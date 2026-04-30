@@ -1,0 +1,62 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37111.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetTracker.Domain", "AssetTracker.Domain\AssetTracker.Domain.csproj", "{A0F8541D-7CF0-46B3-9E99-E326FFD0493D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetTracker.Application", "AssetTracker.Application\AssetTracker.Application.csproj", "{914251E9-D648-4E77-B3D9-27C5E5B60931}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetTracker.Infrastructure", "AssetTracker.Infrastructure\AssetTracker.Infrastructure.csproj", "{FEBB13AB-9A32-42C3-92FC-0F5B7784EBC4}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetTracker.WebAPI", "AssetTracker.WebAPI\AssetTracker.WebAPI.csproj", "{9F870868-9597-4E2B-9844-61367082E060}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
+EndProject
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "testproj", "Web\testproj\testproj.esproj", "{5570440E-39C6-D48A-F0AD-47B57FDDCB23}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A0F8541D-7CF0-46B3-9E99-E326FFD0493D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0F8541D-7CF0-46B3-9E99-E326FFD0493D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0F8541D-7CF0-46B3-9E99-E326FFD0493D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0F8541D-7CF0-46B3-9E99-E326FFD0493D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{914251E9-D648-4E77-B3D9-27C5E5B60931}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{914251E9-D648-4E77-B3D9-27C5E5B60931}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{914251E9-D648-4E77-B3D9-27C5E5B60931}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{914251E9-D648-4E77-B3D9-27C5E5B60931}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEBB13AB-9A32-42C3-92FC-0F5B7784EBC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEBB13AB-9A32-42C3-92FC-0F5B7784EBC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEBB13AB-9A32-42C3-92FC-0F5B7784EBC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEBB13AB-9A32-42C3-92FC-0F5B7784EBC4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F870868-9597-4E2B-9844-61367082E060}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F870868-9597-4E2B-9844-61367082E060}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F870868-9597-4E2B-9844-61367082E060}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F870868-9597-4E2B-9844-61367082E060}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5570440E-39C6-D48A-F0AD-47B57FDDCB23} = {36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6FBAE370-86F4-4588-80BC-93C66F8BC4C4}
+	EndGlobalSection
+EndGlobal

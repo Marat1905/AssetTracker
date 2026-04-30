@@ -1,0 +1,56 @@
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: asset_tracker_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: AssetTrackerDb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - asset_tracker_net
+
+  api:
+    build:
+      context: .
+      dockerfile: AssetTracker.WebAPI/Dockerfile
+    container_name: asset_tracker_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=AssetTrackerDb;Username=postgres;Password=postgres
+    ports:
+      - "5000:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - asset_tracker_net
+
+  # ui:
+  #   build:
+  #     context: ./asset-tracker-ui
+  #     dockerfile: Dockerfile
+  #   container_name: asset_tracker_ui
+  #   ports:
+  #     - "3000:80"
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - asset_tracker_net
+
+volumes:
+  postgres_data:
+
+networks:
+  asset_tracker_net:
+    driver: bridge
