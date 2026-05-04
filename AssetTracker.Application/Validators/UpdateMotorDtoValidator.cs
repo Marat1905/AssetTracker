@@ -2,13 +2,11 @@
 using FluentValidation;
 
 namespace AssetTracker.Application.Validators;
-public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
-{
-    public CreateMotorDtoValidator()
-    {
-        RuleFor(x => x.InventoryNumber)
-            .GreaterThan(0).WithMessage("Инвентарный номер должен быть положительным");
 
+public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
+{
+    public UpdateMotorDtoValidator()
+    {
         RuleFor(x => x.Type)
             .NotEmpty().WithMessage("Тип двигателя обязателен")
             .MaximumLength(100);
@@ -27,8 +25,5 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 
         RuleFor(x => x.RearBearingType)
             .NotEmpty().WithMessage("Тип заднего подшипника обязателен");
-
-        RuleFor(x => x.InitialLocation)
-            .NotEmpty().WithMessage("Начальное место установки обязательно");
     }
 }

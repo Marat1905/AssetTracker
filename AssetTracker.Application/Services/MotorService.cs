@@ -168,4 +168,35 @@ public class MotorService : IMotorService
 
         return dto;
     }
+
+    //  Обновление основных характеристик двигателя
+    public async Task UpdateMotorAsync(int motorId, UpdateMotorDto dto)
+    {
+        _logger.LogInformation("Updating motor {MotorId}", motorId);
+
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motor == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        _mapper.Map(dto, motor); // Обновляем только разрешённые поля
+        _unitOfWork.Motors.Update(motor);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Motor {MotorId} updated successfully", motorId);
+    }
+
+    // Удаление двигателя и всей связанной истории (каскадное удаление в БД)
+    public async Task DeleteMotorAsync(int motorId)
+    {
+        _logger.LogInformation("Deleting motor {MotorId}", motorId);
+
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motor == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        _unitOfWork.Motors.Remove(motor);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Motor {MotorId} deleted successfully", motorId);
+    }
 }

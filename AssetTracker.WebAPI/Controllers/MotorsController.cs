@@ -83,4 +83,29 @@ public class MotorsController : ControllerBase
         var motors = await _motorService.GetAllMotorsAsync();
         return Ok(motors);
     }
+
+    /// <summary>
+    /// Редактирование основных характеристик двигателя
+    /// </summary>
+    [HttpPut("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateMotor(int id, [FromBody] UpdateMotorDto dto)
+    {
+        await _motorService.UpdateMotorAsync(id, dto);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Удаление двигателя (вместе со всей историей перемещений и обслуживания)
+    /// </summary>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteMotor(int id)
+    {
+        await _motorService.DeleteMotorAsync(id);
+        return NoContent();
+    }
 }

@@ -1,5 +1,13 @@
 import axios from 'axios';
-import type { CreateMotorDto, MotorFullHistoryDto, MoveMotorDto, MaintenanceDto, MotorListItem, UpdateMotorStatusDto } from '../types';
+import type {
+    CreateMotorDto,
+    MotorFullHistoryDto,
+    MoveMotorDto,
+    MaintenanceDto,
+    MotorListItem,
+    UpdateMotorStatusDto,
+    UpdateMotorRequest
+} from '../types';
 
 const api = axios.create({
     baseURL: '/api',
@@ -26,6 +34,16 @@ export const motorApi = {
         return response.data;
     },
 
+    // Редактировать двигатель (обновить основные характеристики)
+    updateMotor: async (id: number, data: UpdateMotorRequest): Promise<void> => {
+        await api.put(`/motors/${id}`, data);
+    },
+
+    // Удалить двигатель со всей историей
+    deleteMotor: async (id: number): Promise<void> => {
+        await api.delete(`/motors/${id}`);
+    },
+
     // Переместить двигатель
     moveMotor: async (id: number, data: MoveMotorDto): Promise<void> => {
         await api.patch(`/motors/${id}/move`, data);
@@ -42,8 +60,7 @@ export const motorApi = {
         return response.data;
     },
 
-    // Дополнительно: получить все двигатели (для списка) – если API не предоставляет, можно имитировать через историю? Лучше добавить эндпоинт GET /motors.
-    // Предположим, что в API добавлен GET /motors (можно доработать backend, но для UI пусть будет).
+    // Получить список всех двигателей
     getAllMotors: async (): Promise<MotorListItem[]> => {
         const response = await api.get<MotorListItem[]>('/motors');
         return response.data;

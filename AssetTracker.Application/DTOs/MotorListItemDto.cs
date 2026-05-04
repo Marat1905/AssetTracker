@@ -1,10 +1,8 @@
-﻿namespace AssetTracker.Application.DTOs
+﻿namespace AssetTracker.Application.DTOs;
+public class MotorListItemDto
 {
-    public class MotorListItemDto
-    {
-        public int InventoryNumber { get; set; }
-        public string Type { get; set; } = string.Empty;
-        public double Power { get; set; }
-        public string Status { get; set; } = string.Empty;
-    }
+    public int InventoryNumber { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public double Power { get; set; }
+    public string Status { get; set; } = string.Empty;
 }

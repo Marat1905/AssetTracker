@@ -8,9 +8,10 @@ import { maintenanceTypeLabels, motorStatusLabels } from '../utils/locales';
 
 interface Props {
     motorId: number;
+    onMotorUpdated?: () => void; // уведомление родителя об успешной загрузке/обновлении
 }
 
-export default function MotorHistory({ motorId }: Props) {
+export default function MotorHistory({ motorId, onMotorUpdated }: Props) {
     const [history, setHistory] = useState<MotorFullHistoryDto | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -18,6 +19,7 @@ export default function MotorHistory({ motorId }: Props) {
         try {
             const data = await motorApi.getFullHistory(motorId);
             setHistory(data);
+            onMotorUpdated?.(); // сообщаем родителю, что данные загружены (полезно после редактирования/удаления)
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка загрузки');
         } finally {

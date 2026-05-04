@@ -61,7 +61,6 @@ export interface MaintenanceDto {
     comment: string;
 }
 
-// Для списка двигателей (можно расширить)
 export interface MotorListItem {
     inventoryNumber: number;
     type: string;
@@ -70,5 +69,15 @@ export interface MotorListItem {
 }
 
 export interface UpdateMotorStatusDto {
+    status: MotorStatus;
+}
+
+export interface UpdateMotorRequest {
+    type: string;
+    dimensions: string;
+    power: number;
+    speed: number;
+    frontBearingType: string;
+    rearBearingType: string;
     status: MotorStatus;
 }

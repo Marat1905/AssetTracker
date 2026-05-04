@@ -2,17 +2,17 @@
 using AssetTracker.Domain.Entities;
 using AutoMapper;
 
-namespace AssetTracker.Application.Mappings
+namespace AssetTracker.Application.Mappings;
+
+public class MappingProfile : Profile
 {
-    public class MappingProfile : Profile
+    public MappingProfile()
     {
-        public MappingProfile()
-        {
-            CreateMap<CreateMotorDto, Motor>();
-            CreateMap<Motor, MotorFullHistoryDto>();
-            CreateMap<LocationHistory, LocationHistoryDto>();
-            CreateMap<MaintenanceLog, MaintenanceLogDto>()
-                .ForMember(dest => dest.WorkType, opt => opt.MapFrom(src => src.WorkType.ToString()));
-        }
+        CreateMap<CreateMotorDto, Motor>();
+        CreateMap<Motor, MotorFullHistoryDto>();
+        CreateMap<LocationHistory, LocationHistoryDto>();
+        CreateMap<MaintenanceLog, MaintenanceLogDto>()
+            .ForMember(dest => dest.WorkType, opt => opt.MapFrom(src => src.WorkType.ToString()));
+        CreateMap<UpdateMotorDto, Motor>();
     }
 }
