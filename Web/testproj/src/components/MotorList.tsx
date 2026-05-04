@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { MotorListItem, MotorFullHistoryDto } from '../types';
 import { motorApi } from '../services/api';
 import toast from 'react-hot-toast';
@@ -7,6 +7,7 @@ import { motorStatusLabels } from '../utils/locales';
 import EditMotorModal from './EditMotorModal';
 
 export default function MotorList() {
+    const navigate = useNavigate();
     const [motors, setMotors] = useState<MotorListItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingMotor, setEditingMotor] = useState<MotorFullHistoryDto | null>(null);
@@ -26,26 +27,32 @@ export default function MotorList() {
         fetchMotors();
     }, []);
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, e: React.MouseEvent) => {
+        e.stopPropagation(); // Предотвращаем переход по строке
         if (!confirm('Вы уверены, что хотите удалить двигатель? Все данные (история перемещений, обслуживания) будут безвозвратно удалены.')) {
             return;
         }
         try {
             await motorApi.deleteMotor(id);
             toast.success('Двигатель удалён');
-            fetchMotors(); // обновляем список
+            fetchMotors();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка удаления');
         }
     };
 
-    const handleEditClick = async (motor: MotorListItem) => {
+    const handleEditClick = async (motor: MotorListItem, e: React.MouseEvent) => {
+        e.stopPropagation(); // Предотвращаем переход по строке
         try {
             const fullData = await motorApi.getFullHistory(motor.inventoryNumber);
             setEditingMotor(fullData);
         } catch {
             toast.error('Не удалось загрузить данные для редактирования');
         }
+    };
+
+    const handleRowClick = (inventoryNumber: number) => {
+        navigate(`/motors/${inventoryNumber}`);
     };
 
     if (loading) {
@@ -94,7 +101,11 @@ export default function MotorList() {
                         </thead>
                         <tbody>
                             {motors.map(motor => (
-                                <tr key={motor.inventoryNumber} className="group">
+                                <tr
+                                    key={motor.inventoryNumber}
+                                    onClick={() => handleRowClick(motor.inventoryNumber)}
+                                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                                >
                                     <td className="font-medium text-text-h">{motor.inventoryNumber}</td>
                                     <td>{motor.type}</td>
                                     <td>{motor.power} кВт</td>
@@ -103,19 +114,10 @@ export default function MotorList() {
                                             {motorStatusLabels[motor.status] || motor.status}
                                         </span>
                                     </td>
-                                    <td>
+                                    <td onClick={(e) => e.stopPropagation()}>
                                         <div className="flex items-center gap-2">
-                                            <Link
-                                                to={`/motors/${motor.inventoryNumber}`}
-                                                className="inline-flex items-center text-accent hover:text-accent-dark transition-colors gap-1 group/link"
-                                            >
-                                                <span>История</span>
-                                                <svg className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                </svg>
-                                            </Link>
                                             <button
-                                                onClick={() => handleEditClick(motor)}
+                                                onClick={(e) => handleEditClick(motor, e)}
                                                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                                                 title="Редактировать"
                                             >
@@ -124,7 +126,7 @@ export default function MotorList() {
                                                 </svg>
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(motor.inventoryNumber)}
+                                                onClick={(e) => handleDelete(motor.inventoryNumber, e)}
                                                 className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                                                 title="Удалить"
                                             >
