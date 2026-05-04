@@ -4,10 +4,11 @@ import MotorHistory from '../components/MotorHistory';
 import EditMotorModal from '../components/EditMotorModal';
 import MoveMotorForm from '../components/MoveMotorForm';
 import MaintenanceForm from '../components/MaintenanceForm';
-import Pagination from '../components/Pagination';
 import { motorApi } from '../services/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
+import Pagination from '../components/Pagination';
+import { maintenanceTypeLabels } from '../utils/locales';
 
 export default function MotorDetails() {
     const { id } = useParams<{ id: string }>();
@@ -19,16 +20,16 @@ export default function MotorDetails() {
     // Пагинация истории перемещений
     const [locationHistory, setLocationHistory] = useState<LocationHistoryDto[]>([]);
     const [locationPage, setLocationPage] = useState(1);
-    const [locationPageSize, setLocationPageSize] = useState(5);
     const [locationTotalPages, setLocationTotalPages] = useState(1);
     const [locationTotalCount, setLocationTotalCount] = useState(0);
+    const [locationPageSize, setLocationPageSize] = useState(5);
 
     // Пагинация журнала обслуживания
     const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLogDto[]>([]);
     const [maintenancePage, setMaintenancePage] = useState(1);
-    const [maintenancePageSize, setMaintenancePageSize] = useState(5);
     const [maintenanceTotalPages, setMaintenanceTotalPages] = useState(1);
     const [maintenanceTotalCount, setMaintenanceTotalCount] = useState(0);
+    const [maintenancePageSize, setMaintenancePageSize] = useState(5);
 
     // Загрузка паспортных данных
     const loadMotorData = async () => {
@@ -64,15 +65,6 @@ export default function MotorDetails() {
             toast.error('Ошибка загрузки журнала обслуживания');
         }
     };
-
-    // Сброс страницы при изменении размера страницы
-    useEffect(() => {
-        setLocationPage(1);
-    }, [locationPageSize]);
-
-    useEffect(() => {
-        setMaintenancePage(1);
-    }, [maintenancePageSize]);
 
     useEffect(() => {
         if (!isNaN(motorId) && motorId > 0) {
@@ -143,31 +135,31 @@ export default function MotorDetails() {
                 </div>
             </div>
 
-            {/* Паспортная часть */}
+            {/* Блок паспортных данных (используем MotorHistory) */}
             {motorData && (
                 <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
             )}
 
-            {/* Формы действий */}
+            {/* Формы действий (перемещение и обслуживание) */}
             <div className="grid md:grid-cols-2 gap-6 mt-6">
                 <MoveMotorForm
                     motorId={motorId}
                     currentStatus={motorData?.status}
                     onMoved={() => {
-                        loadLocationHistory();
-                        loadMotorData();
+                        loadLocationHistory(); // обновить историю после перемещения
+                        loadMotorData();       // обновить статус
                     }}
                 />
                 <MaintenanceForm
                     motorId={motorId}
                     onAdded={() => {
-                        loadMaintenanceLogs();
+                        loadMaintenanceLogs(); // обновить журнал после добавления
                         loadMotorData();
                     }}
                 />
             </div>
 
-            {/* История перемещений */}
+            {/* История перемещений с пагинацией */}
             <div className="card mt-6">
                 <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
                     <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
@@ -201,13 +193,16 @@ export default function MotorDetails() {
                         totalPages={locationTotalPages}
                         onPageChange={setLocationPage}
                         pageSize={locationPageSize}
-                        onPageSizeChange={setLocationPageSize}
+                        onPageSizeChange={(newSize) => {
+                            setLocationPageSize(newSize);
+                            setLocationPage(1);
+                        }}
                         totalCount={locationTotalCount}
                     />
                 </div>
             </div>
 
-            {/* Журнал обслуживания */}
+            {/* Журнал обслуживания с пагинацией */}
             <div className="card mt-6">
                 <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
                     <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
@@ -226,7 +221,7 @@ export default function MotorDetails() {
                                 <div key={log.id} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 hover:shadow-md transition-shadow">
                                     <div className="flex justify-between items-start flex-wrap gap-2">
                                         <span className="font-semibold text-text-h px-2 py-1 bg-accent/10 rounded-lg text-sm">
-                                            {log.workType}
+                                            {maintenanceTypeLabels[log.workType] || log.workType}
                                         </span>
                                         <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
                                     </div>
@@ -242,7 +237,10 @@ export default function MotorDetails() {
                         totalPages={maintenanceTotalPages}
                         onPageChange={setMaintenancePage}
                         pageSize={maintenancePageSize}
-                        onPageSizeChange={setMaintenancePageSize}
+                        onPageSizeChange={(newSize) => {
+                            setMaintenancePageSize(newSize);
+                            setMaintenancePage(1);
+                        }}
                         totalCount={maintenanceTotalCount}
                     />
                 </div>
@@ -254,7 +252,7 @@ export default function MotorDetails() {
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
                     onSuccess={() => {
-                        loadMotorData();
+                        loadMotorData(); // обновить паспортные данные после редактирования
                     }}
                 />
             )}

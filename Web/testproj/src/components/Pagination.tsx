@@ -80,8 +80,8 @@ export default function Pagination({
                         key={page}
                         onClick={() => onPageChange(page)}
                         className={`px-3 py-1 rounded-md border text-sm transition-colors ${currentPage === page
-                                ? 'bg-accent border-accent text-white'
-                                : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+                            ? 'bg-accent border-accent text-white'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
                             }`}
                     >
                         {page}

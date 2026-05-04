@@ -15,9 +15,9 @@ export default function MotorList() {
 
     // Пагинация
     const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
     const [totalPages, setTotalPages] = useState(1);
     const [totalCount, setTotalCount] = useState(0);
+    const [pageSize, setPageSize] = useState(10);
 
     // Фильтры
     const [filterInventory, setFilterInventory] = useState('');
@@ -44,24 +44,20 @@ export default function MotorList() {
         }
     };
 
-    // Сброс страницы при изменении фильтров или размера страницы
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [filterInventory, filterLocation, filterStatus, pageSize]);
-
     useEffect(() => {
         fetchMotors();
     }, [currentPage, pageSize, filterInventory, filterLocation, filterStatus]);
 
     const handleApplyFilters = () => {
-        // Страница уже сбросится через useEffect
+        setCurrentPage(1); // сброс на первую страницу при новом фильтре
+        // fetchMotors вызовется автоматически через useEffect
     };
 
     const handleResetFilters = () => {
         setFilterInventory('');
         setFilterLocation('');
         setFilterStatus('');
-        // pageSize не сбрасываем, страница сбросится автоматически
+        setCurrentPage(1);
     };
 
     const handleDelete = async (id: number, e: React.MouseEvent) => {
@@ -70,7 +66,7 @@ export default function MotorList() {
         try {
             await motorApi.deleteMotor(id);
             toast.success('Двигатель удалён');
-            // если после удаления на текущей странице не осталось элементов и это не первая страница – переходим на предыдущую
+            // если удалён последний элемент на странице и страница > 1, переходим на предыдущую
             if (motors.length === 1 && currentPage > 1) {
                 setCurrentPage(currentPage - 1);
             } else {
@@ -236,7 +232,10 @@ export default function MotorList() {
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         pageSize={pageSize}
-                        onPageSizeChange={(size) => setPageSize(size)}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            setCurrentPage(1); // сброс страницы при изменении размера
+                        }}
                         totalCount={totalCount}
                     />
                 </div>
@@ -247,7 +246,10 @@ export default function MotorList() {
                     motor={editingMotor}
                     isOpen={!!editingMotor}
                     onClose={() => setEditingMotor(null)}
-                    onSuccess={fetchMotors}
+                    onSuccess={() => {
+                        fetchMotors();   // обновить список после редактирования
+                        setEditingMotor(null);
+                    }}
                 />
             )}
         </>

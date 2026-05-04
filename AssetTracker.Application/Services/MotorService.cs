@@ -210,10 +210,10 @@ public class MotorService : IMotorService
 
         var query = _unitOfWork.Motors.GetQueryable();
 
-        // Фильтрация по инвентарному номеру (точное совпадение)
-        if (!string.IsNullOrEmpty(inventoryNumberFilter) && int.TryParse(inventoryNumberFilter, out var inventoryNumber))
+        // Фильтрация по инвентарному номеру (частичное совпадение, как строка)
+        if (!string.IsNullOrEmpty(inventoryNumberFilter))
         {
-            query = query.Where(m => m.InventoryNumber == inventoryNumber);
+            query = query.Where(m => m.InventoryNumber.ToString().Contains(inventoryNumberFilter));
         }
 
         // Фильтрация по текущему месту установки (активная запись LocationHistory)
@@ -229,6 +229,7 @@ public class MotorService : IMotorService
         }
 
         var totalCount = await query.CountAsync();
+
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -237,7 +238,11 @@ public class MotorService : IMotorService
                 InventoryNumber = m.InventoryNumber,
                 Type = m.Type,
                 Power = m.Power,
-                Status = m.Status.ToString()
+                Status = m.Status.ToString(),
+                CurrentLocation = m.LocationHistories
+                    .Where(l => l.EndDate == null)
+                    .Select(l => l.Location)
+                    .FirstOrDefault() ?? string.Empty
             })
             .ToListAsync();
 

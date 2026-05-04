@@ -7,6 +7,10 @@ interface Props {
 }
 
 export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
+    // Если нужно, можно вызвать onMotorUpdated при монтировании
+    // useEffect(() => { onMotorUpdated?.(); }, []);
+    // Но он и так вызывается из родителя
+
     return (
         <div className="card">
             <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-accent/5 to-transparent">
