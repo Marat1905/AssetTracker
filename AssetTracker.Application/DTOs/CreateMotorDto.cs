@@ -13,3 +13,20 @@ public class CreateMotorDto
     public MotorStatus Status { get; set; } = MotorStatus.InOperation;
     public string InitialLocation { get; set; } = string.Empty;
 }
+
+public class UpdateMotorDto
+{
+    public string Type { get; set; } = string.Empty;
+    public string Dimensions { get; set; } = string.Empty;
+    public double Power { get; set; }
+    public int Speed { get; set; }
+    public string FrontBearingType { get; set; } = string.Empty;
+    public string RearBearingType { get; set; } = string.Empty;
+    public MotorStatus Status { get; set; }
+}
+
+public class MoveMotorDto
+{
+    public string NewLocation { get; set; } = string.Empty;
+    public MotorStatus? NewStatus { get; set; }
+}

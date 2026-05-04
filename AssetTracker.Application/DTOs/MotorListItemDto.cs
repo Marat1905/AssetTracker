@@ -5,4 +5,5 @@ public class MotorListItemDto
     public string Type { get; set; } = string.Empty;
     public double Power { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string CurrentLocation { get; set; } = string.Empty; // Текущее местоположение
 }
