@@ -66,6 +66,7 @@ export interface MotorListItem {
     type: string;
     power: number;
     status: MotorStatus;
+    currentLocation: string;   // добавлено поле текущего местоположения
 }
 
 export interface UpdateMotorStatusDto {
@@ -80,4 +81,13 @@ export interface UpdateMotorRequest {
     frontBearingType: string;
     rearBearingType: string;
     status: MotorStatus;
+}
+
+// Пагинированный результат (соответствует бэкенду)
+export interface PagedResult<T> {
+    items: T[];
+    totalCount: number;
+    pageNumber: number;
+    pageSize: number;
+    totalPages: number;
 }

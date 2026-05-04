@@ -2,8 +2,11 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
 import EditMotorModal from '../components/EditMotorModal';
+import MoveMotorForm from '../components/MoveMotorForm';
+import MaintenanceForm from '../components/MaintenanceForm';
+import Pagination from '../components/Pagination';
 import { motorApi } from '../services/api';
-import type { MotorFullHistoryDto } from '../types';
+import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
 
 export default function MotorDetails() {
@@ -13,20 +16,71 @@ export default function MotorDetails() {
     const [motorData, setMotorData] = useState<MotorFullHistoryDto | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    // Загружаем данные для отображения в модалке редактирования
+    // Пагинация истории перемещений
+    const [locationHistory, setLocationHistory] = useState<LocationHistoryDto[]>([]);
+    const [locationPage, setLocationPage] = useState(1);
+    const [locationPageSize, setLocationPageSize] = useState(5);
+    const [locationTotalPages, setLocationTotalPages] = useState(1);
+    const [locationTotalCount, setLocationTotalCount] = useState(0);
+
+    // Пагинация журнала обслуживания
+    const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLogDto[]>([]);
+    const [maintenancePage, setMaintenancePage] = useState(1);
+    const [maintenancePageSize, setMaintenancePageSize] = useState(5);
+    const [maintenanceTotalPages, setMaintenanceTotalPages] = useState(1);
+    const [maintenanceTotalCount, setMaintenanceTotalCount] = useState(0);
+
+    // Загрузка паспортных данных
     const loadMotorData = async () => {
         if (isNaN(motorId) || motorId <= 0) return;
         try {
             const data = await motorApi.getFullHistory(motorId);
             setMotorData(data);
-        } catch {
-            // ошибка будет обработана в MotorHistory
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Ошибка загрузки данных двигателя');
         }
     };
 
+    // Загрузка пагинированной истории перемещений
+    const loadLocationHistory = async () => {
+        try {
+            const data = await motorApi.getLocationHistoryPaged(motorId, locationPage, locationPageSize);
+            setLocationHistory(data.items);
+            setLocationTotalPages(data.totalPages);
+            setLocationTotalCount(data.totalCount);
+        } catch (err: any) {
+            toast.error('Ошибка загрузки истории перемещений');
+        }
+    };
+
+    // Загрузка пагинированного журнала обслуживания
+    const loadMaintenanceLogs = async () => {
+        try {
+            const data = await motorApi.getMaintenanceLogsPaged(motorId, maintenancePage, maintenancePageSize);
+            setMaintenanceLogs(data.items);
+            setMaintenanceTotalPages(data.totalPages);
+            setMaintenanceTotalCount(data.totalCount);
+        } catch (err: any) {
+            toast.error('Ошибка загрузки журнала обслуживания');
+        }
+    };
+
+    // Сброс страницы при изменении размера страницы
     useEffect(() => {
-        loadMotorData();
-    }, [motorId]);
+        setLocationPage(1);
+    }, [locationPageSize]);
+
+    useEffect(() => {
+        setMaintenancePage(1);
+    }, [maintenancePageSize]);
+
+    useEffect(() => {
+        if (!isNaN(motorId) && motorId > 0) {
+            loadMotorData();
+            loadLocationHistory();
+            loadMaintenanceLogs();
+        }
+    }, [motorId, locationPage, locationPageSize, maintenancePage, maintenancePageSize]);
 
     const handleDelete = async () => {
         if (!confirm('Удалить двигатель без возможности восстановления?')) return;
@@ -37,6 +91,12 @@ export default function MotorDetails() {
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка удаления');
         }
+    };
+
+    const refreshAll = () => {
+        loadMotorData();
+        loadLocationHistory();
+        loadMaintenanceLogs();
     };
 
     if (isNaN(motorId) || motorId <= 0) {
@@ -82,14 +142,119 @@ export default function MotorDetails() {
                     </button>
                 </div>
             </div>
-            <MotorHistory motorId={motorId} onMotorUpdated={loadMotorData} />
+
+            {/* Паспортная часть */}
+            {motorData && (
+                <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
+            )}
+
+            {/* Формы действий */}
+            <div className="grid md:grid-cols-2 gap-6 mt-6">
+                <MoveMotorForm
+                    motorId={motorId}
+                    currentStatus={motorData?.status}
+                    onMoved={() => {
+                        loadLocationHistory();
+                        loadMotorData();
+                    }}
+                />
+                <MaintenanceForm
+                    motorId={motorId}
+                    onAdded={() => {
+                        loadMaintenanceLogs();
+                        loadMotorData();
+                    }}
+                />
+            </div>
+
+            {/* История перемещений */}
+            <div className="card mt-6">
+                <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+                    <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
+                        <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        История перемещений
+                    </h3>
+                </div>
+                <div className="p-6">
+                    {locationHistory.length === 0 ? (
+                        <p className="text-gray-500 text-center py-4">Нет записей о перемещениях</p>
+                    ) : (
+                        <div className="space-y-4">
+                            {locationHistory.map((loc) => (
+                                <div key={loc.id} className="relative pl-6 pb-4 last:pb-0 border-l-2 border-accent/30">
+                                    <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-accent shadow-md"></div>
+                                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
+                                        <p className="font-semibold text-text-h">{loc.location}</p>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            {new Date(loc.startDate).toLocaleString('ru-RU')} – {loc.endDate ? new Date(loc.endDate).toLocaleString('ru-RU') : 'настоящее время'}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <Pagination
+                        currentPage={locationPage}
+                        totalPages={locationTotalPages}
+                        onPageChange={setLocationPage}
+                        pageSize={locationPageSize}
+                        onPageSizeChange={setLocationPageSize}
+                        totalCount={locationTotalCount}
+                    />
+                </div>
+            </div>
+
+            {/* Журнал обслуживания */}
+            <div className="card mt-6">
+                <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+                    <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
+                        <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Журнал обслуживания и ремонтов
+                    </h3>
+                </div>
+                <div className="p-6">
+                    {maintenanceLogs.length === 0 ? (
+                        <p className="text-gray-500 text-center py-4">Нет записей об обслуживании</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {maintenanceLogs.map(log => (
+                                <div key={log.id} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 hover:shadow-md transition-shadow">
+                                    <div className="flex justify-between items-start flex-wrap gap-2">
+                                        <span className="font-semibold text-text-h px-2 py-1 bg-accent/10 rounded-lg text-sm">
+                                            {log.workType}
+                                        </span>
+                                        <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
+                                    </div>
+                                    {log.comment && (
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{log.comment}</p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <Pagination
+                        currentPage={maintenancePage}
+                        totalPages={maintenanceTotalPages}
+                        onPageChange={setMaintenancePage}
+                        pageSize={maintenancePageSize}
+                        onPageSizeChange={setMaintenancePageSize}
+                        totalCount={maintenanceTotalCount}
+                    />
+                </div>
+            </div>
+
             {motorData && (
                 <EditMotorModal
                     motor={motorData}
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
                     onSuccess={() => {
-                        loadMotorData(); // обновить данные на странице после редактирования
+                        loadMotorData();
                     }}
                 />
             )}
