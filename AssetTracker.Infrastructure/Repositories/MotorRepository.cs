@@ -16,4 +16,6 @@ public class MotorRepository : Repository<Motor>, IMotorRepository
             .Include(m => m.MaintenanceLogs)
             .FirstOrDefaultAsync(m => m.InventoryNumber == inventoryNumber, cancellationToken);
     }
+
+    public IQueryable<Motor> GetQueryable() => _dbSet;
 }

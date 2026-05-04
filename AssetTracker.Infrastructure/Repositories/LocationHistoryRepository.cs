@@ -14,4 +14,6 @@ public class LocationHistoryRepository : Repository<LocationHistory>, ILocationH
         return await _context.LocationHistories
             .FirstOrDefaultAsync(l => l.MotorId == motorId && l.EndDate == null, cancellationToken);
     }
+
+    public IQueryable<LocationHistory> GetQueryable() => _dbSet;
 }

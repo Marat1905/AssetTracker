@@ -7,4 +7,6 @@ namespace AssetTracker.Infrastructure.Repositories;
 public class MaintenanceLogRepository : Repository<MaintenanceLog>, IMaintenanceLogRepository
 {
     public MaintenanceLogRepository(AppDbContext context) : base(context) { }
+
+    public IQueryable<MaintenanceLog> GetQueryable() => _dbSet;
 }

@@ -4,6 +4,7 @@ using AssetTracker.Domain.Entities;
 using AssetTracker.Domain.Enums;
 using AssetTracker.Domain.Interfaces;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace AssetTracker.Application.Services;
@@ -198,5 +199,125 @@ public class MotorService : IMotorService
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Motor {MotorId} deleted successfully", motorId);
+    }
+
+    // Реализация новых методов
+
+    public async Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(int page, int pageSize, string? inventoryNumberFilter, string? locationFilter, MotorStatus? statusFilter)
+    {
+        _logger.LogInformation("Fetching motors paged: page={Page}, pageSize={PageSize}, inventoryFilter={InventoryFilter}, locationFilter={LocationFilter}, statusFilter={StatusFilter}",
+            page, pageSize, inventoryNumberFilter, locationFilter, statusFilter);
+
+        var query = _unitOfWork.Motors.GetQueryable();
+
+        // Фильтрация по инвентарному номеру (точное совпадение)
+        if (!string.IsNullOrEmpty(inventoryNumberFilter) && int.TryParse(inventoryNumberFilter, out var inventoryNumber))
+        {
+            query = query.Where(m => m.InventoryNumber == inventoryNumber);
+        }
+
+        // Фильтрация по текущему месту установки (активная запись LocationHistory)
+        if (!string.IsNullOrEmpty(locationFilter))
+        {
+            query = query.Where(m => m.LocationHistories.Any(l => l.EndDate == null && l.Location.Contains(locationFilter)));
+        }
+
+        // Фильтрация по статусу
+        if (statusFilter.HasValue)
+        {
+            query = query.Where(m => m.Status == statusFilter.Value);
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(m => new MotorListItemDto
+            {
+                InventoryNumber = m.InventoryNumber,
+                Type = m.Type,
+                Power = m.Power,
+                Status = m.Status.ToString()
+            })
+            .ToListAsync();
+
+        return new PagedResult<MotorListItemDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+    }
+
+    public async Task<PagedResult<LocationHistoryDto>> GetMotorLocationHistoryPagedAsync(int motorId, int page, int pageSize)
+    {
+        _logger.LogInformation("Fetching location history for motor {MotorId}, page={Page}, pageSize={PageSize}", motorId, page, pageSize);
+
+        var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motorExists == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        var query = _unitOfWork.LocationHistories.GetQueryable()
+            .Where(l => l.MotorId == motorId)
+            .OrderBy(l => l.StartDate); // как в GetFullHistory – по возрастанию
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(l => new LocationHistoryDto
+            {
+                Id = l.Id,
+                Location = l.Location,
+                StartDate = l.StartDate,
+                EndDate = l.EndDate
+            })
+            .ToListAsync();
+
+        return new PagedResult<LocationHistoryDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+    }
+
+    public async Task<PagedResult<MaintenanceLogDto>> GetMotorMaintenanceLogsPagedAsync(int motorId, int page, int pageSize)
+    {
+        _logger.LogInformation("Fetching maintenance logs for motor {MotorId}, page={Page}, pageSize={PageSize}", motorId, page, pageSize);
+
+        var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motorExists == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        var query = _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Where(m => m.MotorId == motorId)
+            .OrderByDescending(m => m.Date); // как в GetFullHistory – по убыванию
+
+        var totalCount = await query.CountAsync();
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(m => new MaintenanceLogDto
+            {
+                Id = m.Id,
+                WorkType = m.WorkType.ToString(),
+                Date = m.Date,
+                Comment = m.Comment
+            })
+            .ToListAsync();
+
+        return new PagedResult<MaintenanceLogDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
     }
 }

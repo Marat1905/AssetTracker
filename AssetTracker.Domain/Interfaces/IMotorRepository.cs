@@ -1,9 +1,8 @@
 ﻿using AssetTracker.Domain.Entities;
 
-namespace AssetTracker.Domain.Interfaces
+namespace AssetTracker.Domain.Interfaces;
+public interface IMotorRepository : IRepository<Motor>
 {
-    public interface IMotorRepository : IRepository<Motor>
-    {
-        Task<Motor?> GetWithFullHistoryAsync(int inventoryNumber, CancellationToken cancellationToken = default);
-    }
+    Task<Motor?> GetWithFullHistoryAsync(int inventoryNumber, CancellationToken cancellationToken = default);
+    IQueryable<Motor> GetQueryable();
 }

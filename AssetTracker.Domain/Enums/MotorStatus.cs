@@ -1,10 +1,8 @@
-﻿namespace AssetTracker.Domain.Enums
+﻿namespace AssetTracker.Domain.Enums;
+public enum MotorStatus
 {
-    public enum MotorStatus
-    {
-        InOperation,
-        Reserve,
-        Repair,
-        Scrapped
-    }
+    InOperation,
+    Reserve,
+    Repair,
+    Scrapped
 }

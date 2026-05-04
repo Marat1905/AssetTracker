@@ -1,6 +1,7 @@
 ﻿using AssetTracker.Domain.Entities;
 
-namespace AssetTracker.Domain.Interfaces
+namespace AssetTracker.Domain.Interfaces;
+public interface IMaintenanceLogRepository : IRepository<MaintenanceLog>
 {
-    public interface IMaintenanceLogRepository : IRepository<MaintenanceLog> { }
+    IQueryable<MaintenanceLog> GetQueryable();
 }

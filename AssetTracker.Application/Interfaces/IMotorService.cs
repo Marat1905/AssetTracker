@@ -1,4 +1,5 @@
 ﻿using AssetTracker.Application.DTOs;
+using AssetTracker.Domain.Enums;
 
 namespace AssetTracker.Application.Interfaces;
 
@@ -11,4 +12,9 @@ public interface IMotorService
     Task<IEnumerable<MotorListItemDto>> GetAllMotorsAsync();
     Task UpdateMotorAsync(int motorId, UpdateMotorDto dto);
     Task DeleteMotorAsync(int motorId);
+
+    // Новые методы для пагинации и фильтрации
+    Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(int page, int pageSize, string? inventoryNumberFilter, string? locationFilter, MotorStatus? statusFilter);
+    Task<PagedResult<LocationHistoryDto>> GetMotorLocationHistoryPagedAsync(int motorId, int page, int pageSize);
+    Task<PagedResult<MaintenanceLogDto>> GetMotorMaintenanceLogsPagedAsync(int motorId, int page, int pageSize);
 }

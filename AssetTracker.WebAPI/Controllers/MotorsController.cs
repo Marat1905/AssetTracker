@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
+using AssetTracker.Domain.Enums;
 
 namespace AssetTracker.WebAPI.Controllers;
 
@@ -62,7 +63,7 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение "карточки жизни" ЭД: где стоял и что с ним делали
+    /// Получение "карточки жизни" ЭД: где стоял и что с ним делали (без пагинации – для мобильных устройств)
     /// </summary>
     [HttpGet("{id}/full-history")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -74,7 +75,7 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение списка всех электродвигателей (для UI)
+    /// Получение списка всех электродвигателей (без пагинации – для мобильных устройств)
     /// </summary>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -82,6 +83,58 @@ public class MotorsController : ControllerBase
     {
         var motors = await _motorService.GetAllMotorsAsync();
         return Ok(motors);
+    }
+
+    /// <summary>
+    /// Получение списка электродвигателей с пагинацией и фильтрацией (для UI)
+    /// </summary>
+    [HttpGet("paged")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<MotorListItemDto>>> GetMotorsPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? inventoryNumber = null,
+        [FromQuery] string? location = null,
+        [FromQuery] MotorStatus? status = null)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        var result = await _motorService.GetMotorsPagedAsync(page, pageSize, inventoryNumber, location, status);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Получение пагинированной истории перемещений двигателя (для UI)
+    /// </summary>
+    [HttpGet("{id}/location-history/paged")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PagedResult<LocationHistoryDto>>> GetLocationHistoryPaged(
+        int id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        var result = await _motorService.GetMotorLocationHistoryPagedAsync(id, page, pageSize);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Получение пагинированного журнала обслуживания двигателя (для UI)
+    /// </summary>
+    [HttpGet("{id}/maintenance-logs/paged")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<PagedResult<MaintenanceLogDto>>> GetMaintenanceLogsPaged(
+        int id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        var result = await _motorService.GetMotorMaintenanceLogsPagedAsync(id, page, pageSize);
+        return Ok(result);
     }
 
     /// <summary>

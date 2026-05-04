@@ -1,10 +1,8 @@
-﻿namespace AssetTracker.Domain.Enums
+﻿namespace AssetTracker.Domain.Enums;
+public enum MaintenanceType
 {
-    public enum MaintenanceType
-    {
-        Lubrication,
-        BearingReplacement,
-        StatorRewinding,
-        ShaftRepair
-    }
+    Lubrication,
+    BearingReplacement,
+    StatorRewinding,
+    ShaftRepair
 }
