@@ -31,5 +31,9 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 
         RuleFor(x => x.InitialLocation)
             .NotEmpty().WithMessage("Начальное место установки обязательно");
+
+        // Проверка, что тип монтажа имеет допустимое значение (из объявленного перечисления)
+        RuleFor(x => x.MountingType)
+            .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, FeetAndFlange или Flange");
     }
 }

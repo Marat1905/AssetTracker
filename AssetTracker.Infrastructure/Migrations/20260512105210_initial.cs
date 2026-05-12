@@ -23,7 +23,8 @@ namespace AssetTracker.Infrastructure.Migrations
                     Speed = table.Column<int>(type: "integer", nullable: false),
                     FrontBearingType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     RearBearingType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    Status = table.Column<string>(type: "text", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    MountingType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {

@@ -18,11 +18,17 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.InventoryNumber);
             entity.Property(e => e.InventoryNumber).ValueGeneratedNever();
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.ShaftDiameter).HasPrecision(10, 2); // мм, с двумя знаками
+            entity.Property(e => e.ShaftDiameter).HasPrecision(10, 2);
             entity.Property(e => e.Power).HasPrecision(10, 2);
             entity.Property(e => e.FrontBearingType).HasMaxLength(50);
             entity.Property(e => e.RearBearingType).HasMaxLength(50);
             entity.Property(e => e.Status).HasConversion<string>();
+
+            // Конфигурация для нового поля MountingType – хранить как строку (значение enum)
+            entity.Property(e => e.MountingType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
         });
 
         modelBuilder.Entity<LocationHistory>(entity =>

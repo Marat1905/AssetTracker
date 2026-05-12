@@ -91,6 +91,11 @@ namespace AssetTracker.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("MountingType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<double>("Power")
                         .HasPrecision(10, 2)
                         .HasColumnType("double precision");

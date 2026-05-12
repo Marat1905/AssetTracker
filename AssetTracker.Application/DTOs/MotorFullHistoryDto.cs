@@ -13,6 +13,9 @@ public class MotorFullHistoryDto
     public string RearBearingType { get; set; } = string.Empty;
     public MotorStatus Status { get; set; }
 
+    /// <summary>Тип монтажа (лапы, лапы и фланец, фланец)</summary>
+    public MountingType MountingType { get; set; }
+
     public List<LocationHistoryDto> LocationHistory { get; set; } = new();
     public List<MaintenanceLogDto> MaintenanceLogs { get; set; } = new();
 }
