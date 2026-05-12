@@ -86,11 +86,6 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.Property<int>("InventoryNumber")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Dimensions")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("FrontBearingType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -104,6 +99,10 @@ namespace AssetTracker.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<double>("ShaftDiameter")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Speed")
                         .HasColumnType("integer");

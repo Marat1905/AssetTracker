@@ -8,7 +8,7 @@ import { motorStatusLabels } from '../utils/locales';
 
 const schema = z.object({
     type: z.string().min(1, 'Тип обязателен'),
-    dimensions: z.string().min(1, 'Габариты обязательны'),
+    shaftDiameter: z.number().positive('Диаметр вала > 0'),
     power: z.number().positive('Мощность > 0'),
     speed: z.number().positive('Обороты > 0'),
     frontBearingType: z.string().min(1, 'Передний подшипник обязателен'),
@@ -19,7 +19,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 interface Props {
-    motor: MotorFullHistoryDto; // используем полные данные для предзаполнения
+    motor: MotorFullHistoryDto;
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
@@ -30,7 +30,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
         resolver: zodResolver(schema),
         defaultValues: {
             type: motor.type,
-            dimensions: motor.dimensions,
+            shaftDiameter: motor.shaftDiameter,
             power: motor.power,
             speed: motor.speed,
             frontBearingType: motor.frontBearingType,
@@ -75,9 +75,9 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                 {errors.type && <p className="text-danger text-xs mt-1">{errors.type.message}</p>}
                             </div>
                             <div>
-                                <label className="form-label">Габариты (ДхШхВ)</label>
-                                <input {...register('dimensions')} className="form-input" />
-                                {errors.dimensions && <p className="text-danger text-xs mt-1">{errors.dimensions.message}</p>}
+                                <label className="form-label">Диаметр вала (мм)</label>
+                                <input type="number" step="0.1" {...register('shaftDiameter', { valueAsNumber: true })} className="form-input" />
+                                {errors.shaftDiameter && <p className="text-danger text-xs mt-1">{errors.shaftDiameter.message}</p>}
                             </div>
                             <div>
                                 <label className="form-label">Мощность (кВт)</label>

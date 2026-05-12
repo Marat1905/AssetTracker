@@ -29,7 +29,7 @@ export interface MaintenanceLogDto {
 export interface MotorFullHistoryDto {
     inventoryNumber: number;
     type: string;
-    dimensions: string;
+    shaftDiameter: number;   // мм
     power: number;
     speed: number;
     frontBearingType: string;
@@ -42,7 +42,7 @@ export interface MotorFullHistoryDto {
 export interface CreateMotorDto {
     inventoryNumber: number;
     type: string;
-    dimensions: string;
+    shaftDiameter: number;   // мм
     power: number;
     speed: number;
     frontBearingType: string;
@@ -66,7 +66,7 @@ export interface MotorListItem {
     type: string;
     power: number;
     status: MotorStatus;
-    currentLocation: string;   // добавлено поле текущего местоположения
+    currentLocation: string;
 }
 
 export interface UpdateMotorStatusDto {
@@ -75,7 +75,7 @@ export interface UpdateMotorStatusDto {
 
 export interface UpdateMotorRequest {
     type: string;
-    dimensions: string;
+    shaftDiameter: number;
     power: number;
     speed: number;
     frontBearingType: string;

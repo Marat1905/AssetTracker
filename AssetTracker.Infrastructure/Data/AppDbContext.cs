@@ -18,7 +18,7 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.InventoryNumber);
             entity.Property(e => e.InventoryNumber).ValueGeneratedNever();
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.Dimensions).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.ShaftDiameter).HasPrecision(10, 2); // мм, с двумя знаками
             entity.Property(e => e.Power).HasPrecision(10, 2);
             entity.Property(e => e.FrontBearingType).HasMaxLength(50);
             entity.Property(e => e.RearBearingType).HasMaxLength(50);

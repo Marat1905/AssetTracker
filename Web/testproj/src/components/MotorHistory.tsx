@@ -31,8 +31,8 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                         <span className="font-medium text-text-h mt-1">{motorData.type}</span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-xs text-gray-500 uppercase tracking-wider">Габариты</span>
-                        <span className="font-medium text-text-h mt-1">{motorData.dimensions}</span>
+                        <span className="text-xs text-gray-500 uppercase tracking-wider">Диаметр вала (мм)</span>
+                        <span className="font-medium text-text-h mt-1">{motorData.shaftDiameter}</span>
                     </div>
                     <div className="flex flex-col">
                         <span className="text-xs text-gray-500 uppercase tracking-wider">Мощность</span>

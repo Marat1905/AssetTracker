@@ -1,11 +1,13 @@
 ﻿using AssetTracker.Domain.Enums;
 
 namespace AssetTracker.Domain.Entities;
+
 public class Motor
 {
     public int InventoryNumber { get; set; } // PK
     public string Type { get; set; } = string.Empty;
-    public string Dimensions { get; set; } = string.Empty;
+    // Диаметр вала (мм)
+    public double ShaftDiameter { get; set; } // мм, > 0
     public double Power { get; set; } // кВт, >0
     public int Speed { get; set; } // об/мин
     public string FrontBearingType { get; set; } = string.Empty;

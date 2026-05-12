@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AssetTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260430053309_initial")]
+    [Migration("20260512103151_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -89,11 +89,6 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.Property<int>("InventoryNumber")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Dimensions")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("FrontBearingType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -107,6 +102,10 @@ namespace AssetTracker.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
+
+                    b.Property<double>("ShaftDiameter")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Speed")
                         .HasColumnType("integer");

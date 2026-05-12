@@ -18,7 +18,7 @@ namespace AssetTracker.Infrastructure.Migrations
                 {
                     InventoryNumber = table.Column<int>(type: "integer", nullable: false),
                     Type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    Dimensions = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    ShaftDiameter = table.Column<double>(type: "double precision", precision: 10, scale: 2, nullable: false),
                     Power = table.Column<double>(type: "double precision", precision: 10, scale: 2, nullable: false),
                     Speed = table.Column<int>(type: "integer", nullable: false),
                     FrontBearingType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),

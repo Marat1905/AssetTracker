@@ -2,6 +2,7 @@
 using FluentValidation;
 
 namespace AssetTracker.Application.Validators;
+
 public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 {
     public CreateMotorDtoValidator()
@@ -13,8 +14,8 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
             .NotEmpty().WithMessage("Тип двигателя обязателен")
             .MaximumLength(100);
 
-        RuleFor(x => x.Dimensions)
-            .NotEmpty().WithMessage("Габариты обязательны");
+        RuleFor(x => x.ShaftDiameter)
+            .GreaterThan(0).WithMessage("Диаметр вала должен быть больше 0 мм");
 
         RuleFor(x => x.Power)
             .GreaterThan(0).WithMessage("Мощность должна быть больше 0");
