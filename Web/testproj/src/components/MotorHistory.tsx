@@ -1,5 +1,5 @@
 import type { MotorFullHistoryDto } from '../types';
-import { motorStatusLabels } from '../utils/locales';
+import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
 
 interface Props {
     motorData: MotorFullHistoryDto;
@@ -7,10 +7,6 @@ interface Props {
 }
 
 export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
-    // Если нужно, можно вызвать onMotorUpdated при монтировании
-    // useEffect(() => { onMotorUpdated?.(); }, []);
-    // Но он и так вызывается из родителя
-
     return (
         <div className="card">
             <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-accent/5 to-transparent">
@@ -49,6 +45,12 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                     <div className="flex flex-col">
                         <span className="text-xs text-gray-500 uppercase tracking-wider">Задний подшипник</span>
                         <span className="font-medium text-text-h mt-1">{motorData.rearBearingType}</span>
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="text-xs text-gray-500 uppercase tracking-wider">Тип монтажа</span>
+                        <span className="font-medium text-text-h mt-1">
+                            {mountingTypeLabels[motorData.mountingType] || motorData.mountingType}
+                        </span>
                     </div>
                 </div>
             </div>

@@ -3,7 +3,7 @@ export const maintenanceTypeLabels: Record<string, string> = {
     BearingReplacement: 'Замена подшипника',
     StatorRewinding: 'Перемотка статора',
     ShaftRepair: 'Ремонт вала',
-    StatusChange: 'Изменение статуса',   // если добавили на бэкенде
+    StatusChange: 'Изменение статуса',
 };
 
 export const motorStatusLabels: Record<string, string> = {
@@ -11,4 +11,10 @@ export const motorStatusLabels: Record<string, string> = {
     Reserve: 'Резерв',
     Repair: 'Ремонт',
     Scrapped: 'Списание',
+};
+
+export const mountingTypeLabels: Record<string, string> = {
+    Feet: 'Лапы',
+    FeetAndFlange: 'Лапы и фланец',
+    Flange: 'Фланец',
 };

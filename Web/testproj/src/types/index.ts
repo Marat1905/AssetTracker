@@ -12,6 +12,12 @@ export enum MaintenanceType {
     ShaftRepair = "ShaftRepair"
 }
 
+export enum MountingType {
+    Feet = "Feet",               // Лапы
+    FeetAndFlange = "FeetAndFlange", // Лапы и фланец
+    Flange = "Flange"            // Фланец
+}
+
 export interface LocationHistoryDto {
     id: number;
     location: string;
@@ -35,6 +41,7 @@ export interface MotorFullHistoryDto {
     frontBearingType: string;
     rearBearingType: string;
     status: MotorStatus;
+    mountingType: MountingType; 
     locationHistory: LocationHistoryDto[];
     maintenanceLogs: MaintenanceLogDto[];
 }
@@ -49,6 +56,7 @@ export interface CreateMotorDto {
     rearBearingType: string;
     status: MotorStatus;
     initialLocation: string;
+    mountingType: MountingType;
 }
 
 export interface MoveMotorDto {
@@ -81,9 +89,9 @@ export interface UpdateMotorRequest {
     frontBearingType: string;
     rearBearingType: string;
     status: MotorStatus;
+    mountingType: MountingType; 
 }
 
-// Пагинированный результат (соответствует бэкенду)
 export interface PagedResult<T> {
     items: T[];
     totalCount: number;

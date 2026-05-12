@@ -3,8 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { motorApi } from '../services/api';
-import { MotorStatus, type CreateMotorDto } from '../types';
-import { motorStatusLabels } from '../utils/locales';
+import { MotorStatus, MountingType, type CreateMotorDto } from '../types';
+import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
 
 const schema = z.object({
     inventoryNumber: z.number({ invalid_type_error: 'Обязательное поле' }).positive('Инвентарный номер > 0'),
@@ -16,6 +16,7 @@ const schema = z.object({
     rearBearingType: z.string().min(1, 'Задний подшипник обязателен'),
     status: z.nativeEnum(MotorStatus),
     initialLocation: z.string().min(1, 'Начальное местоположение обязательно'),
+    mountingType: z.nativeEnum(MountingType),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -29,7 +30,10 @@ interface Props {
 export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FormData>({
         resolver: zodResolver(schema),
-        defaultValues: { status: MotorStatus.InOperation }
+        defaultValues: {
+            status: MotorStatus.InOperation,
+            mountingType: MountingType.Feet,
+        }
     });
 
     const onSubmit = async (data: FormData) => {
@@ -112,6 +116,15 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                                         <option key={value} value={value}>{label}</option>
                                     ))}
                                 </select>
+                            </div>
+                            <div>
+                                <label className="form-label">Тип монтажа</label>
+                                <select {...register('mountingType')} className="form-input">
+                                    {Object.entries(mountingTypeLabels).map(([value, label]) => (
+                                        <option key={value} value={value}>{label}</option>
+                                    ))}
+                                </select>
+                                {errors.mountingType && <p className="text-danger text-xs mt-1">{errors.mountingType.message}</p>}
                             </div>
                             <div className="md:col-span-2">
                                 <label className="form-label">Начальное местоположение</label>

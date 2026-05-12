@@ -3,8 +3,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { motorApi } from '../services/api';
-import { MotorStatus, type MotorFullHistoryDto, type UpdateMotorRequest } from '../types';
-import { motorStatusLabels } from '../utils/locales';
+import { MotorStatus, MountingType, type MotorFullHistoryDto, type UpdateMotorRequest } from '../types';
+import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
 
 const schema = z.object({
     type: z.string().min(1, 'Тип обязателен'),
@@ -14,6 +14,7 @@ const schema = z.object({
     frontBearingType: z.string().min(1, 'Передний подшипник обязателен'),
     rearBearingType: z.string().min(1, 'Задний подшипник обязателен'),
     status: z.nativeEnum(MotorStatus),
+    mountingType: z.nativeEnum(MountingType),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -36,6 +37,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
             frontBearingType: motor.frontBearingType,
             rearBearingType: motor.rearBearingType,
             status: motor.status,
+            mountingType: motor.mountingType,
         }
     });
 
@@ -106,6 +108,15 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                         <option key={value} value={value}>{label}</option>
                                     ))}
                                 </select>
+                            </div>
+                            <div>
+                                <label className="form-label">Тип монтажа</label>
+                                <select {...register('mountingType')} className="form-input">
+                                    {Object.entries(mountingTypeLabels).map(([value, label]) => (
+                                        <option key={value} value={value}>{label}</option>
+                                    ))}
+                                </select>
+                                {errors.mountingType && <p className="text-danger text-xs mt-1">{errors.mountingType.message}</p>}
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end gap-3">
