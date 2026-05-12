@@ -9,6 +9,7 @@ import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from 
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels } from '../utils/locales';
+import { Map, ClipboardList, PlusCircle } from 'lucide-react';
 
 export default function MotorDetails() {
     const { id } = useParams<{ id: string }>();
@@ -16,6 +17,11 @@ export default function MotorDetails() {
     const motorId = parseInt(id || '0', 10);
     const [motorData, setMotorData] = useState<MotorFullHistoryDto | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState<'location' | 'maintenance'>('location');
+
+    // Модальные окна для добавления записей
+    const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+    const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
 
     // Пагинация истории перемещений
     const [locationHistory, setLocationHistory] = useState<LocationHistoryDto[]>([]);
@@ -135,124 +141,208 @@ export default function MotorDetails() {
                 </div>
             </div>
 
-            {/* Блок паспортных данных (используем MotorHistory) */}
+            {/* Блок паспортных данных */}
             {motorData && (
                 <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
             )}
 
-            {/* Формы действий (перемещение и обслуживание) */}
-            <div className="grid md:grid-cols-2 gap-6 mt-6">
-                <MoveMotorForm
-                    motorId={motorId}
-                    currentStatus={motorData?.status}
-                    onMoved={() => {
-                        loadLocationHistory(); // обновить историю после перемещения
-                        loadMotorData();       // обновить статус
-                    }}
-                />
-                <MaintenanceForm
-                    motorId={motorId}
-                    onAdded={() => {
-                        loadMaintenanceLogs(); // обновить журнал после добавления
-                        loadMotorData();
-                    }}
-                />
-            </div>
+            {/* Вкладки: История перемещений / Журнал обслуживания */}
+            <div className="mt-6">
+                <div className="border-b border-gray-200 dark:border-gray-700">
+                    <nav className="flex gap-6">
+                        <button
+                            onClick={() => setActiveTab('location')}
+                            className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'location'
+                                    ? 'border-b-2 border-accent text-accent'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                }`}
+                        >
+                            <Map size={18} />
+                            История перемещений
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('maintenance')}
+                            className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'maintenance'
+                                    ? 'border-b-2 border-accent text-accent'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                }`}
+                        >
+                            <ClipboardList size={18} />
+                            Журнал обслуживания и ремонтов
+                        </button>
+                    </nav>
+                </div>
 
-            {/* История перемещений с пагинацией */}
-            <div className="card mt-6">
-                <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
-                    <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
-                        <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        История перемещений
-                    </h3>
-                </div>
-                <div className="p-6">
-                    {locationHistory.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">Нет записей о перемещениях</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {locationHistory.map((loc) => (
-                                <div key={loc.id} className="relative pl-6 pb-4 last:pb-0 border-l-2 border-accent/30">
-                                    <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-accent shadow-md"></div>
-                                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
-                                        <p className="font-semibold text-text-h">{loc.location}</p>
-                                        <p className="text-sm text-gray-500 mt-1">
-                                            {new Date(loc.startDate).toLocaleString('ru-RU')} – {loc.endDate ? new Date(loc.endDate).toLocaleString('ru-RU') : 'настоящее время'}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                    <Pagination
-                        currentPage={locationPage}
-                        totalPages={locationTotalPages}
-                        onPageChange={setLocationPage}
-                        pageSize={locationPageSize}
-                        onPageSizeChange={(newSize) => {
-                            setLocationPageSize(newSize);
-                            setLocationPage(1);
-                        }}
-                        totalCount={locationTotalCount}
-                    />
-                </div>
-            </div>
-
-            {/* Журнал обслуживания с пагинацией */}
-            <div className="card mt-6">
-                <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
-                    <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
-                        <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        Журнал обслуживания и ремонтов
-                    </h3>
-                </div>
-                <div className="p-6">
-                    {maintenanceLogs.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">Нет записей об обслуживании</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {maintenanceLogs.map(log => (
-                                <div key={log.id} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 hover:shadow-md transition-shadow">
-                                    <div className="flex justify-between items-start flex-wrap gap-2">
-                                        <span className="font-semibold text-text-h px-2 py-1 bg-accent/10 rounded-lg text-sm">
-                                            {maintenanceTypeLabels[log.workType] || log.workType}
-                                        </span>
-                                        <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
-                                    </div>
-                                    {log.comment && (
-                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{log.comment}</p>
+                <div className="mt-6">
+                    {activeTab === 'location' && (
+                        <div className="space-y-6">
+                            {/* Кнопка добавления перемещения */}
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => setIsMoveModalOpen(true)}
+                                    className="btn-primary inline-flex items-center gap-2"
+                                >
+                                    <PlusCircle size={18} />
+                                    Добавить перемещение
+                                </button>
+                            </div>
+                            {/* Список перемещений */}
+                            <div className="card">
+                                <div className="p-6">
+                                    {locationHistory.length === 0 ? (
+                                        <p className="text-gray-500 text-center py-4">Нет записей о перемещениях</p>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {locationHistory.map((loc) => (
+                                                <div key={loc.id} className="relative pl-6 pb-4 last:pb-0 border-l-2 border-accent/30">
+                                                    <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-accent shadow-md"></div>
+                                                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
+                                                        <p className="font-semibold text-text-h">{loc.location}</p>
+                                                        <p className="text-sm text-gray-500 mt-1">
+                                                            {new Date(loc.startDate).toLocaleString('ru-RU')} – {loc.endDate ? new Date(loc.endDate).toLocaleString('ru-RU') : 'настоящее время'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
+                                    <Pagination
+                                        currentPage={locationPage}
+                                        totalPages={locationTotalPages}
+                                        onPageChange={setLocationPage}
+                                        pageSize={locationPageSize}
+                                        onPageSizeChange={(newSize) => {
+                                            setLocationPageSize(newSize);
+                                            setLocationPage(1);
+                                        }}
+                                        totalCount={locationTotalCount}
+                                    />
                                 </div>
-                            ))}
+                            </div>
                         </div>
                     )}
-                    <Pagination
-                        currentPage={maintenancePage}
-                        totalPages={maintenanceTotalPages}
-                        onPageChange={setMaintenancePage}
-                        pageSize={maintenancePageSize}
-                        onPageSizeChange={(newSize) => {
-                            setMaintenancePageSize(newSize);
-                            setMaintenancePage(1);
-                        }}
-                        totalCount={maintenanceTotalCount}
-                    />
+
+                    {activeTab === 'maintenance' && (
+                        <div className="space-y-6">
+                            {/* Кнопка добавления обслуживания */}
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => setIsMaintenanceModalOpen(true)}
+                                    className="btn-primary inline-flex items-center gap-2"
+                                >
+                                    <PlusCircle size={18} />
+                                    Добавить запись обслуживания
+                                </button>
+                            </div>
+                            {/* Список обслуживаний */}
+                            <div className="card">
+                                <div className="p-6">
+                                    {maintenanceLogs.length === 0 ? (
+                                        <p className="text-gray-500 text-center py-4">Нет записей об обслуживании</p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {maintenanceLogs.map(log => (
+                                                <div key={log.id} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 hover:shadow-md transition-shadow">
+                                                    <div className="flex justify-between items-start flex-wrap gap-2">
+                                                        <span className="font-semibold text-text-h px-2 py-1 bg-accent/10 rounded-lg text-sm">
+                                                            {maintenanceTypeLabels[log.workType] || log.workType}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
+                                                    </div>
+                                                    {log.comment && (
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{log.comment}</p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <Pagination
+                                        currentPage={maintenancePage}
+                                        totalPages={maintenanceTotalPages}
+                                        onPageChange={setMaintenancePage}
+                                        pageSize={maintenancePageSize}
+                                        onPageSizeChange={(newSize) => {
+                                            setMaintenancePageSize(newSize);
+                                            setMaintenancePage(1);
+                                        }}
+                                        totalCount={maintenanceTotalCount}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
+            {/* Модальное окно перемещения */}
+            {isMoveModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 transition-opacity" onClick={() => setIsMoveModalOpen(false)}>
+                            <div className="absolute inset-0 bg-gray-500 opacity-75 dark:bg-gray-900 dark:opacity-80"></div>
+                        </div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+                                <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
+                                    <Map size={20} className="text-accent" />
+                                    Перемещение двигателя
+                                </h3>
+                            </div>
+                            <MoveMotorForm
+                                motorId={motorId}
+                                currentStatus={motorData?.status}
+                                onMoved={() => {
+                                    loadLocationHistory();
+                                    loadMotorData();
+                                    setIsMoveModalOpen(false);
+                                }}
+                                onCancel={() => setIsMoveModalOpen(false)}
+                                isModal={true}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Модальное окно обслуживания */}
+            {isMaintenanceModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 transition-opacity" onClick={() => setIsMaintenanceModalOpen(false)}>
+                            <div className="absolute inset-0 bg-gray-500 opacity-75 dark:bg-gray-900 dark:opacity-80"></div>
+                        </div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+                                <h3 className="text-lg font-semibold text-text-h flex items-center gap-2">
+                                    <ClipboardList size={20} className="text-accent" />
+                                    Запись обслуживания / ремонта
+                                </h3>
+                            </div>
+                            <MaintenanceForm
+                                motorId={motorId}
+                                onAdded={() => {
+                                    loadMaintenanceLogs();
+                                    loadMotorData();
+                                    setIsMaintenanceModalOpen(false);
+                                }}
+                                onCancel={() => setIsMaintenanceModalOpen(false)}
+                                isModal={true}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Модальное окно редактирования двигателя */}
             {motorData && (
                 <EditMotorModal
                     motor={motorData}
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
                     onSuccess={() => {
-                        loadMotorData(); // обновить паспортные данные после редактирования
+                        loadMotorData();
                     }}
                 />
             )}
