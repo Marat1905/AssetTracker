@@ -21,8 +21,8 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
 
             <div className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* ЛЕВАЯ КОЛОНКА – Рисунок ЭД (задаёт высоту) */}
-                    <div className="flex justify-center items-center">
+                    {/* ЛЕВАЯ КОЛОНКА – Рисунок ЭД (теперь компактный) */}
+                    <div className="flex justify-center items-center w-80 max-w-full mx-auto">
                         <MotorDiagram
                             shaftDiameter={motorData.shaftDiameter}
                             frontBearingType={motorData.frontBearingType}
@@ -31,7 +31,7 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                         />
                     </div>
 
-                    {/* ПРАВАЯ КОЛОНКА – Технические характеристики (подстраивается по высоте) */}
+                    {/* ПРАВАЯ КОЛОНКА – Технические характеристики */}
                     <div className="flex flex-col justify-start">
                         <h3 className="text-md font-semibold text-text-h mb-3 flex items-center gap-2">
                             <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
