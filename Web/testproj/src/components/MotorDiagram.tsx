@@ -28,15 +28,15 @@ export default function MotorDiagram({
         mountingType === MountingType.SmallFlange ||
         mountingType === MountingType.FeetAndSmallFlange;
 
-    const showNormalFrontCover = !hasBigFlange && !hasSmallFlange; // для Feet и (теоретически) других вариантов без фланца
+    const showNormalFrontCover = !hasBigFlange && !hasSmallFlange;
 
     return (
         <div className="w-full flex justify-center items-center py-6 select-none">
             <svg
                 version="1.1"
-                viewBox="0 0 400 340"
+                viewBox="-30 0 460 340"   // ← расширено влево на 60px
                 className="w-full h-auto max-w-3xl"
-                style={{ enableBackground: 'new 0 0 400 340' }}
+                style={{ enableBackground: 'new -60 0 460 340' }}
             >
                 <defs>
                     <style>{`
@@ -44,6 +44,10 @@ export default function MotorDiagram({
                         .st1 { fill-rule: evenodd; clip-rule: evenodd; fill: #5B5B5B; stroke: #000000; stroke-linecap: round; stroke-linejoin: round; }
                         .st2 { fill-rule: evenodd; clip-rule: evenodd; fill: #4288E3; stroke: #000000; stroke-linecap: round; stroke-linejoin: round; }
                         .st3 { fill: none; }
+                        .bearing-leader { stroke: #10b981; stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
+                        .bearing-text { fill: #059669; font-size: 14px; font-weight: bold; font-family: monospace; }
+                        .shaft-dim { stroke: #3b82f6; stroke-width: 1.5; fill: none; }
+                        .shaft-text { fill: #2563eb; font-size: 13px; font-weight: bold; font-family: monospace; }
                     `}</style>
                 </defs>
 
@@ -130,7 +134,6 @@ export default function MotorDiagram({
                 <path className="st0" d="M275,235c-22,0-45,0-68,0c-2-1-3-3-3-7h67" />
                 <path className="st0" d="M271,225c0,3,1,6,1,10v-9h-1" />
                 <path className="st0" d="M119,218h156v7H119V218z" />
-                
                 <path className="st0" d="M120,245c-2,0-3,0-5,0v-10" />
                 <line className="st0" x1="118" y1="228" x2="118" y2="245" />
                 <line className="st0" x1="82" y1="182" x2="79" y2="182" />
@@ -184,6 +187,41 @@ export default function MotorDiagram({
                         <path className="st2" d="M238 239zm0 0l5 0 0 16 -5 0 0 -16z" />
                     </g>
                 )}
+
+                {/* ========== ДОБАВЛЕННАЯ РАЗМЕТКА: диаметр вала и подшипники ========== */}
+                {/* Диаметр вала – вертикальная размерная линия слева от вала */}
+                <g id="shaft-dimension">
+                    {/* Выносные линии от верхней и нижней граней вала */}
+                    <line className="shaft-dim" x1="28" y1="158" x2="22" y2="158" />
+                    <line className="shaft-dim" x1="28" y1="182" x2="22" y2="182" />
+                    {/* Вертикальная размерная линия */}
+                    <line className="shaft-dim" x1="22" y1="158" x2="22" y2="182" />
+                    {/* Стрелки */}
+                    <polygon className="shaft-dim" points="22,158 19,163 25,163" fill="#3b82f6" />
+                    <polygon className="shaft-dim" points="22,182 19,177 25,177" fill="#3b82f6" />
+                    {/* Текст размера – теперь левее, с отступом от края */}
+                    <text x="-30" y="172" textAnchor="start" className="shaft-text">Ø{shaftDiameter} мм</text>
+                </g>
+
+                {/* Передний подшипник – кружок со смещением вверх (не по центру вала) */}
+                <g id="front-bearing">
+                    {/* Пунктирная окружность вокруг переднего подшипника (центр x=128, y=114) */}
+                    <circle cx="100" cy="170" r="15" className="bearing-leader" />
+                    {/* Линия-выноска вверх */}
+                    <line className="bearing-leader" x1="100" y1="155" x2="100" y2="35" />
+                    <circle cx="100" cy="35" r="2" fill="#10b981" />
+                    {/* Текст подшипника – ещё выше */}
+                    <text x="100" y="28" textAnchor="middle" className="bearing-text">{frontBearingType}</text>
+                </g>
+
+                {/* Задний подшипник – аналогично, центр x=305, y=114 */}
+                <g id="rear-bearing">
+                    <circle cx="290" cy="170" r="15" className="bearing-leader" />
+                    <line className="bearing-leader" x1="290" y1="155" x2="290" y2="35" />
+                    <circle cx="290" cy="35" r="2" fill="#10b981" />
+                    <text x="290" y="28" textAnchor="middle" className="bearing-text">{rearBearingType}</text>
+                </g>
+
             </svg>
         </div>
     );
