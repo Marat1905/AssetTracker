@@ -34,6 +34,6 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 
         // Проверка, что тип монтажа имеет допустимое значение (из объявленного перечисления)
         RuleFor(x => x.MountingType)
-            .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, FeetAndFlange или Flange");
+            .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, Flange, FeetAndFlange, SmallFlange, FeetAndSmallFlange");
     }
 }

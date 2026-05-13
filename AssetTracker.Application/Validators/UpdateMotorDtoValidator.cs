@@ -27,6 +27,6 @@ public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
             .NotEmpty().WithMessage("Тип заднего подшипника обязателен");
 
         RuleFor(x => x.MountingType)
-            .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, FeetAndFlange или Flange");
+            .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, Flange, FeetAndFlange, SmallFlange, FeetAndSmallFlange");
     }
 }
