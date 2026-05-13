@@ -31,11 +31,12 @@ export default function MotorDiagram({
     const showNormalFrontCover = !hasBigFlange && !hasSmallFlange;
 
     return (
-        <div className="w-full flex justify-center items-center py-6 select-none">
+        <div className="w-full flex justify-center items-center">
             <svg
                 version="1.1"
-                viewBox="-30 0 460 340"   // ← расширено влево на 60px
-                className="w-full h-auto max-w-3xl"
+                viewBox="-30 0 460 340"
+                className="w-full"
+                preserveAspectRatio="xMidYMid meet"
                 style={{ enableBackground: 'new -60 0 460 340' }}
             >
                 <defs>
@@ -52,7 +53,6 @@ export default function MotorDiagram({
                 </defs>
 
                 {/* ========== БАЗОВЫЕ ЭЛЕМЕНТЫ (общие для всех типов) ========== */}
-                {/* Корпус, вал, борно, вентилятор, подшипники и т.д. (взято из исходного SVG) */}
                 <path className="st0" d="M121,39h77c1,0,3,0,3,3l-3,36l0,0h-77l-3-36C118,39,123,39,121,39z" />
                 <path className="st1" d="M120,40L120,40c0,1,2,2,4,2s4-1,4-2l0,0c0,0-2,1-4,1S121,40,120,40z" />
                 <path className="st0" d="M124,38c-2,0-4,1-4,1c0,1,2,2,4,2s4-1,4-2C128,39,126,38,124,38z" />
