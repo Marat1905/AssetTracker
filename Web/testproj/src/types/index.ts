@@ -13,9 +13,11 @@ export enum MaintenanceType {
 }
 
 export enum MountingType {
-    Feet = "Feet",               // Лапы
-    FeetAndFlange = "FeetAndFlange", // Лапы и фланец
-    Flange = "Flange"            // Фланец
+    Feet = "Feet",                      // Лапы
+    FeetAndFlange = "FeetAndFlange",    // Лапы и фланец
+    Flange = "Flange",                  // Фланец
+    SmallFlange = "SmallFlange",        // Малый фланец
+    FeetAndSmallFlange = "FeetAndSmallFlange" // Лапы и малый фланец
 }
 
 export interface LocationHistoryDto {

@@ -17,4 +17,6 @@ export const mountingTypeLabels: Record<string, string> = {
     Feet: 'Лапы',
     FeetAndFlange: 'Лапы и фланец',
     Flange: 'Фланец',
+    SmallFlange: 'Малый фланец',
+    FeetAndSmallFlange: 'Лапы и малый фланец',
 };
