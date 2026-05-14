@@ -19,6 +19,7 @@ public static class InfrastructureExtensions
         services.AddScoped<IMotorRepository, MotorRepository>();
         services.AddScoped<ILocationHistoryRepository, LocationHistoryRepository>();
         services.AddScoped<IMaintenanceLogRepository, MaintenanceLogRepository>();
+        services.AddScoped<ILubricantTypeRepository, LubricantTypeRepository>();
 
         return services;
     }

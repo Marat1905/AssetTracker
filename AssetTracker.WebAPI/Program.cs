@@ -38,6 +38,7 @@ builder.Services.AddAutoMapper(cfg => {
 }, AppDomain.CurrentDomain.GetAssemblies());
 //builder.Services.AddAutoMapper(Assembly.GetEntryAssembly());
 builder.Services.AddScoped<IMotorService, MotorService>();
+builder.Services.AddScoped<ILubricantTypeService, LubricantTypeService>();
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();

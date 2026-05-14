@@ -13,6 +13,20 @@ namespace AssetTracker.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "LubricantTypes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LubricantTypes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Motors",
                 columns: table => new
                 {
@@ -62,11 +76,19 @@ namespace AssetTracker.Infrastructure.Migrations
                     MotorId = table.Column<int>(type: "integer", nullable: false),
                     WorkType = table.Column<string>(type: "text", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false)
+                    Comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    BearingPosition = table.Column<string>(type: "text", nullable: true),
+                    LubricantTypeId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MaintenanceLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceLogs_LubricantTypes_LubricantTypeId",
+                        column: x => x.LubricantTypeId,
+                        principalTable: "LubricantTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_MaintenanceLogs_Motors_MotorId",
                         column: x => x.MotorId,
@@ -81,9 +103,14 @@ namespace AssetTracker.Infrastructure.Migrations
                 column: "MotorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MaintenanceLogs_MotorId",
+                name: "IX_MaintenanceLogs_LastLubricant",
                 table: "MaintenanceLogs",
-                column: "MotorId");
+                columns: new[] { "MotorId", "WorkType", "BearingPosition", "Date" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceLogs_LubricantTypeId",
+                table: "MaintenanceLogs",
+                column: "LubricantTypeId");
         }
 
         /// <inheritdoc />
@@ -94,6 +121,9 @@ namespace AssetTracker.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "MaintenanceLogs");
+
+            migrationBuilder.DropTable(
+                name: "LubricantTypes");
 
             migrationBuilder.DropTable(
                 name: "Motors");

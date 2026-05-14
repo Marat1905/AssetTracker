@@ -51,6 +51,28 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.ToTable("LocationHistories");
                 });
 
+            modelBuilder.Entity("AssetTracker.Domain.Entities.LubricantType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LubricantTypes");
+                });
+
             modelBuilder.Entity("AssetTracker.Domain.Entities.MaintenanceLog", b =>
                 {
                     b.Property<int>("Id")
@@ -59,6 +81,9 @@ namespace AssetTracker.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BearingPosition")
+                        .HasColumnType("text");
+
                     b.Property<string>("Comment")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -66,6 +91,9 @@ namespace AssetTracker.Infrastructure.Migrations
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("LubricantTypeId")
+                        .HasColumnType("integer");
 
                     b.Property<int>("MotorId")
                         .HasColumnType("integer");
@@ -76,7 +104,10 @@ namespace AssetTracker.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MotorId");
+                    b.HasIndex("LubricantTypeId");
+
+                    b.HasIndex("MotorId", "WorkType", "BearingPosition", "Date")
+                        .HasDatabaseName("IX_MaintenanceLogs_LastLubricant");
 
                     b.ToTable("MaintenanceLogs");
                 });
@@ -139,11 +170,18 @@ namespace AssetTracker.Infrastructure.Migrations
 
             modelBuilder.Entity("AssetTracker.Domain.Entities.MaintenanceLog", b =>
                 {
+                    b.HasOne("AssetTracker.Domain.Entities.LubricantType", "LubricantType")
+                        .WithMany()
+                        .HasForeignKey("LubricantTypeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AssetTracker.Domain.Entities.Motor", "Motor")
                         .WithMany("MaintenanceLogs")
                         .HasForeignKey("MotorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("LubricantType");
 
                     b.Navigation("Motor");
                 });

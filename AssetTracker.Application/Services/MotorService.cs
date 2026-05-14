@@ -124,12 +124,27 @@ public class MotorService : IMotorService
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
+        // Дополнительная проверка для смазки
+        if (dto.WorkType == MaintenanceType.Lubrication)
+        {
+            if (!dto.BearingPosition.HasValue)
+                throw new ArgumentException("Для смазки необходимо указать позицию подшипника");
+            if (!dto.LubricantTypeId.HasValue)
+                throw new ArgumentException("Для смазки необходимо указать тип смазки");
+
+            var lubricantExists = await _unitOfWork.LubricantTypes.ExistsAsync(dto.LubricantTypeId.Value);
+            if (!lubricantExists)
+                throw new ArgumentException($"Тип смазки с id {dto.LubricantTypeId} не существует");
+        }
+
         var maintenance = new MaintenanceLog
         {
             MotorId = motorId,
             WorkType = dto.WorkType,
             Date = DateTime.UtcNow,
-            Comment = dto.Comment
+            Comment = dto.Comment,
+            BearingPosition = dto.BearingPosition,
+            LubricantTypeId = dto.LubricantTypeId
         };
 
         await _unitOfWork.MaintenanceLogs.AddAsync(maintenance);
@@ -142,12 +157,16 @@ public class MotorService : IMotorService
     {
         _logger.LogInformation("Fetching full history for motor {MotorId}", motorId);
 
-        var motor = await _unitOfWork.Motors.GetWithFullHistoryAsync(motorId);
+        // 1. Загружаем только сам двигатель (без навигационных коллекций)
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
         var dto = _mapper.Map<MotorFullHistoryDto>(motor);
-        dto.LocationHistory = motor.LocationHistories
+
+        // 2. История перемещений (обычно не миллионы записей, но всё же делаем проекцию)
+        dto.LocationHistory = await _unitOfWork.LocationHistories.GetQueryable()
+            .Where(l => l.MotorId == motorId)
             .OrderBy(l => l.StartDate)
             .Select(l => new LocationHistoryDto
             {
@@ -155,17 +174,49 @@ public class MotorService : IMotorService
                 Location = l.Location,
                 StartDate = l.StartDate,
                 EndDate = l.EndDate
-            }).ToList();
+            })
+            .ToListAsync();
 
-        dto.MaintenanceLogs = motor.MaintenanceLogs
+        // 3. История обслуживания – ограничиваем последними 100 записями для мобильных устройств
+        //    Полную историю можно получить через пагинированный эндпоинт
+        dto.MaintenanceLogs = await _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Where(m => m.MotorId == motorId)
             .OrderByDescending(m => m.Date)
+            .Take(100)
             .Select(m => new MaintenanceLogDto
             {
                 Id = m.Id,
                 WorkType = m.WorkType.ToString(),
                 Date = m.Date,
-                Comment = m.Comment
-            }).ToList();
+                Comment = m.Comment,
+                BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
+                LubricantTypeId = m.LubricantTypeId,
+                LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null
+            })
+            .ToListAsync();
+
+        // 4. Последняя смазка переднего подшипника – один быстрый запрос с индексом
+        var frontLubricant = await _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Where(m => m.MotorId == motorId
+                        && m.WorkType == MaintenanceType.Lubrication
+                        && m.BearingPosition == BearingPosition.Front
+                        && m.LubricantType != null)
+            .OrderByDescending(m => m.Date)
+            .Select(m => m.LubricantType!.Name)
+            .FirstOrDefaultAsync();
+
+        // 5. Последняя смазка заднего подшипника
+        var rearLubricant = await _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Where(m => m.MotorId == motorId
+                        && m.WorkType == MaintenanceType.Lubrication
+                        && m.BearingPosition == BearingPosition.Rear
+                        && m.LubricantType != null)
+            .OrderByDescending(m => m.Date)
+            .Select(m => m.LubricantType!.Name)
+            .FirstOrDefaultAsync();
+
+        dto.FrontBearingLastLubricant = frontLubricant;
+        dto.RearBearingLastLubricant = rearLubricant;
 
         return dto;
     }
@@ -301,7 +352,7 @@ public class MotorService : IMotorService
 
         var query = _unitOfWork.MaintenanceLogs.GetQueryable()
             .Where(m => m.MotorId == motorId)
-            .OrderByDescending(m => m.Date); // как в GetFullHistory – по убыванию
+            .OrderByDescending(m => m.Date);
 
         var totalCount = await query.CountAsync();
         var items = await query
@@ -312,7 +363,10 @@ public class MotorService : IMotorService
                 Id = m.Id,
                 WorkType = m.WorkType.ToString(),
                 Date = m.Date,
-                Comment = m.Comment
+                Comment = m.Comment,
+                BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
+                LubricantTypeId = m.LubricantTypeId,
+                LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null
             })
             .ToListAsync();
 

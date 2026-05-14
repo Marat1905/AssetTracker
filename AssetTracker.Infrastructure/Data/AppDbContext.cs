@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<Motor> Motors { get; set; }
     public DbSet<LocationHistory> LocationHistories { get; set; }
     public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
+    public DbSet<LubricantType> LubricantTypes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,8 +24,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.FrontBearingType).HasMaxLength(50);
             entity.Property(e => e.RearBearingType).HasMaxLength(50);
             entity.Property(e => e.Status).HasConversion<string>();
-
-            // Конфигурация для нового поля MountingType – хранить как строку (значение enum)
             entity.Property(e => e.MountingType)
                 .HasConversion<string>()
                 .HasMaxLength(20)
@@ -46,10 +45,30 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.WorkType).HasConversion<string>();
             entity.Property(e => e.Comment).HasMaxLength(500);
+            entity.Property(e => e.BearingPosition)
+                .HasConversion<string>()
+                .IsRequired(false);
+
             entity.HasOne(e => e.Motor)
                   .WithMany(m => m.MaintenanceLogs)
                   .HasForeignKey(e => e.MotorId)
                   .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LubricantType)
+                  .WithMany()
+                  .HasForeignKey(e => e.LubricantTypeId)
+                  .OnDelete(DeleteBehavior.Restrict); // не удалять тип смазки, если есть ссылки
+
+            // Составной индекс для ускорения запросов последней смазки
+            entity.HasIndex(m => new { m.MotorId, m.WorkType, m.BearingPosition, m.Date })
+                .HasDatabaseName("IX_MaintenanceLogs_LastLubricant");
+        });
+
+        modelBuilder.Entity<LubricantType>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
         });
     }
 }

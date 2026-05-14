@@ -9,6 +9,7 @@ public class UnitOfWork : IUnitOfWork
     private IMotorRepository? _motorRepository;
     private ILocationHistoryRepository? _locationHistoryRepository;
     private IMaintenanceLogRepository? _maintenanceLogRepository;
+    private ILubricantTypeRepository? _lubricantTypeRepository;
 
     public UnitOfWork(AppDbContext context)
     {
@@ -18,6 +19,7 @@ public class UnitOfWork : IUnitOfWork
     public IMotorRepository Motors => _motorRepository ??= new MotorRepository(_context);
     public ILocationHistoryRepository LocationHistories => _locationHistoryRepository ??= new LocationHistoryRepository(_context);
     public IMaintenanceLogRepository MaintenanceLogs => _maintenanceLogRepository ??= new MaintenanceLogRepository(_context);
+    public ILubricantTypeRepository LubricantTypes => _lubricantTypeRepository ??= new LubricantTypeRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => await _context.SaveChangesAsync(cancellationToken);
