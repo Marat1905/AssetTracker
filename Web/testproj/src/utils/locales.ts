@@ -29,3 +29,7 @@ export const mountingCodes: Record<string, { numeric: string; alpha: string }> =
     SmallFlange: { numeric: 'IM 3601 / IM 3681', alpha: 'IM B14' },
     FeetAndSmallFlange: { numeric: 'IM 2101 / IM 2181', alpha: 'IM B34' },
 };
+export const bearingPositionLabels: Record<string, string> = {
+    Front: 'Передний',
+    Rear: 'Задний'
+};

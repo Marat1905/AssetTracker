@@ -6,6 +6,8 @@ interface MotorDiagramProps {
     frontBearingType: string;
     rearBearingType: string;
     mountingType: MountingType;
+    frontBearingLastLubricant?: string;   // Тип смазки переднего подшипника
+    rearBearingLastLubricant?: string;    // Тип смазки заднего подшипника
 }
 
 export default function MotorDiagram({
@@ -13,6 +15,8 @@ export default function MotorDiagram({
     frontBearingType,
     rearBearingType,
     mountingType,
+    frontBearingLastLubricant,
+    rearBearingLastLubricant,
 }: MotorDiagramProps) {
     // Флаги для выбора отображаемых элементов
     const hasFeet =
@@ -47,6 +51,7 @@ export default function MotorDiagram({
                         .st3 { fill: none; }
                         .bearing-leader { stroke: #10b981; stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
                         .bearing-text { fill: #059669; font-size: 14px; font-weight: bold; font-family: monospace; }
+                        .lubricant-text { fill: #f59e0b; font-size: 14px; font-weight: bold; font-family: monospace; }
                         .shaft-dim { stroke: #3b82f6; stroke-width: 1.5; fill: none; }
                         .shaft-text { fill: #2563eb; font-size: 13px; font-weight: bold; font-family: monospace; }
                     `}</style>
@@ -203,7 +208,7 @@ export default function MotorDiagram({
                     <text x="-30" y="172" textAnchor="start" className="shaft-text">Ø{shaftDiameter} мм</text>
                 </g>
 
-                {/* Передний подшипник – кружок со смещением вверх (не по центру вала) */}
+                {/* Передний подшипник – кружок со смещением вверх */}
                 <g id="front-bearing">
                     {/* Пунктирная окружность вокруг переднего подшипника (центр x=128, y=114) */}
                     <circle cx="100" cy="170" r="15" className="bearing-leader" />
@@ -212,14 +217,27 @@ export default function MotorDiagram({
                     <circle cx="100" cy="35" r="2" fill="#10b981" />
                     {/* Текст подшипника – ещё выше */}
                     <text x="100" y="28" textAnchor="middle" className="bearing-text">{frontBearingType}</text>
+                    {/* Тип смазки (если есть) – ниже */}
+                    {frontBearingLastLubricant && (
+                        <text x="100" y="10" textAnchor="middle" className="lubricant-text">
+                            🛢️ {frontBearingLastLubricant}
+                        </text>
+                    )}
                 </g>
 
-                {/* Задний подшипник – аналогично, центр x=305, y=114 */}
+                {/* Задний подшипник */}
                 <g id="rear-bearing">
                     <circle cx="290" cy="170" r="15" className="bearing-leader" />
                     <line className="bearing-leader" x1="290" y1="155" x2="290" y2="35" />
                     <circle cx="290" cy="35" r="2" fill="#10b981" />
+                    {/* Тип подшипника */}
                     <text x="290" y="28" textAnchor="middle" className="bearing-text">{rearBearingType}</text>
+                    {/* Тип смазки (если есть) – ниже */}
+                    {rearBearingLastLubricant && (
+                        <text x="290" y="10" textAnchor="middle" className="lubricant-text">
+                            🛢️ {rearBearingLastLubricant}
+                        </text>
+                    )}
                 </g>
 
             </svg>

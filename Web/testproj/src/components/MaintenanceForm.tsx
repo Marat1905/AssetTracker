@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { MaintenanceType } from '../types';
-import { motorApi } from '../services/api';
+import { useState, useEffect } from 'react';
+import { MaintenanceType, BearingPosition, type LubricantType } from '../types';
+import { motorApi, lubricantApi } from '../services/api';
 import toast from 'react-hot-toast';
 
 const workTypes = [
@@ -21,14 +21,53 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
     const [workType, setWorkType] = useState<MaintenanceType>(MaintenanceType.Lubrication);
     const [comment, setComment] = useState('');
     const [loading, setLoading] = useState(false);
+    const [lubricants, setLubricants] = useState<LubricantType[]>([]);
+    const [bearingPosition, setBearingPosition] = useState<BearingPosition>(BearingPosition.Front);
+    const [lubricantTypeId, setLubricantTypeId] = useState<number | ''>('');
+
+    // Загрузка списка типов смазки при монтировании
+    useEffect(() => {
+        const fetchLubricants = async () => {
+            try {
+                const data = await lubricantApi.getAll();
+                setLubricants(data);
+                if (data.length > 0) setLubricantTypeId(data[0].id);
+            } catch (err) {
+                console.error('Ошибка загрузки типов смазки', err);
+                toast.error('Не удалось загрузить типы смазки');
+            }
+        };
+        fetchLubricants();
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
-            await motorApi.addMaintenance(motorId, { workType, comment });
+            const payload: any = { workType, comment };
+
+            // Для смазки обязательно передаём позицию и тип смазки
+            if (workType === MaintenanceType.Lubrication) {
+                if (!bearingPosition) {
+                    toast.error('Выберите позицию подшипника');
+                    setLoading(false);
+                    return;
+                }
+                if (!lubricantTypeId) {
+                    toast.error('Выберите тип смазки');
+                    setLoading(false);
+                    return;
+                }
+                payload.bearingPosition = bearingPosition;
+                payload.lubricantTypeId = Number(lubricantTypeId);
+            }
+
+            await motorApi.addMaintenance(motorId, payload);
             toast.success('Запись обслуживания добавлена');
             setComment('');
+            setWorkType(MaintenanceType.Lubrication);
+            setBearingPosition(BearingPosition.Front);
+            setLubricantTypeId(lubricants.length > 0 ? lubricants[0].id : '');
             onAdded?.();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка добавления записи');
@@ -36,6 +75,8 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
             setLoading(false);
         }
     };
+
+    const isLubrication = workType === MaintenanceType.Lubrication;
 
     return (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -53,6 +94,40 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
                     ))}
                 </select>
             </div>
+
+            {/* Дополнительные поля только для смазки */}
+            {isLubrication && (
+                <>
+                    <div>
+                        <label className="form-label">Позиция подшипника</label>
+                        <select
+                            value={bearingPosition}
+                            onChange={(e) => setBearingPosition(e.target.value as BearingPosition)}
+                            className="form-input"
+                        >
+                            <option value={BearingPosition.Front}>Передний</option>
+                            <option value={BearingPosition.Rear}>Задний</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="form-label">Тип смазки</label>
+                        <select
+                            value={lubricantTypeId}
+                            onChange={(e) => setLubricantTypeId(Number(e.target.value))}
+                            className="form-input"
+                            required
+                        >
+                            {lubricants.map(l => (
+                                <option key={l.id} value={l.id}>{l.name}</option>
+                            ))}
+                        </select>
+                        {lubricants.length === 0 && (
+                            <p className="text-xs text-danger mt-1">Нет доступных типов смазки. Добавьте через справочник.</p>
+                        )}
+                    </div>
+                </>
+            )}
+
             <div>
                 <label className="form-label">Комментарий</label>
                 <textarea
@@ -63,6 +138,7 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
                     rows={3}
                 />
             </div>
+
             <div className="flex justify-end gap-3">
                 {onCancel && (
                     <button type="button" onClick={onCancel} className="btn-secondary">

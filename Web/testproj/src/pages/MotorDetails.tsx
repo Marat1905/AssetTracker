@@ -1,3 +1,4 @@
+// MotorDetails.tsx
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
@@ -8,7 +9,7 @@ import { motorApi } from '../services/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
-import { maintenanceTypeLabels } from '../utils/locales';
+import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';
 import { Map, ClipboardList, PlusCircle } from 'lucide-react';
 
 export default function MotorDetails() {
@@ -153,8 +154,8 @@ export default function MotorDetails() {
                         <button
                             onClick={() => setActiveTab('location')}
                             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'location'
-                                    ? 'border-b-2 border-accent text-accent'
-                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                ? 'border-b-2 border-accent text-accent'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                 }`}
                         >
                             <Map size={18} />
@@ -163,8 +164,8 @@ export default function MotorDetails() {
                         <button
                             onClick={() => setActiveTab('maintenance')}
                             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'maintenance'
-                                    ? 'border-b-2 border-accent text-accent'
-                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                ? 'border-b-2 border-accent text-accent'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                 }`}
                         >
                             <ClipboardList size={18} />
@@ -249,6 +250,18 @@ export default function MotorDetails() {
                                                         </span>
                                                         <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
                                                     </div>
+                                                    {/* Дополнительная информация для смазки */}
+                                                    {log.workType === 'Lubrication' && (
+                                                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                                                            <span className="font-medium">Позиция подшипника:</span> {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
+                                                            {log.lubricantTypeName && (
+                                                                <>
+                                                                    {' '}&nbsp;|&nbsp;
+                                                                    <span className="font-medium">Смазка:</span> {log.lubricantTypeName}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                     {log.comment && (
                                                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{log.comment}</p>
                                                     )}

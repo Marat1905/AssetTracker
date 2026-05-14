@@ -1,3 +1,4 @@
+// services/api.ts
 import axios from 'axios';
 import type {
     CreateMotorDto,
@@ -9,7 +10,10 @@ import type {
     UpdateMotorRequest,
     PagedResult,
     LocationHistoryDto,
-    MaintenanceLogDto
+    MaintenanceLogDto,
+    LubricantType,
+    CreateLubricantTypeDto,
+    UpdateLubricantTypeDto
 } from '../types';
 
 const api = axios.create({
@@ -37,12 +41,12 @@ export const motorApi = {
         return response.data;
     },
 
-    // Редактировать двигатель (обновить основные характеристики)
+    // Редактировать двигатель
     updateMotor: async (id: number, data: UpdateMotorRequest): Promise<void> => {
         await api.put(`/motors/${id}`, data);
     },
 
-    // Удалить двигатель со всей историей
+    // Удалить двигатель
     deleteMotor: async (id: number): Promise<void> => {
         await api.delete(`/motors/${id}`);
     },
@@ -52,18 +56,18 @@ export const motorApi = {
         await api.patch(`/motors/${id}/move`, data);
     },
 
-    // Добавить обслуживание
+    // Добавить обслуживание (с учётом смазки)
     addMaintenance: async (id: number, data: MaintenanceDto): Promise<void> => {
         await api.post(`/motors/${id}/maintenance`, data);
     },
 
-    // Получить полную историю (используется для паспортных данных)
+    // Получить полную историю
     getFullHistory: async (id: number): Promise<MotorFullHistoryDto> => {
         const response = await api.get<MotorFullHistoryDto>(`/motors/${id}/full-history`);
         return response.data;
     },
 
-    // Получить список всех двигателей (устаревший, использовать пагинированный)
+    // Получить список всех двигателей (устаревший)
     getAllMotors: async (): Promise<MotorListItem[]> => {
         const response = await api.get<MotorListItem[]>('/motors');
         return response.data;
@@ -110,5 +114,32 @@ export const motorApi = {
             `/motors/${id}/maintenance-logs/paged?page=${page}&pageSize=${pageSize}`
         );
         return response.data;
+    }
+};
+
+// --- Новый API для типов смазки ---
+export const lubricantApi = {
+    getAll: async (): Promise<LubricantType[]> => {
+        const response = await api.get<LubricantType[]>('/lubricanttypes');
+        return response.data;
+    },
+
+    getById: async (id: number): Promise<LubricantType> => {
+        const response = await api.get<LubricantType>(`/lubricanttypes/${id}`);
+        return response.data;
+    },
+
+    create: async (data: CreateLubricantTypeDto): Promise<LubricantType> => {
+        const response = await api.post<LubricantType>('/lubricanttypes', data);
+        return response.data;
+    },
+
+    update: async (id: number, data: UpdateLubricantTypeDto): Promise<LubricantType> => {
+        const response = await api.put<LubricantType>(`/lubricanttypes/${id}`, data);
+        return response.data;
+    },
+
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/lubricanttypes/${id}`);
     }
 };

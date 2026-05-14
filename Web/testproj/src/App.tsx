@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Dashboard from './pages/Dashboard';
 import MotorDetails from './pages/MotorDetails';
+import LubricantTypesPage from './pages/LubricantTypesPage';
 
 function Header() {
     return (
@@ -19,6 +20,25 @@ function Header() {
                         </span>
                     </Link>
                     <div className="flex items-center space-x-4">
+                        {/* Кнопка перехода к справочнику типов смазки */}
+                        <Link
+                            to="/lubricant-types"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50 transition-colors"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                            Типы смазки
+                        </Link>
+                        <Link
+                            to="/motors/new"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Электродвигателя
+                        </Link>
                         <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">Управление электродвигателями</span>
                     </div>
                 </div>
@@ -45,7 +65,9 @@ function App() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <Routes>
                     <Route path="/" element={<Dashboard />} />
+                    <Route path="/motors/new" element={<Dashboard />} />
                     <Route path="/motors/:id" element={<MotorDetails />} />
+                    <Route path="/lubricant-types" element={<LubricantTypesPage />} />
                 </Routes>
             </main>
         </BrowserRouter>

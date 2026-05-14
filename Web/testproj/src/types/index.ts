@@ -20,6 +20,12 @@ export enum MountingType {
     FeetAndSmallFlange = "FeetAndSmallFlange" // Лапы и малый фланец
 }
 
+// --- Добавлено: позиция подшипника ---
+export enum BearingPosition {
+    Front = "Front",
+    Rear = "Rear"
+}
+
 export interface LocationHistoryDto {
     id: number;
     location: string;
@@ -32,20 +38,26 @@ export interface MaintenanceLogDto {
     workType: string;
     date: string;
     comment: string;
+    bearingPosition?: string;       // "Front" / "Rear"
+    lubricantTypeId?: number;
+    lubricantTypeName?: string;
 }
 
 export interface MotorFullHistoryDto {
     inventoryNumber: number;
     type: string;
-    shaftDiameter: number;   // мм
+    shaftDiameter: number;
     power: number;
     speed: number;
     frontBearingType: string;
     rearBearingType: string;
     status: MotorStatus;
-    mountingType: MountingType; 
+    mountingType: MountingType;
     locationHistory: LocationHistoryDto[];
     maintenanceLogs: MaintenanceLogDto[];
+    // Новые поля для последней использованной смазки
+    frontBearingLastLubricant?: string;   // Название последней смазки переднего подшипника
+    rearBearingLastLubricant?: string;    // Название последней смазки заднего подшипника
 }
 
 export interface CreateMotorDto {
@@ -69,6 +81,8 @@ export interface MoveMotorDto {
 export interface MaintenanceDto {
     workType: MaintenanceType;
     comment: string;
+    bearingPosition?: BearingPosition;   // только для смазки
+    lubricantTypeId?: number;            // только для смазки
 }
 
 export interface MotorListItem {
@@ -91,9 +105,25 @@ export interface UpdateMotorRequest {
     frontBearingType: string;
     rearBearingType: string;
     status: MotorStatus;
-    mountingType: MountingType; 
+    mountingType: MountingType;
 }
 
+// --- DTO для типа смазки ---
+export interface LubricantType {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+export interface CreateLubricantTypeDto {
+    name: string;
+    description?: string;
+}
+
+export interface UpdateLubricantTypeDto {
+    name: string;
+    description?: string;
+}
 export interface PagedResult<T> {
     items: T[];
     totalCount: number;

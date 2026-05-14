@@ -1,3 +1,4 @@
+// components/MotorHistory.tsx
 import type { MotorFullHistoryDto } from '../types';
 import { motorStatusLabels, mountingTypeLabels, mountingCodes } from '../utils/locales';
 import MotorDiagram from './MotorDiagram';
@@ -21,13 +22,15 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
 
             <div className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* ЛЕВАЯ КОЛОНКА – Рисунок ЭД (теперь компактный) */}
+                    {/* ЛЕВАЯ КОЛОНКА – Рисунок ЭД с типами смазки */}
                     <div className="flex justify-center items-center w-96 max-w-full mx-auto">
                         <MotorDiagram
                             shaftDiameter={motorData.shaftDiameter}
                             frontBearingType={motorData.frontBearingType}
                             rearBearingType={motorData.rearBearingType}
                             mountingType={motorData.mountingType}
+                            frontBearingLastLubricant={motorData.frontBearingLastLubricant}
+                            rearBearingLastLubricant={motorData.rearBearingLastLubricant}
                         />
                     </div>
 
@@ -64,6 +67,19 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                                 <span className="text-sm text-gray-500">Задний подшипник:</span>
                                 <span className="text-sm font-medium text-text-h">{motorData.rearBearingType}</span>
                             </div>
+                            {/* Отображение последней смазки в таблице (опционально) */}
+                            {motorData.frontBearingLastLubricant && (
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
+                                    <span className="text-sm text-gray-500">Последняя смазка (передний):</span>
+                                    <span className="text-sm font-medium text-orange-600 dark:text-orange-400">{motorData.frontBearingLastLubricant}</span>
+                                </div>
+                            )}
+                            {motorData.rearBearingLastLubricant && (
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
+                                    <span className="text-sm text-gray-500">Последняя смазка (задний):</span>
+                                    <span className="text-sm font-medium text-orange-600 dark:text-orange-400">{motorData.rearBearingLastLubricant}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
                                 <span className="text-sm text-gray-500">Тип монтажа:</span>
                                 <div className="text-right">
