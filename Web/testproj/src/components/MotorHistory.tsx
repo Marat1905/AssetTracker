@@ -22,7 +22,7 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
             <div className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* ЛЕВАЯ КОЛОНКА – Рисунок ЭД (теперь компактный) */}
-                    <div className="flex justify-center items-center w-80 max-w-full mx-auto">
+                    <div className="flex justify-center items-center w-96 max-w-full mx-auto">
                         <MotorDiagram
                             shaftDiameter={motorData.shaftDiameter}
                             frontBearingType={motorData.frontBearingType}
