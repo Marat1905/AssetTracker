@@ -1,10 +1,11 @@
+// MotorDetails.tsx
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
 import EditMotorModal from '../components/EditMotorModal';
 import MoveMotorForm from '../components/MoveMotorForm';
 import MaintenanceForm from '../components/MaintenanceForm';
-import EditMaintenanceModal from '../components/EditMaintenanceModal';
+import EditMaintenanceModal from '../components/EditMaintenanceModal'; // новый импорт для модалки редактирования записи
 import { motorApi } from '../services/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
@@ -101,17 +102,19 @@ export default function MotorDetails() {
         loadMaintenanceLogs();
     };
 
+    // Обработчик открытия модалки редактирования записи обслуживания
     const handleEditLog = (log: MaintenanceLogDto) => {
         setEditingLog(log);
     };
 
+    // Обработчик удаления записи обслуживания
     const handleDeleteLog = async (log: MaintenanceLogDto) => {
         if (!confirm('Удалить запись обслуживания?')) return;
         try {
             await motorApi.deleteMaintenanceLog(motorId, log.id);
             toast.success('Запись удалена');
-            loadMaintenanceLogs();
-            loadMotorData();
+            loadMaintenanceLogs();   // обновить текущую страницу
+            loadMotorData();         // обновить данные двигателя (последние смазки)
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка удаления');
         }
@@ -162,7 +165,10 @@ export default function MotorDetails() {
             </div>
 
             {/* Блок паспортных данных */}
-            {motorData && <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />}
+            {motorData && (
+                <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
+            )}
+
             {/* Вкладки: История перемещений / Журнал обслуживания */}
             <div className="mt-6">
                 <div className="border-b border-gray-200 dark:border-gray-700">
@@ -262,10 +268,20 @@ export default function MotorDetails() {
                                                         </span>
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
-                                                            <button onClick={() => handleEditLog(log)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" title="Редактировать запись">
+                                                            {/* Кнопка редактирования */}
+                                                            <button
+                                                                onClick={() => handleEditLog(log)}
+                                                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                                                title="Редактировать запись"
+                                                            >
                                                                 <Edit size={16} />
                                                             </button>
-                                                            <button onClick={() => handleDeleteLog(log)} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Удалить запись">
+                                                            {/* Кнопка удаления */}
+                                                            <button
+                                                                onClick={() => handleDeleteLog(log)}
+                                                                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                                                title="Удалить запись"
+                                                            >
                                                                 <Trash2 size={16} />
                                                             </button>
                                                         </div>
@@ -275,7 +291,10 @@ export default function MotorDetails() {
                                                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                                                             <span className="font-medium">Позиция подшипника:</span> {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
                                                             {log.lubricantTypeName && (
-                                                                <> &nbsp;|&nbsp; <span className="font-medium">Смазка:</span> {log.lubricantTypeName}</>
+                                                                <>
+                                                                    {' '}&nbsp;|&nbsp;
+                                                                    <span className="font-medium">Смазка:</span> {log.lubricantTypeName}
+                                                                </>
                                                             )}
                                                         </div>
                                                     )}
@@ -303,16 +322,22 @@ export default function MotorDetails() {
                                                                         {log.oldBearingType && (
                                                                             <div className="flex items-center gap-1.5">
                                                                                 <span className="font-medium text-gray-500 dark:text-gray-400">Старый:</span>
-                                                                                    <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                                                                        {log.oldBearingType}
-                                                                                    </span>
+                                                                                <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                                                    {log.oldBearingType}
+                                                                                </span>
                                                                             </div>
                                                                         )}
-                                                                        {log.oldBearingType && log.newBearingType && <ArrowRight size={16} className="text-accent flex-shrink-0" />}
+                                                                        {log.oldBearingType && log.newBearingType && (
+                                                                            <ArrowRight size={16} className="text-accent flex-shrink-0" />
+                                                                        )}
                                                                         {log.newBearingType && (
                                                                             <div className="flex items-center gap-1.5">
-                                                                                <span className="font-medium text-green-600 dark:text-green-400">{log.oldBearingType ? 'Новый:' : 'Установлен:'}</span>
-                                                                                <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">{log.newBearingType}</span>
+                                                                                <span className="font-medium text-green-600 dark:text-green-400">
+                                                                                    {log.oldBearingType ? 'Новый:' : 'Установлен:'}
+                                                                                </span>
+                                                                                <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
+                                                                                    {log.newBearingType}
+                                                                                </span>
                                                                             </div>
                                                                         )}
                                                                     </>
@@ -378,7 +403,7 @@ export default function MotorDetails() {
                 </div>
             )}
 
-            {/* Модальное окно обслуживания */}
+            {/* Модальное окно добавления обслуживания */}
             {isMaintenanceModalOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto">
                     <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -408,14 +433,19 @@ export default function MotorDetails() {
                     </div>
                 </div>
             )}
-            {/* Модальное окно редактирования двигателя */}
+
+            {/* Модальное окно редактирования записи обслуживания */}
             {editingLog && (
                 <EditMaintenanceModal
                     isOpen={!!editingLog}
                     motorId={motorId}
                     log={editingLog}
                     onClose={() => setEditingLog(null)}
-                    onSuccess={() => { loadMaintenanceLogs(); loadMotorData(); setEditingLog(null); }}
+                    onSuccess={() => {
+                        loadMaintenanceLogs();
+                        loadMotorData();
+                        setEditingLog(null);
+                    }}
                 />
             )}
 
