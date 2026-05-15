@@ -13,14 +13,15 @@ public class MappingProfile : Profile
         CreateMap<MaintenanceLog, MaintenanceLogDto>()
             .ForMember(dest => dest.WorkType, opt => opt.MapFrom(src => src.WorkType.ToString()))
             .ForMember(dest => dest.BearingPosition, opt => opt.MapFrom(src => src.BearingPosition.HasValue ? src.BearingPosition.Value.ToString() : null))
-            .ForMember(dest => dest.LubricantTypeName, opt => opt.MapFrom(src => src.LubricantType != null ? src.LubricantType.Name : null));
+            .ForMember(dest => dest.LubricantTypeName, opt => opt.MapFrom(src => src.LubricantType != null ? src.LubricantType.Name : null))
+            .ForMember(dest => dest.OldBearingType, opt => opt.MapFrom(src => src.OldBearingType))
+            .ForMember(dest => dest.NewBearingType, opt => opt.MapFrom(src => src.NewBearingType));
 
         CreateMap<UpdateMotorDto, Motor>();
 
         CreateMap<Motor, MotorFullHistoryDto>()
-    .ForMember(dest => dest.FrontBearingLastLubricant, opt => opt.Ignore())
-    .ForMember(dest => dest.RearBearingLastLubricant, opt => opt.Ignore());
-
+            .ForMember(dest => dest.FrontBearingLastLubricant, opt => opt.Ignore())
+            .ForMember(dest => dest.RearBearingLastLubricant, opt => opt.Ignore());
 
         // Маппинги для LubricantType
         CreateMap<LubricantType, LubricantTypeDto>();

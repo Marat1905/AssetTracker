@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MaintenanceType, BearingPosition, type LubricantType } from '../types';
+import { MaintenanceType, BearingPosition, type LubricantType, type MotorFullHistoryDto } from '../types';
 import { motorApi, lubricantApi } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -12,18 +12,20 @@ const workTypes = [
 
 interface Props {
     motorId: number;
+    motorData?: MotorFullHistoryDto | null;  // Данные двигателя для предустановки значений
     onAdded?: () => void;
     onCancel?: () => void;
     isModal?: boolean;
 }
 
-export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }: Props) {
+export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel, isModal }: Props) {
     const [workType, setWorkType] = useState<MaintenanceType>(MaintenanceType.Lubrication);
     const [comment, setComment] = useState('');
     const [loading, setLoading] = useState(false);
     const [lubricants, setLubricants] = useState<LubricantType[]>([]);
     const [bearingPosition, setBearingPosition] = useState<BearingPosition>(BearingPosition.Front);
     const [lubricantTypeId, setLubricantTypeId] = useState<number | ''>('');
+    const [newBearingType, setNewBearingType] = useState('');
 
     // Загрузка списка типов смазки при монтировании
     useEffect(() => {
@@ -31,7 +33,6 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
             try {
                 const data = await lubricantApi.getAll();
                 setLubricants(data);
-                if (data.length > 0) setLubricantTypeId(data[0].id);
             } catch (err) {
                 console.error('Ошибка загрузки типов смазки', err);
                 toast.error('Не удалось загрузить типы смазки');
@@ -40,13 +41,64 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
         fetchLubricants();
     }, []);
 
+    // Эффект для обновления предустановленных значений при изменении зависимостей
+    useEffect(() => {
+        if (!motorData) return; // Если данных двигателя нет, предустановки не делаем
+
+        if (workType === MaintenanceType.Lubrication && lubricants.length > 0) {
+            // Для смазки: подставляем последнюю использованную смазку для выбранной позиции
+            const lastLubricantName = bearingPosition === BearingPosition.Front
+                ? motorData.frontBearingLastLubricant
+                : motorData.rearBearingLastLubricant;
+
+            if (lastLubricantName) {
+                const matched = lubricants.find(l => l.name === lastLubricantName);
+                if (matched) {
+                    setLubricantTypeId(matched.id);
+                    return;
+                }
+            }
+            // Если нет совпадения или нет последней смазки – ставим первый элемент
+            if (lubricants.length > 0) {
+                setLubricantTypeId(lubricants[0].id);
+            }
+        } else if (workType === MaintenanceType.BearingReplacement) {
+            // Для замены подшипника: подставляем текущий тип выбранного подшипника
+            const currentBearingType = bearingPosition === BearingPosition.Front
+                ? motorData.frontBearingType
+                : motorData.rearBearingType;
+            setNewBearingType(currentBearingType);
+        }
+    }, [workType, bearingPosition, motorData, lubricants]); // Срабатывает при изменении любой из зависимостей
+
+    // Обработчик смены типа работ
+    const handleWorkTypeChange = (newType: MaintenanceType) => {
+        setWorkType(newType);
+        // Сбрасываем специфические поля, но предустановки применятся через эффект
+        if (newType === MaintenanceType.BearingReplacement) {
+            setLubricantTypeId('');
+        } else if (newType === MaintenanceType.Lubrication) {
+            setNewBearingType('');
+        } else {
+            // Для остальных типов очищаем всё
+            setBearingPosition(BearingPosition.Front);
+            setLubricantTypeId('');
+            setNewBearingType('');
+        }
+    };
+
+    // Обработчик смены позиции подшипника
+    const handleBearingPositionChange = (pos: BearingPosition) => {
+        setBearingPosition(pos);
+        // Эффект сам обновит предустановки, отдельно вызывать не нужно
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
             const payload: any = { workType, comment };
 
-            // Для смазки обязательно передаём позицию и тип смазки
             if (workType === MaintenanceType.Lubrication) {
                 if (!bearingPosition) {
                     toast.error('Выберите позицию подшипника');
@@ -60,14 +112,30 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
                 }
                 payload.bearingPosition = bearingPosition;
                 payload.lubricantTypeId = Number(lubricantTypeId);
+            } else if (workType === MaintenanceType.BearingReplacement) {
+                if (!bearingPosition) {
+                    toast.error('Выберите позицию подшипника');
+                    setLoading(false);
+                    return;
+                }
+                if (!newBearingType.trim()) {
+                    toast.error('Введите новый тип подшипника');
+                    setLoading(false);
+                    return;
+                }
+                payload.bearingPosition = bearingPosition;
+                payload.newBearingType = newBearingType.trim();
             }
 
             await motorApi.addMaintenance(motorId, payload);
             toast.success('Запись обслуживания добавлена');
+            // Сброс формы
             setComment('');
             setWorkType(MaintenanceType.Lubrication);
             setBearingPosition(BearingPosition.Front);
-            setLubricantTypeId(lubricants.length > 0 ? lubricants[0].id : '');
+            // Сбросим специфические поля, эффект потом установит предустановки
+            setLubricantTypeId('');
+            setNewBearingType('');
             onAdded?.();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка добавления записи');
@@ -77,6 +145,7 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
     };
 
     const isLubrication = workType === MaintenanceType.Lubrication;
+    const isBearingReplacement = workType === MaintenanceType.BearingReplacement;
 
     return (
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -84,7 +153,7 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
                 <label className="form-label">Тип работ</label>
                 <select
                     value={workType}
-                    onChange={(e) => setWorkType(e.target.value as MaintenanceType)}
+                    onChange={(e) => handleWorkTypeChange(e.target.value as MaintenanceType)}
                     className="form-input"
                 >
                     {workTypes.map(wt => (
@@ -95,37 +164,55 @@ export default function MaintenanceForm({ motorId, onAdded, onCancel, isModal }:
                 </select>
             </div>
 
-            {/* Дополнительные поля только для смазки */}
+            {/* Поле позиции подшипника – общее для смазки и замены */}
+            {(isLubrication || isBearingReplacement) && (
+                <div>
+                    <label className="form-label">Позиция подшипника</label>
+                    <select
+                        value={bearingPosition}
+                        onChange={(e) => handleBearingPositionChange(e.target.value as BearingPosition)}
+                        className="form-input"
+                    >
+                        <option value={BearingPosition.Front}>Передний</option>
+                        <option value={BearingPosition.Rear}>Задний</option>
+                    </select>
+                </div>
+            )}
+
+            {/* Поля только для смазки */}
             {isLubrication && (
-                <>
-                    <div>
-                        <label className="form-label">Позиция подшипника</label>
-                        <select
-                            value={bearingPosition}
-                            onChange={(e) => setBearingPosition(e.target.value as BearingPosition)}
-                            className="form-input"
-                        >
-                            <option value={BearingPosition.Front}>Передний</option>
-                            <option value={BearingPosition.Rear}>Задний</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="form-label">Тип смазки</label>
-                        <select
-                            value={lubricantTypeId}
-                            onChange={(e) => setLubricantTypeId(Number(e.target.value))}
-                            className="form-input"
-                            required
-                        >
-                            {lubricants.map(l => (
-                                <option key={l.id} value={l.id}>{l.name}</option>
-                            ))}
-                        </select>
-                        {lubricants.length === 0 && (
-                            <p className="text-xs text-danger mt-1">Нет доступных типов смазки. Добавьте через справочник.</p>
-                        )}
-                    </div>
-                </>
+                <div>
+                    <label className="form-label">Тип смазки</label>
+                    <select
+                        value={lubricantTypeId}
+                        onChange={(e) => setLubricantTypeId(Number(e.target.value))}
+                        className="form-input"
+                        required
+                    >
+                        {lubricants.map(l => (
+                            <option key={l.id} value={l.id}>{l.name}</option>
+                        ))}
+                    </select>
+                    {lubricants.length === 0 && (
+                        <p className="text-xs text-danger mt-1">Нет доступных типов смазки. Добавьте через справочник.</p>
+                    )}
+                </div>
+            )}
+
+            {/* Поля только для замены подшипника */}
+            {isBearingReplacement && (
+                <div>
+                    <label className="form-label">Новый тип подшипника</label>
+                    <input
+                        type="text"
+                        value={newBearingType}
+                        onChange={(e) => setNewBearingType(e.target.value)}
+                        className="form-input"
+                        placeholder="например: 6310"
+                        required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Текущий тип подшипника предустановлен, вы можете его изменить</p>
+                </div>
             )}
 
             <div>

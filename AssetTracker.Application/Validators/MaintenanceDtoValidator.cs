@@ -10,6 +10,7 @@ public class MaintenanceDtoValidator : AbstractValidator<MaintenanceDto>
     {
         RuleFor(x => x.WorkType).IsInEnum();
 
+        // Правила для смазки
         When(x => x.WorkType == MaintenanceType.Lubrication, () =>
         {
             RuleFor(x => x.BearingPosition)
@@ -18,12 +19,29 @@ public class MaintenanceDtoValidator : AbstractValidator<MaintenanceDto>
             RuleFor(x => x.LubricantTypeId)
                 .NotNull().WithMessage("Для смазки необходимо указать тип смазки")
                 .GreaterThan(0).WithMessage("Некорректный идентификатор типа смазки");
+
+            RuleFor(x => x.NewBearingType).Null().WithMessage("Поле NewBearingType не используется при смазке");
         });
 
-        When(x => x.WorkType != MaintenanceType.Lubrication, () =>
+        // Правила для замены подшипника
+        When(x => x.WorkType == MaintenanceType.BearingReplacement, () =>
         {
-            RuleFor(x => x.BearingPosition).Null().WithMessage("Поле BearingPosition допустимо только для смазки");
-            RuleFor(x => x.LubricantTypeId).Null().WithMessage("Поле LubricantTypeId допустимо только для смазки");
+            RuleFor(x => x.BearingPosition)
+                .NotNull().WithMessage("Для замены подшипника необходимо указать позицию (передний/задний)");
+
+            RuleFor(x => x.NewBearingType)
+                .NotEmpty().WithMessage("Для замены подшипника необходимо указать новый тип подшипника")
+                .MaximumLength(100).WithMessage("Тип подшипника не должен превышать 100 символов");
+
+            RuleFor(x => x.LubricantTypeId).Null().WithMessage("Поле LubricantTypeId не используется при замене подшипника");
+        });
+
+        // Для остальных типов работ (StatorRewinding, ShaftRepair) все дополнительные поля должны быть null
+        When(x => x.WorkType != MaintenanceType.Lubrication && x.WorkType != MaintenanceType.BearingReplacement, () =>
+        {
+            RuleFor(x => x.BearingPosition).Null();
+            RuleFor(x => x.LubricantTypeId).Null();
+            RuleFor(x => x.NewBearingType).Null();
         });
     }
 }

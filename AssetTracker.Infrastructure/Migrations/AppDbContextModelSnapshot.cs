@@ -98,6 +98,14 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.Property<int>("MotorId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("NewBearingType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("OldBearingType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("WorkType")
                         .IsRequired()
                         .HasColumnType("text");

@@ -78,7 +78,9 @@ namespace AssetTracker.Infrastructure.Migrations
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     BearingPosition = table.Column<string>(type: "text", nullable: true),
-                    LubricantTypeId = table.Column<int>(type: "integer", nullable: true)
+                    LubricantTypeId = table.Column<int>(type: "integer", nullable: true),
+                    OldBearingType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    NewBearingType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
                 },
                 constraints: table =>
                 {

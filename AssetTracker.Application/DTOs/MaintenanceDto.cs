@@ -10,4 +10,7 @@ public class MaintenanceDto
     // Поля для смазки (обязательны, если WorkType == Lubrication)
     public BearingPosition? BearingPosition { get; set; }
     public int? LubricantTypeId { get; set; }
+
+    // Поле для замены подшипника (обязательно, если WorkType == BearingReplacement)
+    public string? NewBearingType { get; set; }
 }

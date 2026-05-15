@@ -40,4 +40,6 @@ public class MaintenanceLogDto
     public string? BearingPosition { get; set; }
     public int? LubricantTypeId { get; set; }
     public string? LubricantTypeName { get; set; }
+    public string? OldBearingType { get; set; }   // Старый тип подшипника (при замене)
+    public string? NewBearingType { get; set; }   // Новый тип подшипника (при замене)
 }

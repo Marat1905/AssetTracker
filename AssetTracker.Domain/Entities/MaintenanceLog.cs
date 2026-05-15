@@ -10,9 +10,16 @@ public class MaintenanceLog
     public DateTime Date { get; set; }
     public string Comment { get; set; } = string.Empty;
 
-    /// <summary>Позиция подшипника</summary>
+    /// <summary>Позиция подшипника (только для смазки и замены подшипника)</summary>
     public BearingPosition? BearingPosition { get; set; }
+
     public int? LubricantTypeId { get; set; }
+
+    /// <summary>Старый тип подшипника (только для замены подшипника)</summary>
+    public string? OldBearingType { get; set; }
+
+    /// <summary>Новый тип подшипника (только для замены подшипника)</summary>
+    public string? NewBearingType { get; set; }
 
     // Навигационные свойства
     public virtual Motor Motor { get; set; } = null!;

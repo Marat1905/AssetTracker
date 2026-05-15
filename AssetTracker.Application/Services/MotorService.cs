@@ -124,7 +124,9 @@ public class MotorService : IMotorService
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        // Дополнительная проверка для смазки
+        string? oldBearingType = null;
+
+        // Валидация для смазки
         if (dto.WorkType == MaintenanceType.Lubrication)
         {
             if (!dto.BearingPosition.HasValue)
@@ -137,6 +139,29 @@ public class MotorService : IMotorService
                 throw new ArgumentException($"Тип смазки с id {dto.LubricantTypeId} не существует");
         }
 
+        // Валидация для замены подшипника
+        if (dto.WorkType == MaintenanceType.BearingReplacement)
+        {
+            if (!dto.BearingPosition.HasValue)
+                throw new ArgumentException("Для замены подшипника необходимо указать позицию (передний/задний)");
+            if (string.IsNullOrWhiteSpace(dto.NewBearingType))
+                throw new ArgumentException("Для замены подшипника необходимо указать новый тип подшипника");
+
+            // Сохраняем старый тип подшипника до обновления
+            if (dto.BearingPosition.Value == BearingPosition.Front)
+            {
+                oldBearingType = motor.FrontBearingType;
+                motor.FrontBearingType = dto.NewBearingType;
+            }
+            else if (dto.BearingPosition.Value == BearingPosition.Rear)
+            {
+                oldBearingType = motor.RearBearingType;
+                motor.RearBearingType = dto.NewBearingType;
+            }
+
+            _unitOfWork.Motors.Update(motor);
+        }
+
         var maintenance = new MaintenanceLog
         {
             MotorId = motorId,
@@ -144,7 +169,9 @@ public class MotorService : IMotorService
             Date = DateTime.UtcNow,
             Comment = dto.Comment,
             BearingPosition = dto.BearingPosition,
-            LubricantTypeId = dto.LubricantTypeId
+            LubricantTypeId = dto.LubricantTypeId,
+            OldBearingType = oldBearingType,                 // Сохраняем старый тип
+            NewBearingType = dto.WorkType == MaintenanceType.BearingReplacement ? dto.NewBearingType : null
         };
 
         await _unitOfWork.MaintenanceLogs.AddAsync(maintenance);
@@ -179,6 +206,7 @@ public class MotorService : IMotorService
 
         // 3. История обслуживания – ограничиваем последними 100 записями для мобильных устройств
         //    Полную историю можно получить через пагинированный эндпоинт
+        // ИСПРАВЛЕНО: добавлены поля OldBearingType и NewBearingType
         dto.MaintenanceLogs = await _unitOfWork.MaintenanceLogs.GetQueryable()
             .Where(m => m.MotorId == motorId)
             .OrderByDescending(m => m.Date)
@@ -191,7 +219,9 @@ public class MotorService : IMotorService
                 Comment = m.Comment,
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
-                LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null
+                LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
+                OldBearingType = m.OldBearingType,
+                NewBearingType = m.NewBearingType
             })
             .ToListAsync();
 
@@ -355,6 +385,7 @@ public class MotorService : IMotorService
             .OrderByDescending(m => m.Date);
 
         var totalCount = await query.CountAsync();
+        // ИСПРАВЛЕНО: добавлены поля OldBearingType и NewBearingType
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -366,7 +397,9 @@ public class MotorService : IMotorService
                 Comment = m.Comment,
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
-                LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null
+                LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
+                OldBearingType = m.OldBearingType,
+                NewBearingType = m.NewBearingType
             })
             .ToListAsync();
 

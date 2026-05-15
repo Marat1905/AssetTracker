@@ -49,6 +49,15 @@ public class AppDbContext : DbContext
                 .HasConversion<string>()
                 .IsRequired(false);
 
+            // Новые поля для замены подшипника
+            entity.Property(e => e.OldBearingType)
+                .HasMaxLength(100)
+                .IsRequired(false);
+
+            entity.Property(e => e.NewBearingType)
+                .HasMaxLength(100)
+                .IsRequired(false);
+
             entity.HasOne(e => e.Motor)
                   .WithMany(m => m.MaintenanceLogs)
                   .HasForeignKey(e => e.MotorId)
@@ -57,7 +66,7 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.LubricantType)
                   .WithMany()
                   .HasForeignKey(e => e.LubricantTypeId)
-                  .OnDelete(DeleteBehavior.Restrict); // не удалять тип смазки, если есть ссылки
+                  .OnDelete(DeleteBehavior.Restrict);
 
             // Составной индекс для ускорения запросов последней смазки
             entity.HasIndex(m => new { m.MotorId, m.WorkType, m.BearingPosition, m.Date })

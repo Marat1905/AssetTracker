@@ -10,7 +10,7 @@ import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from 
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';
-import { Map, ClipboardList, PlusCircle } from 'lucide-react';
+import { Map, ClipboardList, PlusCircle, ArrowRight } from 'lucide-react';
 
 export default function MotorDetails() {
     const { id } = useParams<{ id: string }>();
@@ -177,7 +177,6 @@ export default function MotorDetails() {
                 <div className="mt-6">
                     {activeTab === 'location' && (
                         <div className="space-y-6">
-                            {/* Кнопка добавления перемещения */}
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => setIsMoveModalOpen(true)}
@@ -187,7 +186,6 @@ export default function MotorDetails() {
                                     Добавить перемещение
                                 </button>
                             </div>
-                            {/* Список перемещений */}
                             <div className="card">
                                 <div className="p-6">
                                     {locationHistory.length === 0 ? (
@@ -225,7 +223,6 @@ export default function MotorDetails() {
 
                     {activeTab === 'maintenance' && (
                         <div className="space-y-6">
-                            {/* Кнопка добавления обслуживания */}
                             <div className="flex justify-end">
                                 <button
                                     onClick={() => setIsMaintenanceModalOpen(true)}
@@ -235,7 +232,6 @@ export default function MotorDetails() {
                                     Добавить запись обслуживания
                                 </button>
                             </div>
-                            {/* Список обслуживаний */}
                             <div className="card">
                                 <div className="p-6">
                                     {maintenanceLogs.length === 0 ? (
@@ -250,7 +246,7 @@ export default function MotorDetails() {
                                                         </span>
                                                         <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
                                                     </div>
-                                                    {/* Дополнительная информация для смазки */}
+                                                    {/* Смазка */}
                                                     {log.workType === 'Lubrication' && (
                                                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                                                             <span className="font-medium">Позиция подшипника:</span> {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
@@ -262,8 +258,57 @@ export default function MotorDetails() {
                                                             )}
                                                         </div>
                                                     )}
+                                                    {/* Замена подшипника с улучшенным отображением */}
+                                                    {log.workType === 'BearingReplacement' && (
+                                                        <div className="mt-3">
+                                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                                                <span className="font-medium">Позиция:</span>
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700">
+                                                                    <span>⚙️</span>
+                                                                    {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+                                                                {log.oldBearingType && log.newBearingType && log.oldBearingType === log.newBearingType ? (
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <span className="font-medium text-gray-500 dark:text-gray-400">Тип подшипника:</span>
+                                                                        <span className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                                            {log.newBearingType}
+                                                                        </span>
+                                                                        <span className="text-xs text-gray-400 ml-1">(не изменялся)</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        {log.oldBearingType && (
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="font-medium text-gray-500 dark:text-gray-400">Старый:</span>
+                                                                                <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                                                    {log.oldBearingType}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                        {log.oldBearingType && log.newBearingType && (
+                                                                            <ArrowRight size={16} className="text-accent flex-shrink-0" />
+                                                                        )}
+                                                                        {log.newBearingType && (
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="font-medium text-green-600 dark:text-green-400">
+                                                                                    {log.oldBearingType ? 'Новый:' : 'Установлен:'}
+                                                                                </span>
+                                                                                <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
+                                                                                    {log.newBearingType}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                     {log.comment && (
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">{log.comment}</p>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 pt-1 border-t border-gray-100 dark:border-slate-700">
+                                                            {log.comment}
+                                                        </p>
                                                     )}
                                                 </div>
                                             ))}
@@ -335,6 +380,7 @@ export default function MotorDetails() {
                             </div>
                             <MaintenanceForm
                                 motorId={motorId}
+                                motorData={motorData}
                                 onAdded={() => {
                                     loadMaintenanceLogs();
                                     loadMotorData();

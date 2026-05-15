@@ -20,7 +20,7 @@ export enum MountingType {
     FeetAndSmallFlange = "FeetAndSmallFlange" // Лапы и малый фланец
 }
 
-// --- Добавлено: позиция подшипника ---
+// Позиция подшипника
 export enum BearingPosition {
     Front = "Front",
     Rear = "Rear"
@@ -41,6 +41,8 @@ export interface MaintenanceLogDto {
     bearingPosition?: string;       // "Front" / "Rear"
     lubricantTypeId?: number;
     lubricantTypeName?: string;
+    oldBearingType?: string;        // Старый тип подшипника (при замене)
+    newBearingType?: string;        // Новый тип подшипника (при замене)
 }
 
 export interface MotorFullHistoryDto {
@@ -55,7 +57,6 @@ export interface MotorFullHistoryDto {
     mountingType: MountingType;
     locationHistory: LocationHistoryDto[];
     maintenanceLogs: MaintenanceLogDto[];
-    // Новые поля для последней использованной смазки
     frontBearingLastLubricant?: string;   // Название последней смазки переднего подшипника
     rearBearingLastLubricant?: string;    // Название последней смазки заднего подшипника
 }
@@ -78,11 +79,13 @@ export interface MoveMotorDto {
     newStatus?: MotorStatus;
 }
 
+// ДОБАВЛЕНО поле newBearingType для замены подшипника
 export interface MaintenanceDto {
     workType: MaintenanceType;
     comment: string;
-    bearingPosition?: BearingPosition;   // только для смазки
+    bearingPosition?: BearingPosition;   // для смазки и замены подшипника
     lubricantTypeId?: number;            // только для смазки
+    newBearingType?: string;             // только для замены подшипника
 }
 
 export interface MotorListItem {
@@ -124,6 +127,7 @@ export interface UpdateLubricantTypeDto {
     name: string;
     description?: string;
 }
+
 export interface PagedResult<T> {
     items: T[];
     totalCount: number;
