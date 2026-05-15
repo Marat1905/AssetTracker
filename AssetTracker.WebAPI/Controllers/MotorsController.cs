@@ -161,4 +161,51 @@ public class MotorsController : ControllerBase
         await _motorService.DeleteMotorAsync(id);
         return NoContent();
     }
+
+    /// <summary>
+    /// Редактирование записи обслуживания (комментарий и, для смазки, тип смазки)
+    /// </summary>
+    [HttpPut("{id}/maintenance/{logId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateMaintenanceLog(int id, int logId, [FromBody] UpdateMaintenanceLogDto dto)
+    {
+        try
+        {
+            await _motorService.UpdateMaintenanceLogAsync(id, logId, dto);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Удаление записи обслуживания
+    /// </summary>
+    [HttpDelete("{id}/maintenance/{logId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteMaintenanceLog(int id, int logId)
+    {
+        try
+        {
+            await _motorService.DeleteMaintenanceLogAsync(id, logId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+    }
 }

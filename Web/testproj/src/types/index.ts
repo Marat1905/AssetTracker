@@ -128,6 +128,12 @@ export interface UpdateLubricantTypeDto {
     description?: string;
 }
 
+export interface UpdateMaintenanceLogDto {
+    comment?: string;
+    lubricantTypeId?: number;
+    newBearingType?: string;
+}
+
 export interface PagedResult<T> {
     items: T[];
     totalCount: number;

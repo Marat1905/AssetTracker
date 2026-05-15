@@ -6,14 +6,14 @@ import type {
     MoveMotorDto,
     MaintenanceDto,
     MotorListItem,
-    UpdateMotorStatusDto,
     UpdateMotorRequest,
     PagedResult,
     LocationHistoryDto,
     MaintenanceLogDto,
     LubricantType,
     CreateLubricantTypeDto,
-    UpdateLubricantTypeDto
+    UpdateLubricantTypeDto,
+    UpdateMaintenanceLogDto
 } from '../types';
 
 const api = axios.create({
@@ -114,10 +114,18 @@ export const motorApi = {
             `/motors/${id}/maintenance-logs/paged?page=${page}&pageSize=${pageSize}`
         );
         return response.data;
+    },
+
+    // === МЕТОДЫ ДЛЯ РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ ЗАПИСЕЙ ОБСЛУЖИВАНИЯ ===
+    updateMaintenanceLog: async (motorId: number, logId: number, data: UpdateMaintenanceLogDto): Promise<void> => {
+        await api.put(`/motors/${motorId}/maintenance/${logId}`, data);
+    },
+
+    deleteMaintenanceLog: async (motorId: number, logId: number): Promise<void> => {
+        await api.delete(`/motors/${motorId}/maintenance/${logId}`);
     }
 };
 
-// --- Новый API для типов смазки ---
 export const lubricantApi = {
     getAll: async (): Promise<LubricantType[]> => {
         const response = await api.get<LubricantType[]>('/lubricanttypes');

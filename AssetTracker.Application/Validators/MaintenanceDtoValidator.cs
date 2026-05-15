@@ -45,3 +45,30 @@ public class MaintenanceDtoValidator : AbstractValidator<MaintenanceDto>
         });
     }
 }
+
+/// <summary>
+/// Валидатор для редактирования записи обслуживания
+/// </summary>
+public class UpdateMaintenanceLogDtoValidator : AbstractValidator<UpdateMaintenanceLogDto>
+{
+    public UpdateMaintenanceLogDtoValidator()
+    {
+        // Комментарий не длиннее 500 символов
+        RuleFor(x => x.Comment)
+            .MaximumLength(500).WithMessage("Комментарий не должен превышать 500 символов");
+
+        // Если указан LubricantTypeId, он должен быть положительным
+        When(x => x.LubricantTypeId.HasValue, () =>
+        {
+            RuleFor(x => x.LubricantTypeId.Value)
+                .GreaterThan(0).WithMessage("Идентификатор типа смазки должен быть положительным");
+        });
+
+        // Если указан NewBearingType, он не должен быть пустым и не длиннее 100 символов
+        When(x => !string.IsNullOrWhiteSpace(x.NewBearingType), () =>
+        {
+            RuleFor(x => x.NewBearingType)
+                .MaximumLength(100).WithMessage("Тип подшипника не должен превышать 100 символов");
+        });
+    }
+}

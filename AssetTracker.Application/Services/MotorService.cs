@@ -412,4 +412,93 @@ public class MotorService : IMotorService
             TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
         };
     }
+
+    /// <summary>
+    /// Редактирование записи обслуживания
+    /// </summary>
+    public async Task UpdateMaintenanceLogAsync(int motorId, int logId, UpdateMaintenanceLogDto dto)
+    {
+        _logger.LogInformation("Updating maintenance log {LogId} for motor {MotorId}", logId, motorId);
+
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motor == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        var log = await _unitOfWork.MaintenanceLogs.GetByIdAsync(logId);
+        if (log == null || log.MotorId != motorId)
+            throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
+
+        // Обновляем комментарий, если передан
+        if (dto.Comment != null)
+            log.Comment = dto.Comment;
+
+        if (log.WorkType == MaintenanceType.Lubrication)
+        {
+            if (dto.LubricantTypeId.HasValue)
+            {
+                var lubricantExists = await _unitOfWork.LubricantTypes.ExistsAsync(dto.LubricantTypeId.Value);
+                if (!lubricantExists)
+                    throw new ArgumentException($"Тип смазки с id {dto.LubricantTypeId} не существует");
+                log.LubricantTypeId = dto.LubricantTypeId;
+            }
+            if (dto.NewBearingType != null)
+                throw new InvalidOperationException("Невозможно изменить тип подшипника для операции смазки");
+        }
+        else if (log.WorkType == MaintenanceType.BearingReplacement)
+        {
+            // Разрешаем менять новый тип подшипника
+            if (dto.NewBearingType != null)
+            {
+                log.NewBearingType = dto.NewBearingType;
+
+                // Обновляем соответствующий подшипник в двигателе
+                if (log.BearingPosition == BearingPosition.Front)
+                    motor.FrontBearingType = dto.NewBearingType;
+                else if (log.BearingPosition == BearingPosition.Rear)
+                    motor.RearBearingType = dto.NewBearingType;
+
+                _unitOfWork.Motors.Update(motor);
+            }
+            if (dto.LubricantTypeId.HasValue)
+                throw new InvalidOperationException("Для замены подшипника нельзя указывать тип смазки");
+        }
+        else
+        {
+            if (dto.LubricantTypeId.HasValue)
+                throw new InvalidOperationException("Для данного типа работ нельзя указывать тип смазки");
+            if (dto.NewBearingType != null)
+                throw new InvalidOperationException("Для данного типа работ нельзя указывать тип подшипника");
+        }
+
+        _unitOfWork.MaintenanceLogs.Update(log);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} updated", logId, motorId);
+    }
+
+    /// <summary>
+    /// Удаление записи обслуживания
+    /// </summary>
+    public async Task DeleteMaintenanceLogAsync(int motorId, int logId)
+    {
+        _logger.LogInformation("Deleting maintenance log {LogId} for motor {MotorId}", logId, motorId);
+
+        // Проверяем существование двигателя
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motor == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        // Загружаем запись обслуживания
+        var log = await _unitOfWork.MaintenanceLogs.GetByIdAsync(logId);
+        if (log == null || log.MotorId != motorId)
+            throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
+
+        // При удалении записи о замене подшипника не откатываем состояние двигателя,
+        // так как замена уже произошла физически. Удаление записи – лишь удаление исторического факта.
+        // Просто удаляем запись.
+        _unitOfWork.MaintenanceLogs.Remove(log);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} deleted", logId, motorId);
+    }
 }

@@ -1,16 +1,16 @@
-// MotorDetails.tsx
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
 import EditMotorModal from '../components/EditMotorModal';
 import MoveMotorForm from '../components/MoveMotorForm';
 import MaintenanceForm from '../components/MaintenanceForm';
+import EditMaintenanceModal from '../components/EditMaintenanceModal';
 import { motorApi } from '../services/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';
-import { Map, ClipboardList, PlusCircle, ArrowRight } from 'lucide-react';
+import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2 } from 'lucide-react';
 
 export default function MotorDetails() {
     const { id } = useParams<{ id: string }>();
@@ -23,6 +23,9 @@ export default function MotorDetails() {
     // Модальные окна для добавления записей
     const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
     const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
+
+    // Модальное окно редактирования записи обслуживания
+    const [editingLog, setEditingLog] = useState<MaintenanceLogDto | null>(null);
 
     // Пагинация истории перемещений
     const [locationHistory, setLocationHistory] = useState<LocationHistoryDto[]>([]);
@@ -98,6 +101,22 @@ export default function MotorDetails() {
         loadMaintenanceLogs();
     };
 
+    const handleEditLog = (log: MaintenanceLogDto) => {
+        setEditingLog(log);
+    };
+
+    const handleDeleteLog = async (log: MaintenanceLogDto) => {
+        if (!confirm('Удалить запись обслуживания?')) return;
+        try {
+            await motorApi.deleteMaintenanceLog(motorId, log.id);
+            toast.success('Запись удалена');
+            loadMaintenanceLogs();
+            loadMotorData();
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Ошибка удаления');
+        }
+    };
+
     if (isNaN(motorId) || motorId <= 0) {
         return (
             <div className="card p-8 text-center">
@@ -143,10 +162,7 @@ export default function MotorDetails() {
             </div>
 
             {/* Блок паспортных данных */}
-            {motorData && (
-                <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
-            )}
-
+            {motorData && <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />}
             {/* Вкладки: История перемещений / Журнал обслуживания */}
             <div className="mt-6">
                 <div className="border-b border-gray-200 dark:border-gray-700">
@@ -244,17 +260,22 @@ export default function MotorDetails() {
                                                         <span className="font-semibold text-text-h px-2 py-1 bg-accent/10 rounded-lg text-sm">
                                                             {maintenanceTypeLabels[log.workType] || log.workType}
                                                         </span>
-                                                        <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
+                                                            <button onClick={() => handleEditLog(log)} className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300" title="Редактировать запись">
+                                                                <Edit size={16} />
+                                                            </button>
+                                                            <button onClick={() => handleDeleteLog(log)} className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" title="Удалить запись">
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                     {/* Смазка */}
                                                     {log.workType === 'Lubrication' && (
                                                         <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
                                                             <span className="font-medium">Позиция подшипника:</span> {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
                                                             {log.lubricantTypeName && (
-                                                                <>
-                                                                    {' '}&nbsp;|&nbsp;
-                                                                    <span className="font-medium">Смазка:</span> {log.lubricantTypeName}
-                                                                </>
+                                                                <> &nbsp;|&nbsp; <span className="font-medium">Смазка:</span> {log.lubricantTypeName}</>
                                                             )}
                                                         </div>
                                                     )}
@@ -282,22 +303,16 @@ export default function MotorDetails() {
                                                                         {log.oldBearingType && (
                                                                             <div className="flex items-center gap-1.5">
                                                                                 <span className="font-medium text-gray-500 dark:text-gray-400">Старый:</span>
-                                                                                <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                                                                    {log.oldBearingType}
-                                                                                </span>
+                                                                                    <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                                                        {log.oldBearingType}
+                                                                                    </span>
                                                                             </div>
                                                                         )}
-                                                                        {log.oldBearingType && log.newBearingType && (
-                                                                            <ArrowRight size={16} className="text-accent flex-shrink-0" />
-                                                                        )}
+                                                                        {log.oldBearingType && log.newBearingType && <ArrowRight size={16} className="text-accent flex-shrink-0" />}
                                                                         {log.newBearingType && (
                                                                             <div className="flex items-center gap-1.5">
-                                                                                <span className="font-medium text-green-600 dark:text-green-400">
-                                                                                    {log.oldBearingType ? 'Новый:' : 'Установлен:'}
-                                                                                </span>
-                                                                                <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
-                                                                                    {log.newBearingType}
-                                                                                </span>
+                                                                                <span className="font-medium text-green-600 dark:text-green-400">{log.oldBearingType ? 'Новый:' : 'Установлен:'}</span>
+                                                                                <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">{log.newBearingType}</span>
                                                                             </div>
                                                                         )}
                                                                     </>
@@ -392,6 +407,16 @@ export default function MotorDetails() {
                         </div>
                     </div>
                 </div>
+            )}
+            {/* Модальное окно редактирования двигателя */}
+            {editingLog && (
+                <EditMaintenanceModal
+                    isOpen={!!editingLog}
+                    motorId={motorId}
+                    log={editingLog}
+                    onClose={() => setEditingLog(null)}
+                    onSuccess={() => { loadMaintenanceLogs(); loadMotorData(); setEditingLog(null); }}
+                />
             )}
 
             {/* Модальное окно редактирования двигателя */}
