@@ -1,4 +1,3 @@
-// components/EditLocationModal.tsx
 import { useState } from 'react';
 import { motorApi } from '../services/api';
 import type { LocationHistoryDto } from '../types';

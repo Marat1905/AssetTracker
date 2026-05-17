@@ -1,3 +1,5 @@
+// types/index.ts
+
 export enum MotorStatus {
     InOperation = "InOperation",
     Reserve = "Reserve",
@@ -134,13 +136,15 @@ export interface UpdateMaintenanceLogDto {
     newBearingType?: string;
 }
 
+// НОВЫЙ DTO для редактирования истории перемещений
+export interface UpdateLocationHistoryDto {
+    location: string;
+}
+
 export interface PagedResult<T> {
     items: T[];
     totalCount: number;
     pageNumber: number;
     pageSize: number;
     totalPages: number;
-}
-export interface UpdateLocationHistoryDto {
-    location: string;
 }

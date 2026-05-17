@@ -1,4 +1,3 @@
-// services/api.ts
 import axios from 'axios';
 import type {
     CreateMotorDto,
@@ -13,7 +12,8 @@ import type {
     LubricantType,
     CreateLubricantTypeDto,
     UpdateLubricantTypeDto,
-    UpdateMaintenanceLogDto
+    UpdateMaintenanceLogDto,
+    UpdateLocationHistoryDto,
 } from '../types';
 
 const api = axios.create({
@@ -124,15 +124,22 @@ export const motorApi = {
     deleteMaintenanceLog: async (motorId: number, logId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/maintenance/${logId}`);
     },
+
+    // === НОВЫЕ МЕТОДЫ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ===
     /**
-   * Редактирование записи истории перемещений (только location)
-   */
-    updateLocationHistory: async (motorId: number, locationHistoryId: number, data: { location: string }): Promise<void> => {
+     * Редактирование записи истории перемещений (только location)
+     * @param motorId - инвентарный номер двигателя
+     * @param locationHistoryId - идентификатор записи истории
+     * @param data - объект с новым местоположением
+     */
+    updateLocationHistory: async (motorId: number, locationHistoryId: number, data: UpdateLocationHistoryDto): Promise<void> => {
         await api.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
     },
 
     /**
      * Удаление записи истории перемещений
+     * @param motorId - инвентарный номер двигателя
+     * @param locationHistoryId - идентификатор записи истории
      */
     deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
@@ -162,5 +169,5 @@ export const lubricantApi = {
 
     delete: async (id: number): Promise<void> => {
         await api.delete(`/lubricanttypes/${id}`);
-    },
+    }
 };

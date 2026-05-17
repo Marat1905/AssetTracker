@@ -1,4 +1,3 @@
-// MotorDetails.tsx (обновлённая версия с новыми функциями)
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
