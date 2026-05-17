@@ -72,3 +72,13 @@ public class UpdateMaintenanceLogDtoValidator : AbstractValidator<UpdateMaintena
         });
     }
 }
+
+public class UpdateLocationHistoryDtoValidator : AbstractValidator<UpdateLocationHistoryDto>
+{
+    public UpdateLocationHistoryDtoValidator()
+    {
+        RuleFor(x => x.Location)
+            .NotEmpty().WithMessage("Место расположения не может быть пустым")
+            .MaximumLength(200).WithMessage("Место расположения не должно превышать 200 символов");
+    }
+}

@@ -1,11 +1,12 @@
-// MotorDetails.tsx
+// MotorDetails.tsx (обновлённая версия с новыми функциями)
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
 import EditMotorModal from '../components/EditMotorModal';
 import MoveMotorForm from '../components/MoveMotorForm';
 import MaintenanceForm from '../components/MaintenanceForm';
-import EditMaintenanceModal from '../components/EditMaintenanceModal'; // новый импорт для модалки редактирования записи
+import EditMaintenanceModal from '../components/EditMaintenanceModal';
+import EditLocationModal from '../components/EditLocationModal'; // новый импорт
 import { motorApi } from '../services/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
@@ -27,6 +28,9 @@ export default function MotorDetails() {
 
     // Модальное окно редактирования записи обслуживания
     const [editingLog, setEditingLog] = useState<MaintenanceLogDto | null>(null);
+
+    // Модальное окно редактирования записи перемещения
+    const [editingLocation, setEditingLocation] = useState<LocationHistoryDto | null>(null);
 
     // Пагинация истории перемещений
     const [locationHistory, setLocationHistory] = useState<LocationHistoryDto[]>([]);
@@ -119,6 +123,31 @@ export default function MotorDetails() {
             toast.error(err.response?.data?.error || 'Ошибка удаления');
         }
     };
+
+    // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ---
+    const handleEditLocation = (location: LocationHistoryDto) => {
+        setEditingLocation(location);
+    };
+
+    const handleDeleteLocation = async (location: LocationHistoryDto) => {
+        // Проверка: если это единственная запись, предупредим (бекенд тоже вернёт ошибку)
+        if (locationHistory.length === 1) {
+            toast.error('Нельзя удалить единственную запись – двигатель должен иметь текущее местоположение');
+            return;
+        }
+        if (!confirm('Удалить запись о перемещении? Это может изменить текущее местоположение двигателя.')) return;
+        try {
+            await motorApi.deleteLocationHistory(motorId, location.id);
+            toast.success('Запись перемещения удалена');
+            // После удаления обновляем историю перемещений и данные двигателя (чтобы отобразить актуальное текущее местоположение)
+            await loadLocationHistory();
+            await loadMotorData();
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.error || 'Ошибка удаления';
+            toast.error(errorMsg);
+        }
+    };
+    // --- КОНЕЦ НОВЫХ ОБРАБОТЧИКОВ ---
 
     if (isNaN(motorId) || motorId <= 0) {
         return (
@@ -218,10 +247,32 @@ export default function MotorDetails() {
                                                 <div key={loc.id} className="relative pl-6 pb-4 last:pb-0 border-l-2 border-accent/30">
                                                     <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-accent shadow-md"></div>
                                                     <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
-                                                        <p className="font-semibold text-text-h">{loc.location}</p>
-                                                        <p className="text-sm text-gray-500 mt-1">
-                                                            {new Date(loc.startDate).toLocaleString('ru-RU')} – {loc.endDate ? new Date(loc.endDate).toLocaleString('ru-RU') : 'настоящее время'}
-                                                        </p>
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex-1">
+                                                                <p className="font-semibold text-text-h">{loc.location}</p>
+                                                                <p className="text-sm text-gray-500 mt-1">
+                                                                    {new Date(loc.startDate).toLocaleString('ru-RU')} – {loc.endDate ? new Date(loc.endDate).toLocaleString('ru-RU') : 'настоящее время'}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 ml-4">
+                                                                {/* Кнопка редактирования */}
+                                                                <button
+                                                                    onClick={() => handleEditLocation(loc)}
+                                                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                                                                    title="Редактировать местоположение"
+                                                                >
+                                                                    <Edit size={16} />
+                                                                </button>
+                                                                {/* Кнопка удаления */}
+                                                                <button
+                                                                    onClick={() => handleDeleteLocation(loc)}
+                                                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                                                    title="Удалить запись"
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -268,7 +319,6 @@ export default function MotorDetails() {
                                                         </span>
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
-                                                            {/* Кнопка редактирования */}
                                                             <button
                                                                 onClick={() => handleEditLog(log)}
                                                                 className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -276,7 +326,6 @@ export default function MotorDetails() {
                                                             >
                                                                 <Edit size={16} />
                                                             </button>
-                                                            {/* Кнопка удаления */}
                                                             <button
                                                                 onClick={() => handleDeleteLog(log)}
                                                                 className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
@@ -298,7 +347,7 @@ export default function MotorDetails() {
                                                             )}
                                                         </div>
                                                     )}
-                                                    {/* Замена подшипника с улучшенным отображением */}
+                                                    {/* Замена подшипника */}
                                                     {log.workType === 'BearingReplacement' && (
                                                         <div className="mt-3">
                                                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
@@ -445,6 +494,21 @@ export default function MotorDetails() {
                         loadMaintenanceLogs();
                         loadMotorData();
                         setEditingLog(null);
+                    }}
+                />
+            )}
+
+            {/* Модальное окно редактирования записи перемещения */}
+            {editingLocation && (
+                <EditLocationModal
+                    isOpen={!!editingLocation}
+                    motorId={motorId}
+                    location={editingLocation}
+                    onClose={() => setEditingLocation(null)}
+                    onSuccess={() => {
+                        loadLocationHistory();
+                        loadMotorData(); // обновляем паспортные данные (если изменилось текущее расположение)
+                        setEditingLocation(null);
                     }}
                 />
             )}

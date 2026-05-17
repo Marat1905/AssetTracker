@@ -208,4 +208,57 @@ public class MotorsController : ControllerBase
             return NotFound();
         }
     }
+
+    /// <summary>
+    /// Редактирование записи истории перемещений (только изменение места, даты не редактируются)
+    /// </summary>
+    [HttpPut("{motorId}/location-history/{locationHistoryId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateLocationHistory(int motorId, int locationHistoryId, [FromBody] UpdateLocationHistoryDto dto)
+    {
+        try
+        {
+            await _motorService.UpdateLocationHistoryAsync(motorId, locationHistoryId, dto);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Удаление записи истории перемещений (с проверкой целостности временной линии)
+    /// </summary>
+    [HttpDelete("{motorId}/location-history/{locationHistoryId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteLocationHistory(int motorId, int locationHistoryId)
+    {
+        try
+        {
+            await _motorService.DeleteLocationHistoryAsync(motorId, locationHistoryId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
 }

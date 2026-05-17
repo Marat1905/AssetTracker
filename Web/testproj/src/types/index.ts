@@ -141,3 +141,6 @@ export interface PagedResult<T> {
     pageSize: number;
     totalPages: number;
 }
+export interface UpdateLocationHistoryDto {
+    location: string;
+}

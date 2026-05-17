@@ -501,4 +501,89 @@ public class MotorService : IMotorService
 
         _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} deleted", logId, motorId);
     }
+
+    public async Task UpdateLocationHistoryAsync(int motorId, int locationHistoryId, UpdateLocationHistoryDto dto)
+    {
+        _logger.LogInformation("Updating location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
+
+        // Проверяем существование двигателя
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motor == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        // Загружаем запись истории
+        var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
+        if (locationHistory == null || locationHistory.MotorId != motorId)
+            throw new KeyNotFoundException($"Запись истории перемещений с id {locationHistoryId} не найдена для двигателя {motorId}");
+
+        // Редактируем только Location, даты не трогаем
+        locationHistory.Location = dto.Location;
+        _unitOfWork.LocationHistories.Update(locationHistory);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Location history {LocationHistoryId} for motor {MotorId} updated", locationHistoryId, motorId);
+    }
+
+    public async Task DeleteLocationHistoryAsync(int motorId, int locationHistoryId)
+    {
+        _logger.LogInformation("Deleting location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
+
+        // Проверяем двигатель
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motor == null)
+            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+
+        // Загружаем запись
+        var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
+        if (locationHistory == null || locationHistory.MotorId != motorId)
+            throw new KeyNotFoundException($"Запись истории перемещений с id {locationHistoryId} не найдена для двигателя {motorId}");
+
+        // Получаем все записи истории для этого двигателя, отсортированные по StartDate
+        var allHistories = await _unitOfWork.LocationHistories.GetQueryable()
+            .Where(l => l.MotorId == motorId)
+            .OrderBy(l => l.StartDate)
+            .ToListAsync();
+
+        if (allHistories.Count == 1)
+            throw new InvalidOperationException("Нельзя удалить единственную запись истории перемещений – двигатель должен иметь текущее местоположение");
+
+        // Определяем индекс удаляемой записи
+        var index = allHistories.FindIndex(h => h.Id == locationHistoryId);
+
+        // Случай 1: запись активная (EndDate == null)
+        if (locationHistory.EndDate == null)
+        {
+            // Находим предыдущую запись (если есть)
+            if (index > 0)
+            {
+                var previous = allHistories[index - 1];
+                previous.EndDate = null; // делаем предыдущую запись активной
+                _unitOfWork.LocationHistories.Update(previous);
+            }
+            else
+            {
+                // Это первая запись, и она активная – удалять нельзя, т.к. не останется активной записи
+                throw new InvalidOperationException("Нельзя удалить единственную активную запись местоположения – двигатель останется без текущего места");
+            }
+
+            _unitOfWork.LocationHistories.Remove(locationHistory);
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Active location history {LocationHistoryId} for motor {MotorId} deleted, previous record became active", locationHistoryId, motorId);
+            return;
+        }
+
+        // Случай 2: запись закрытая (EndDate != null) – удаляем только если это последняя запись
+        if (index == allHistories.Count - 1)
+        {
+            // Последняя запись, просто удаляем
+            _unitOfWork.LocationHistories.Remove(locationHistory);
+            await _unitOfWork.SaveChangesAsync();
+            _logger.LogInformation("Closed last location history {LocationHistoryId} for motor {MotorId} deleted", locationHistoryId, motorId);
+        }
+        else
+        {
+            // Запись не последняя – удаление разорвёт временную цепочку, запрещаем
+            throw new InvalidOperationException("Удаление промежуточных записей истории перемещений запрещено, так как это нарушит непрерывность временной линии. Можно отредактировать Location или удалить только последнюю запись.");
+        }
+    }
 }

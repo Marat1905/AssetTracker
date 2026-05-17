@@ -43,3 +43,14 @@ public class MaintenanceLogDto
     public string? OldBearingType { get; set; }   // Старый тип подшипника (при замене)
     public string? NewBearingType { get; set; }   // Новый тип подшипника (при замене)
 }
+
+/// <summary>
+/// DTO для редактирования записи истории перемещений (только изменение места расположения)
+/// </summary>
+public class UpdateLocationHistoryDto
+{
+    /// <summary>
+    /// Новое место расположения
+    /// </summary>
+    public string Location { get; set; } = string.Empty;
+}

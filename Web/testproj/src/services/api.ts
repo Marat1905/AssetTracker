@@ -123,6 +123,19 @@ export const motorApi = {
 
     deleteMaintenanceLog: async (motorId: number, logId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/maintenance/${logId}`);
+    },
+    /**
+   * Редактирование записи истории перемещений (только location)
+   */
+    updateLocationHistory: async (motorId: number, locationHistoryId: number, data: { location: string }): Promise<void> => {
+        await api.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
+    },
+
+    /**
+     * Удаление записи истории перемещений
+     */
+    deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
+        await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
     }
 };
 
@@ -149,5 +162,5 @@ export const lubricantApi = {
 
     delete: async (id: number): Promise<void> => {
         await api.delete(`/lubricanttypes/${id}`);
-    }
+    },
 };
