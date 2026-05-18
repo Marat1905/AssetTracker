@@ -1,4 +1,4 @@
-﻿namespace AssetTracker.Domain.Interfaces;
+﻿using AssetTracker.Domain.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
@@ -6,5 +6,6 @@ public interface IUnitOfWork : IDisposable
     ILocationHistoryRepository LocationHistories { get; }
     IMaintenanceLogRepository MaintenanceLogs { get; }
     ILubricantTypeRepository LubricantTypes { get; }
+    IBearingRepository Bearings { get; }   // новое
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
