@@ -15,13 +15,15 @@ public class MaintenanceLog
 
     public int? LubricantTypeId { get; set; }
 
-    /// <summary>Старый тип подшипника (только для замены подшипника)</summary>
-    public string? OldBearingType { get; set; }
+    /// <summary>Старый подшипник (только для замены подшипника)</summary>
+    public int? OldBearingId { get; set; }
 
-    /// <summary>Новый тип подшипника (только для замены подшипника)</summary>
-    public string? NewBearingType { get; set; }
+    /// <summary>Новый подшипник (только для замены подшипника)</summary>
+    public int? NewBearingId { get; set; }
 
     // Навигационные свойства
     public virtual Motor Motor { get; set; } = null!;
     public virtual LubricantType? LubricantType { get; set; }
+    public virtual Bearing? OldBearing { get; set; }
+    public virtual Bearing? NewBearing { get; set; }
 }

@@ -13,8 +13,15 @@ public class Motor
 
     public double Power { get; set; } // кВт, >0
     public int Speed { get; set; } // об/мин
-    public string FrontBearingType { get; set; } = string.Empty;
-    public string RearBearingType { get; set; } = string.Empty;
+
+    // Внешние ключи на текущие подшипники
+    public int FrontBearingId { get; set; }
+    public int RearBearingId { get; set; }
+
+    // Навигационные свойства для текущих подшипников
+    public virtual Bearing FrontBearing { get; set; } = null!;
+    public virtual Bearing RearBearing { get; set; } = null!;
+
     public MotorStatus Status { get; set; }
 
     /// <summary>Тип монтажа (лапы, лапы+фланец, фланец)</summary>
