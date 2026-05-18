@@ -1,3 +1,4 @@
+// components/CreateMotorForm.tsx
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,14 +7,21 @@ import { motorApi } from '../services/api';
 import { MotorStatus, MountingType, type CreateMotorDto } from '../types';
 import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
 
+// Схема валидации с полями производителя и поставщика для подшипников
 const schema = z.object({
     inventoryNumber: z.number({ invalid_type_error: 'Обязательное поле' }).positive('Инвентарный номер > 0'),
     type: z.string().min(1, 'Тип обязателен'),
     shaftDiameter: z.number().positive('Диаметр вала > 0'),
     power: z.number().positive('Мощность > 0'),
     speed: z.number().positive('Обороты > 0'),
-    frontBearingType: z.string().min(1, 'Передний подшипник обязателен'),
-    rearBearingType: z.string().min(1, 'Задний подшипник обязателен'),
+    // Передний подшипник
+    frontBearingType: z.string().min(1, 'Тип переднего подшипника обязателен'),
+    frontBearingManufacturer: z.string().min(1, 'Производитель переднего подшипника обязателен'),
+    frontBearingSupplier: z.string().min(1, 'Поставщик переднего подшипника обязателен'),
+    // Задний подшипник
+    rearBearingType: z.string().min(1, 'Тип заднего подшипника обязателен'),
+    rearBearingManufacturer: z.string().min(1, 'Производитель заднего подшипника обязателен'),
+    rearBearingSupplier: z.string().min(1, 'Поставщик заднего подшипника обязателен'),
     status: z.nativeEnum(MotorStatus),
     initialLocation: z.string().min(1, 'Начальное местоположение обязательно'),
     mountingType: z.nativeEnum(MountingType),
@@ -33,13 +41,38 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
         defaultValues: {
             status: MotorStatus.InOperation,
             mountingType: MountingType.Feet,
+            frontBearingManufacturer: '',
+            frontBearingSupplier: '',
+            rearBearingManufacturer: '',
+            rearBearingSupplier: '',
         }
     });
 
     const onSubmit = async (data: FormData) => {
         try {
-            console.log('📤 Отправка данных:', data);
-            await motorApi.createMotor(data as CreateMotorDto);
+            // Формируем DTO для создания двигателя с объектами подшипников
+            const createDto: CreateMotorDto = {
+                inventoryNumber: data.inventoryNumber,
+                type: data.type,
+                shaftDiameter: data.shaftDiameter,
+                power: data.power,
+                speed: data.speed,
+                frontBearing: {
+                    type: data.frontBearingType,
+                    manufacturer: data.frontBearingManufacturer,
+                    supplier: data.frontBearingSupplier,
+                },
+                rearBearing: {
+                    type: data.rearBearingType,
+                    manufacturer: data.rearBearingManufacturer,
+                    supplier: data.rearBearingSupplier,
+                },
+                status: data.status,
+                initialLocation: data.initialLocation,
+                mountingType: data.mountingType,
+            };
+            console.log('📤 Отправка данных:', createDto);
+            await motorApi.createMotor(createDto);
             toast.success('Двигатель успешно зарегистрирован');
             reset();
             onSuccess();
@@ -74,6 +107,7 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                     </div>
                     <form onSubmit={handleSubmit(onSubmit)} className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {/* Основные характеристики */}
                             <div>
                                 <label className="form-label">Инвентарный номер</label>
                                 <input type="number" {...register('inventoryNumber', { valueAsNumber: true })} className="form-input" placeholder="Например: 12345" />
@@ -99,16 +133,56 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                                 <input type="number" {...register('speed', { valueAsNumber: true })} className="form-input" placeholder="Например: 1500" />
                                 {errors.speed && <p className="text-danger text-xs mt-1">{errors.speed.message}</p>}
                             </div>
-                            <div>
-                                <label className="form-label">Передний подшипник</label>
-                                <input {...register('frontBearingType')} className="form-input" placeholder="Например: 6308" />
-                                {errors.frontBearingType && <p className="text-danger text-xs mt-1">{errors.frontBearingType.message}</p>}
+
+                            {/* Передний подшипник */}
+                            <div className="md:col-span-2">
+                                <div className="border-t border-gray-200 dark:border-slate-700 pt-3 mt-1 mb-2">
+                                    <span className="font-medium text-text-h">Передний подшипник</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="form-label">Тип</label>
+                                        <input {...register('frontBearingType')} className="form-input" placeholder="Например: 6308" />
+                                        {errors.frontBearingType && <p className="text-danger text-xs mt-1">{errors.frontBearingType.message}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Производитель</label>
+                                        <input {...register('frontBearingManufacturer')} className="form-input" placeholder="SKF, FAG, ..." />
+                                        {errors.frontBearingManufacturer && <p className="text-danger text-xs mt-1">{errors.frontBearingManufacturer.message}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Поставщик</label>
+                                        <input {...register('frontBearingSupplier')} className="form-input" placeholder="ООО «ТехСнаб»" />
+                                        {errors.frontBearingSupplier && <p className="text-danger text-xs mt-1">{errors.frontBearingSupplier.message}</p>}
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label className="form-label">Задний подшипник</label>
-                                <input {...register('rearBearingType')} className="form-input" placeholder="Например: 6206" />
-                                {errors.rearBearingType && <p className="text-danger text-xs mt-1">{errors.rearBearingType.message}</p>}
+
+                            {/* Задний подшипник */}
+                            <div className="md:col-span-2">
+                                <div className="border-t border-gray-200 dark:border-slate-700 pt-3 mt-1 mb-2">
+                                    <span className="font-medium text-text-h">Задний подшипник</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label className="form-label">Тип</label>
+                                        <input {...register('rearBearingType')} className="form-input" placeholder="Например: 6206" />
+                                        {errors.rearBearingType && <p className="text-danger text-xs mt-1">{errors.rearBearingType.message}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Производитель</label>
+                                        <input {...register('rearBearingManufacturer')} className="form-input" placeholder="SKF, FAG, ..." />
+                                        {errors.rearBearingManufacturer && <p className="text-danger text-xs mt-1">{errors.rearBearingManufacturer.message}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Поставщик</label>
+                                        <input {...register('rearBearingSupplier')} className="form-input" placeholder="ООО «ТехСнаб»" />
+                                        {errors.rearBearingSupplier && <p className="text-danger text-xs mt-1">{errors.rearBearingSupplier.message}</p>}
+                                    </div>
+                                </div>
                             </div>
+
+                            {/* Статус и монтаж */}
                             <div>
                                 <label className="form-label">Статус</label>
                                 <select {...register('status')} className="form-input">

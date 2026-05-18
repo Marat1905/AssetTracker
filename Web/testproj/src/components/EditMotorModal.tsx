@@ -1,3 +1,4 @@
+// components/EditMotorModal.tsx
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,8 +12,14 @@ const schema = z.object({
     shaftDiameter: z.number().positive('Диаметр вала > 0'),
     power: z.number().positive('Мощность > 0'),
     speed: z.number().positive('Обороты > 0'),
-    frontBearingType: z.string().min(1, 'Передний подшипник обязателен'),
-    rearBearingType: z.string().min(1, 'Задний подшипник обязателен'),
+    // Передний подшипник
+    frontBearingType: z.string().min(1, 'Тип переднего подшипника обязателен'),
+    frontBearingManufacturer: z.string().min(1, 'Производитель переднего подшипника обязателен'),
+    frontBearingSupplier: z.string().min(1, 'Поставщик переднего подшипника обязателен'),
+    // Задний подшипник
+    rearBearingType: z.string().min(1, 'Тип заднего подшипника обязателен'),
+    rearBearingManufacturer: z.string().min(1, 'Производитель заднего подшипника обязателен'),
+    rearBearingSupplier: z.string().min(1, 'Поставщик заднего подшипника обязателен'),
     status: z.nativeEnum(MotorStatus),
     mountingType: z.nativeEnum(MountingType),
 });
@@ -34,8 +41,12 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
             shaftDiameter: motor.shaftDiameter,
             power: motor.power,
             speed: motor.speed,
-            frontBearingType: motor.frontBearingType,
-            rearBearingType: motor.rearBearingType,
+            frontBearingType: motor.frontBearing.type,
+            frontBearingManufacturer: motor.frontBearing.manufacturer,
+            frontBearingSupplier: motor.frontBearing.supplier,
+            rearBearingType: motor.rearBearing.type,
+            rearBearingManufacturer: motor.rearBearing.manufacturer,
+            rearBearingSupplier: motor.rearBearing.supplier,
             status: motor.status,
             mountingType: motor.mountingType,
         }
@@ -43,7 +54,25 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
 
     const onSubmit = async (data: FormData) => {
         try {
-            await motorApi.updateMotor(motor.inventoryNumber, data as UpdateMotorRequest);
+            const updateDto: UpdateMotorRequest = {
+                type: data.type,
+                shaftDiameter: data.shaftDiameter,
+                power: data.power,
+                speed: data.speed,
+                status: data.status,
+                mountingType: data.mountingType,
+                frontBearing: {
+                    type: data.frontBearingType,
+                    manufacturer: data.frontBearingManufacturer,
+                    supplier: data.frontBearingSupplier,
+                },
+                rearBearing: {
+                    type: data.rearBearingType,
+                    manufacturer: data.rearBearingManufacturer,
+                    supplier: data.rearBearingSupplier,
+                },
+            };
+            await motorApi.updateMotor(motor.inventoryNumber, updateDto);
             toast.success('Данные двигателя обновлены');
             onSuccess();
             onClose();
@@ -69,57 +98,93 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                             Редактирование двигателя №{motor.inventoryNumber}
                         </h3>
                     </div>
-                    <form onSubmit={handleSubmit(onSubmit)} className="p-6">
-                        <div className="space-y-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+                        {/* Основные характеристики */}
+                        <div>
+                            <label className="form-label">Тип двигателя</label>
+                            <input {...register('type')} className="form-input" />
+                            {errors.type && <p className="text-danger text-xs mt-1">{errors.type.message}</p>}
+                        </div>
+                        <div>
+                            <label className="form-label">Диаметр вала (мм)</label>
+                            <input type="number" step="0.1" {...register('shaftDiameter', { valueAsNumber: true })} className="form-input" />
+                            {errors.shaftDiameter && <p className="text-danger text-xs mt-1">{errors.shaftDiameter.message}</p>}
+                        </div>
+                        <div>
+                            <label className="form-label">Мощность (кВт)</label>
+                            <input type="number" step="0.1" {...register('power', { valueAsNumber: true })} className="form-input" />
+                            {errors.power && <p className="text-danger text-xs mt-1">{errors.power.message}</p>}
+                        </div>
+                        <div>
+                            <label className="form-label">Обороты (об/мин)</label>
+                            <input type="number" {...register('speed', { valueAsNumber: true })} className="form-input" />
+                            {errors.speed && <p className="text-danger text-xs mt-1">{errors.speed.message}</p>}
+                        </div>
+
+                        {/* Передний подшипник */}
+                        <div className="border-t border-gray-200 dark:border-slate-700 pt-2 mt-1">
+                            <span className="font-medium text-text-h">Передний подшипник</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
                             <div>
-                                <label className="form-label">Тип двигателя</label>
-                                <input {...register('type')} className="form-input" />
-                                {errors.type && <p className="text-danger text-xs mt-1">{errors.type.message}</p>}
-                            </div>
-                            <div>
-                                <label className="form-label">Диаметр вала (мм)</label>
-                                <input type="number" step="0.1" {...register('shaftDiameter', { valueAsNumber: true })} className="form-input" />
-                                {errors.shaftDiameter && <p className="text-danger text-xs mt-1">{errors.shaftDiameter.message}</p>}
-                            </div>
-                            <div>
-                                <label className="form-label">Мощность (кВт)</label>
-                                <input type="number" step="0.1" {...register('power', { valueAsNumber: true })} className="form-input" />
-                                {errors.power && <p className="text-danger text-xs mt-1">{errors.power.message}</p>}
-                            </div>
-                            <div>
-                                <label className="form-label">Обороты (об/мин)</label>
-                                <input type="number" {...register('speed', { valueAsNumber: true })} className="form-input" />
-                                {errors.speed && <p className="text-danger text-xs mt-1">{errors.speed.message}</p>}
-                            </div>
-                            <div>
-                                <label className="form-label">Передний подшипник</label>
+                                <label className="form-label text-xs">Тип</label>
                                 <input {...register('frontBearingType')} className="form-input" />
                                 {errors.frontBearingType && <p className="text-danger text-xs mt-1">{errors.frontBearingType.message}</p>}
                             </div>
                             <div>
-                                <label className="form-label">Задний подшипник</label>
+                                <label className="form-label text-xs">Производитель</label>
+                                <input {...register('frontBearingManufacturer')} className="form-input" />
+                                {errors.frontBearingManufacturer && <p className="text-danger text-xs mt-1">{errors.frontBearingManufacturer.message}</p>}
+                            </div>
+                            <div>
+                                <label className="form-label text-xs">Поставщик</label>
+                                <input {...register('frontBearingSupplier')} className="form-input" />
+                                {errors.frontBearingSupplier && <p className="text-danger text-xs mt-1">{errors.frontBearingSupplier.message}</p>}
+                            </div>
+                        </div>
+
+                        {/* Задний подшипник */}
+                        <div className="border-t border-gray-200 dark:border-slate-700 pt-2 mt-1">
+                            <span className="font-medium text-text-h">Задний подшипник</span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div>
+                                <label className="form-label text-xs">Тип</label>
                                 <input {...register('rearBearingType')} className="form-input" />
                                 {errors.rearBearingType && <p className="text-danger text-xs mt-1">{errors.rearBearingType.message}</p>}
                             </div>
                             <div>
-                                <label className="form-label">Статус</label>
-                                <select {...register('status')} className="form-input">
-                                    {Object.entries(motorStatusLabels).map(([value, label]) => (
-                                        <option key={value} value={value}>{label}</option>
-                                    ))}
-                                </select>
+                                <label className="form-label text-xs">Производитель</label>
+                                <input {...register('rearBearingManufacturer')} className="form-input" />
+                                {errors.rearBearingManufacturer && <p className="text-danger text-xs mt-1">{errors.rearBearingManufacturer.message}</p>}
                             </div>
                             <div>
-                                <label className="form-label">Тип монтажа</label>
-                                <select {...register('mountingType')} className="form-input">
-                                    {Object.entries(mountingTypeLabels).map(([value, label]) => (
-                                        <option key={value} value={value}>{label}</option>
-                                    ))}
-                                </select>
-                                {errors.mountingType && <p className="text-danger text-xs mt-1">{errors.mountingType.message}</p>}
+                                <label className="form-label text-xs">Поставщик</label>
+                                <input {...register('rearBearingSupplier')} className="form-input" />
+                                {errors.rearBearingSupplier && <p className="text-danger text-xs mt-1">{errors.rearBearingSupplier.message}</p>}
                             </div>
                         </div>
-                        <div className="mt-8 flex justify-end gap-3">
+
+                        {/* Статус и монтаж */}
+                        <div>
+                            <label className="form-label">Статус</label>
+                            <select {...register('status')} className="form-input">
+                                {Object.entries(motorStatusLabels).map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="form-label">Тип монтажа</label>
+                            <select {...register('mountingType')} className="form-input">
+                                {Object.entries(mountingTypeLabels).map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                            {errors.mountingType && <p className="text-danger text-xs mt-1">{errors.mountingType.message}</p>}
+                        </div>
+
+                        <div className="mt-6 flex justify-end gap-3">
                             <button type="button" onClick={onClose} className="btn-secondary">
                                 Отмена
                             </button>

@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<LocationHistory> LocationHistories { get; set; }
     public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
     public DbSet<LubricantType> LubricantTypes { get; set; }
+    public DbSet<Bearing> Bearings { get; set; } // новое
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -21,13 +22,22 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ShaftDiameter).HasPrecision(10, 2);
             entity.Property(e => e.Power).HasPrecision(10, 2);
-            entity.Property(e => e.FrontBearingType).HasMaxLength(50);
-            entity.Property(e => e.RearBearingType).HasMaxLength(50);
             entity.Property(e => e.Status).HasConversion<string>();
             entity.Property(e => e.MountingType)
                 .HasConversion<string>()
                 .HasMaxLength(20)
                 .IsRequired();
+
+            // Связи с подшипниками
+            entity.HasOne(e => e.FrontBearing)
+                .WithOne(b => b.FrontMotor)
+                .HasForeignKey<Motor>(e => e.FrontBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.RearBearing)
+                .WithOne(b => b.RearMotor)
+                .HasForeignKey<Motor>(e => e.RearBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<LocationHistory>(entity =>
@@ -49,14 +59,16 @@ public class AppDbContext : DbContext
                 .HasConversion<string>()
                 .IsRequired(false);
 
-            // Новые поля для замены подшипника
-            entity.Property(e => e.OldBearingType)
-                .HasMaxLength(100)
-                .IsRequired(false);
+            // Связи с подшипниками
+            entity.HasOne(e => e.OldBearing)
+                .WithMany()
+                .HasForeignKey(e => e.OldBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            entity.Property(e => e.NewBearingType)
-                .HasMaxLength(100)
-                .IsRequired(false);
+            entity.HasOne(e => e.NewBearing)
+                .WithMany()
+                .HasForeignKey(e => e.NewBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Motor)
                   .WithMany(m => m.MaintenanceLogs)
@@ -68,7 +80,6 @@ public class AppDbContext : DbContext
                   .HasForeignKey(e => e.LubricantTypeId)
                   .OnDelete(DeleteBehavior.Restrict);
 
-            // Составной индекс для ускорения запросов последней смазки
             entity.HasIndex(m => new { m.MotorId, m.WorkType, m.BearingPosition, m.Date })
                 .HasDatabaseName("IX_MaintenanceLogs_LastLubricant");
         });
@@ -78,6 +89,14 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<Bearing>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Manufacturer).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Supplier).IsRequired().HasMaxLength(100);
         });
     }
 }

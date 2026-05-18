@@ -1,3 +1,4 @@
+// pages/MotorDetails.tsx
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
@@ -5,7 +6,7 @@ import EditMotorModal from '../components/EditMotorModal';
 import MoveMotorForm from '../components/MoveMotorForm';
 import MaintenanceForm from '../components/MaintenanceForm';
 import EditMaintenanceModal from '../components/EditMaintenanceModal';
-import EditLocationModal from '../components/EditLocationModal'; // новый импорт
+import EditLocationModal from '../components/EditLocationModal';
 import { motorApi } from '../services/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
@@ -123,13 +124,12 @@ export default function MotorDetails() {
         }
     };
 
-    // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ---
+    // Обработчики для истории перемещений
     const handleEditLocation = (location: LocationHistoryDto) => {
         setEditingLocation(location);
     };
 
     const handleDeleteLocation = async (location: LocationHistoryDto) => {
-        // Проверка: если это единственная запись, предупредим (бекенд тоже вернёт ошибку)
         if (locationHistory.length === 1) {
             toast.error('Нельзя удалить единственную запись – двигатель должен иметь текущее местоположение');
             return;
@@ -138,7 +138,6 @@ export default function MotorDetails() {
         try {
             await motorApi.deleteLocationHistory(motorId, location.id);
             toast.success('Запись перемещения удалена');
-            // После удаления обновляем историю перемещений и данные двигателя (чтобы отобразить актуальное текущее местоположение)
             await loadLocationHistory();
             await loadMotorData();
         } catch (err: any) {
@@ -146,7 +145,6 @@ export default function MotorDetails() {
             toast.error(errorMsg);
         }
     };
-    // --- КОНЕЦ НОВЫХ ОБРАБОТЧИКОВ ---
 
     if (isNaN(motorId) || motorId <= 0) {
         return (
@@ -254,7 +252,6 @@ export default function MotorDetails() {
                                                                 </p>
                                                             </div>
                                                             <div className="flex items-center gap-2 ml-4">
-                                                                {/* Кнопка редактирования */}
                                                                 <button
                                                                     onClick={() => handleEditLocation(loc)}
                                                                     className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
@@ -262,7 +259,6 @@ export default function MotorDetails() {
                                                                 >
                                                                     <Edit size={16} />
                                                                 </button>
-                                                                {/* Кнопка удаления */}
                                                                 <button
                                                                     onClick={() => handleDeleteLocation(loc)}
                                                                     className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
@@ -346,7 +342,7 @@ export default function MotorDetails() {
                                                             )}
                                                         </div>
                                                     )}
-                                                    {/* Замена подшипника */}
+                                                    {/* Замена подшипника – с отображением производителя и поставщика */}
                                                     {log.workType === 'BearingReplacement' && (
                                                         <div className="mt-3">
                                                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
@@ -356,39 +352,50 @@ export default function MotorDetails() {
                                                                     {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-                                                                {log.oldBearingType && log.newBearingType && log.oldBearingType === log.newBearingType ? (
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span className="font-medium text-gray-500 dark:text-gray-400">Тип подшипника:</span>
-                                                                        <span className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                            <div className="flex flex-col gap-2 text-sm">
+                                                                {/* Старый подшипник */}
+                                                                {log.oldBearingType && (
+                                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                                        <span className="font-medium text-gray-500 dark:text-gray-400">Старый подшипник:</span>
+                                                                        <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                                            {log.oldBearingType}
+                                                                        </span>
+                                                                        {log.oldBearingManufacturer && (
+                                                                            <span className="text-xs text-gray-500">(произв.: {log.oldBearingManufacturer})</span>
+                                                                        )}
+                                                                        {log.oldBearingSupplier && (
+                                                                            <span className="text-xs text-gray-500">поставщик: {log.oldBearingSupplier}</span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                                {/* Новый подшипник */}
+                                                                {log.newBearingType && (
+                                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                                        <span className="font-medium text-green-600 dark:text-green-400">
+                                                                            {log.oldBearingType ? 'Новый подшипник:' : 'Установлен подшипник:'}
+                                                                        </span>
+                                                                        <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
                                                                             {log.newBearingType}
                                                                         </span>
-                                                                        <span className="text-xs text-gray-400 ml-1">(не изменялся)</span>
+                                                                        {log.newBearingManufacturer && (
+                                                                            <span className="text-xs text-green-600">(произв.: {log.newBearingManufacturer})</span>
+                                                                        )}
+                                                                        {log.newBearingSupplier && (
+                                                                            <span className="text-xs text-green-600">поставщик: {log.newBearingSupplier}</span>
+                                                                        )}
                                                                     </div>
-                                                                ) : (
-                                                                    <>
-                                                                        {log.oldBearingType && (
-                                                                            <div className="flex items-center gap-1.5">
-                                                                                <span className="font-medium text-gray-500 dark:text-gray-400">Старый:</span>
-                                                                                <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                                                                    {log.oldBearingType}
-                                                                                </span>
-                                                                            </div>
+                                                                )}
+                                                                {/* Если типы не изменились, но изменились производитель/поставщик */}
+                                                                {log.oldBearingType === log.newBearingType && log.oldBearingType && (
+                                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                                                                        <span>Тип подшипника не изменился, но обновлены данные:</span>
+                                                                        {log.oldBearingManufacturer !== log.newBearingManufacturer && (
+                                                                            <span>производитель: {log.newBearingManufacturer}</span>
                                                                         )}
-                                                                        {log.oldBearingType && log.newBearingType && (
-                                                                            <ArrowRight size={16} className="text-accent flex-shrink-0" />
+                                                                        {log.oldBearingSupplier !== log.newBearingSupplier && (
+                                                                            <span>поставщик: {log.newBearingSupplier}</span>
                                                                         )}
-                                                                        {log.newBearingType && (
-                                                                            <div className="flex items-center gap-1.5">
-                                                                                <span className="font-medium text-green-600 dark:text-green-400">
-                                                                                    {log.oldBearingType ? 'Новый:' : 'Установлен:'}
-                                                                                </span>
-                                                                                <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
-                                                                                    {log.newBearingType}
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                    </>
+                                                                    </div>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -506,7 +513,7 @@ export default function MotorDetails() {
                     onClose={() => setEditingLocation(null)}
                     onSuccess={() => {
                         loadLocationHistory();
-                        loadMotorData(); // обновляем паспортные данные (если изменилось текущее расположение)
+                        loadMotorData();
                         setEditingLocation(null);
                     }}
                 />
