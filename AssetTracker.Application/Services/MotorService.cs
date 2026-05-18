@@ -601,6 +601,16 @@ public class MotorService : IMotorService
         if (locationHistory == null || locationHistory.MotorId != motorId)
             throw new KeyNotFoundException($"Запись истории перемещений с id {locationHistoryId} не найдена для двигателя {motorId}");
 
+        // Проверка: можно редактировать только последнюю запись (самую новую по StartDate)
+        var lastRecord = await _unitOfWork.LocationHistories.GetQueryable()
+            .Where(l => l.MotorId == motorId)
+            .OrderByDescending(l => l.StartDate)
+            .FirstOrDefaultAsync();
+
+        if (lastRecord == null || lastRecord.Id != locationHistoryId)
+            throw new InvalidOperationException("Редактирование разрешено только для последней записи истории перемещений. " +
+                                                "Чтобы изменить более раннюю запись, удалите последующие записи.");
+
         locationHistory.Location = dto.Location;
         _unitOfWork.LocationHistories.Update(locationHistory);
         await _unitOfWork.SaveChangesAsync();

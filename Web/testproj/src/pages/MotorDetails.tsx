@@ -1,3 +1,9 @@
+/**
+ * Страница детальной информации о двигателе.
+ * Отображает паспортные данные, историю перемещений и журнал обслуживания.
+ * Поддерживает добавление/редактирование/удаление записей.
+ * Для замены подшипника и истории перемещений разрешает редактирование/удаление только последней записи.
+ */
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
@@ -11,12 +17,15 @@ import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from 
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';
-import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2 } from 'lucide-react';
+import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2, Info } from 'lucide-react';
 
 export default function MotorDetails() {
+    // Получаем идентификатор двигателя из URL
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const motorId = parseInt(id || '0', 10);
+
+    // Состояния данных
     const [motorData, setMotorData] = useState<MotorFullHistoryDto | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'location' | 'maintenance'>('location');
@@ -45,7 +54,9 @@ export default function MotorDetails() {
     const [maintenanceTotalCount, setMaintenanceTotalCount] = useState(0);
     const [maintenancePageSize, setMaintenancePageSize] = useState(5);
 
-    // Загрузка паспортных данных
+    /**
+     * Загружает паспортные данные двигателя и полную историю (используется для отображения последней смазки и т.д.)
+     */
     const loadMotorData = async () => {
         if (isNaN(motorId) || motorId <= 0) return;
         try {
@@ -56,7 +67,9 @@ export default function MotorDetails() {
         }
     };
 
-    // Загрузка пагинированной истории перемещений
+    /**
+     * Загружает пагинированную историю перемещений для вкладки "История перемещений"
+     */
     const loadLocationHistory = async () => {
         try {
             const data = await motorApi.getLocationHistoryPaged(motorId, locationPage, locationPageSize);
@@ -68,7 +81,9 @@ export default function MotorDetails() {
         }
     };
 
-    // Загрузка пагинированного журнала обслуживания
+    /**
+     * Загружает пагинированный журнал обслуживания для вкладки "Журнал обслуживания"
+     */
     const loadMaintenanceLogs = async () => {
         try {
             const data = await motorApi.getMaintenanceLogsPaged(motorId, maintenancePage, maintenancePageSize);
@@ -80,6 +95,7 @@ export default function MotorDetails() {
         }
     };
 
+    // Загружаем все данные при изменении параметров пагинации или ID двигателя
     useEffect(() => {
         if (!isNaN(motorId) && motorId > 0) {
             loadMotorData();
@@ -88,6 +104,9 @@ export default function MotorDetails() {
         }
     }, [motorId, locationPage, locationPageSize, maintenancePage, maintenancePageSize]);
 
+    /**
+     * Удаление двигателя (безвозвратно)
+     */
     const handleDelete = async () => {
         if (!confirm('Удалить двигатель без возможности восстановления?')) return;
         try {
@@ -99,55 +118,125 @@ export default function MotorDetails() {
         }
     };
 
+    /**
+     * Обновляет все данные после изменений (перемещение, обслуживание, редактирование)
+     */
     const refreshAll = () => {
         loadMotorData();
         loadLocationHistory();
         loadMaintenanceLogs();
     };
 
-    // Обработчик открытия модалки редактирования записи обслуживания
-    const handleEditLog = (log: MaintenanceLogDto) => {
-        setEditingLog(log);
+    /**
+     * Проверяет, является ли запись истории перемещений последней (самой новой).
+     * Последней считается запись с максимальной датой StartDate.
+     * @param location - запись истории перемещений
+     * @returns true, если запись последняя
+     */
+    const isLastLocationRecord = (location: LocationHistoryDto): boolean => {
+        if (locationHistory.length === 0) return false;
+        // Находим запись с максимальной датой начала
+        const lastRecord = locationHistory.reduce((prev, current) =>
+            new Date(current.startDate) > new Date(prev.startDate) ? current : prev
+        );
+        return lastRecord.id === location.id;
     };
 
-    // Обработчик удаления записи обслуживания
-    const handleDeleteLog = async (log: MaintenanceLogDto) => {
-        if (!confirm('Удалить запись обслуживания?')) return;
-        try {
-            await motorApi.deleteMaintenanceLog(motorId, log.id);
-            toast.success('Запись удалена');
-            loadMaintenanceLogs();   // обновить текущую страницу
-            loadMotorData();         // обновить данные двигателя (последние смазки)
-        } catch (err: any) {
-            toast.error(err.response?.data?.error || 'Ошибка удаления');
-        }
-    };
-
-    // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ---
+    /**
+     * Открывает модальное окно редактирования записи истории перемещений.
+     * Редактировать можно только последнюю запись (активную или последнюю закрытую).
+     * @param location - запись истории перемещений
+     */
     const handleEditLocation = (location: LocationHistoryDto) => {
+        if (!isLastLocationRecord(location)) {
+            toast.error('Редактирование разрешено только для последней записи истории перемещений.');
+            return;
+        }
         setEditingLocation(location);
     };
 
+    /**
+     * Удаляет запись истории перемещений с проверкой целостности временной линии.
+     * Удалять можно только последнюю запись (активную или последнюю закрытую).
+     * Нельзя удалить единственную запись.
+     * При удалении активной записи предыдущая становится активной (бекенд обрабатывает это).
+     * @param location - запись истории перемещений
+     */
     const handleDeleteLocation = async (location: LocationHistoryDto) => {
-        // Проверка: если это единственная запись, предупредим (бекенд тоже вернёт ошибку)
         if (locationHistory.length === 1) {
             toast.error('Нельзя удалить единственную запись – двигатель должен иметь текущее местоположение');
+            return;
+        }
+        if (!isLastLocationRecord(location)) {
+            toast.error('Удаление разрешено только для последней записи истории перемещений.');
             return;
         }
         if (!confirm('Удалить запись о перемещении? Это может изменить текущее местоположение двигателя.')) return;
         try {
             await motorApi.deleteLocationHistory(motorId, location.id);
             toast.success('Запись перемещения удалена');
-            // После удаления обновляем историю перемещений и данные двигателя (чтобы отобразить актуальное текущее местоположение)
             await loadLocationHistory();
-            await loadMotorData();
+            await loadMotorData(); // Обновляем данные, так как текущее местоположение могло измениться
         } catch (err: any) {
             const errorMsg = err.response?.data?.error || 'Ошибка удаления';
             toast.error(errorMsg);
         }
     };
-    // --- КОНЕЦ НОВЫХ ОБРАБОТЧИКОВ ---
 
+    /**
+     * Проверяет, можно ли редактировать или удалять запись замены подшипника.
+     * Правило: разрешено только для последней (самой новой) записи замены для данной позиции (передний/задний).
+     * @param log - запись обслуживания
+     * @returns true, если запись можно редактировать/удалять
+     */
+    const canEditOrDeleteBearingLog = (log: MaintenanceLogDto): boolean => {
+        // Если это не замена подшипника, всегда можно
+        if (log.workType !== 'BearingReplacement') return true;
+
+        // Находим все записи замены подшипника для той же позиции и сортируем по дате (сначала новые)
+        const samePositionLogs = maintenanceLogs
+            .filter(l => l.workType === 'BearingReplacement' && l.bearingPosition === log.bearingPosition)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        if (samePositionLogs.length === 0) return true;
+        // Последняя запись — это первая в отсортированном списке
+        const isLast = samePositionLogs[0].id === log.id;
+        return isLast;
+    };
+
+    /**
+     * Открывает модальное окно редактирования записи обслуживания.
+     * Для замены подшипника предварительно проверяет, что запись последняя.
+     */
+    const handleEditLog = (log: MaintenanceLogDto) => {
+        if (log.workType === 'BearingReplacement' && !canEditOrDeleteBearingLog(log)) {
+            toast.error('Редактирование разрешено только для последней записи замены подшипника. Удалите более поздние записи, чтобы изменить эту.');
+            return;
+        }
+        setEditingLog(log);
+    };
+
+    /**
+     * Удаляет запись обслуживания.
+     * Для замены подшипника проверяет, что запись последняя, иначе отклоняет.
+     */
+    const handleDeleteLog = async (log: MaintenanceLogDto) => {
+        if (log.workType === 'BearingReplacement' && !canEditOrDeleteBearingLog(log)) {
+            toast.error('Удаление разрешено только для последней записи замены подшипника. Сначала удалите более поздние записи.');
+            return;
+        }
+        if (!confirm('Удалить запись обслуживания?')) return;
+        try {
+            await motorApi.deleteMaintenanceLog(motorId, log.id);
+            toast.success('Запись удалена');
+            loadMaintenanceLogs();
+            loadMotorData(); // Обновляем данные, так как мог измениться текущий подшипник (при откате)
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || 'Ошибка удаления');
+        }
+    };
+
+    // Обработка некорректного ID
     if (isNaN(motorId) || motorId <= 0) {
         return (
             <div className="card p-8 text-center">
@@ -163,6 +252,7 @@ export default function MotorDetails() {
 
     return (
         <div className="animate-fade-in">
+            {/* Верхняя панель: кнопки назад, редактировать, удалить */}
             <div className="flex justify-between items-center mb-6">
                 <Link to="/" className="inline-flex items-center text-accent hover:text-accent-dark transition-colors group">
                     <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -192,20 +282,18 @@ export default function MotorDetails() {
                 </div>
             </div>
 
-            {/* Блок паспортных данных */}
-            {motorData && (
-                <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
-            )}
+            {/* Блок паспортных данных и схемы */}
+            {motorData && <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />}
 
-            {/* Вкладки: История перемещений / Журнал обслуживания */}
+            {/* Вкладки: история перемещений и журнал обслуживания */}
             <div className="mt-6">
                 <div className="border-b border-gray-200 dark:border-gray-700">
                     <nav className="flex gap-6">
                         <button
                             onClick={() => setActiveTab('location')}
                             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'location'
-                                ? 'border-b-2 border-accent text-accent'
-                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                    ? 'border-b-2 border-accent text-accent'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                 }`}
                         >
                             <Map size={18} />
@@ -214,8 +302,8 @@ export default function MotorDetails() {
                         <button
                             onClick={() => setActiveTab('maintenance')}
                             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'maintenance'
-                                ? 'border-b-2 border-accent text-accent'
-                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                    ? 'border-b-2 border-accent text-accent'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                 }`}
                         >
                             <ClipboardList size={18} />
@@ -225,9 +313,15 @@ export default function MotorDetails() {
                 </div>
 
                 <div className="mt-6">
+                    {/* Вкладка "История перемещений" */}
                     {activeTab === 'location' && (
                         <div className="space-y-6">
-                            <div className="flex justify-end">
+                            <div className="flex justify-between items-center flex-wrap gap-2">
+                                {/* Подсказка о правиле редактирования истории перемещений */}
+                                <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded-full">
+                                    <Info size={14} />
+                                    <span>Только последнюю запись истории перемещений можно редактировать/удалять</span>
+                                </div>
                                 <button
                                     onClick={() => setIsMoveModalOpen(true)}
                                     className="btn-primary inline-flex items-center gap-2"
@@ -242,39 +336,48 @@ export default function MotorDetails() {
                                         <p className="text-gray-500 text-center py-4">Нет записей о перемещениях</p>
                                     ) : (
                                         <div className="space-y-4">
-                                            {locationHistory.map((loc) => (
-                                                <div key={loc.id} className="relative pl-6 pb-4 last:pb-0 border-l-2 border-accent/30">
-                                                    <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-accent shadow-md"></div>
-                                                    <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="flex-1">
-                                                                <p className="font-semibold text-text-h">{loc.location}</p>
-                                                                <p className="text-sm text-gray-500 mt-1">
-                                                                    {new Date(loc.startDate).toLocaleString('ru-RU')} – {loc.endDate ? new Date(loc.endDate).toLocaleString('ru-RU') : 'настоящее время'}
-                                                                </p>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 ml-4">
-                                                                {/* Кнопка редактирования */}
-                                                                <button
-                                                                    onClick={() => handleEditLocation(loc)}
-                                                                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                                                                    title="Редактировать местоположение"
-                                                                >
-                                                                    <Edit size={16} />
-                                                                </button>
-                                                                {/* Кнопка удаления */}
-                                                                <button
-                                                                    onClick={() => handleDeleteLocation(loc)}
-                                                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                                                                    title="Удалить запись"
-                                                                >
-                                                                    <Trash2 size={16} />
-                                                                </button>
+                                            {locationHistory.map((loc) => {
+                                                const isLast = isLastLocationRecord(loc);
+                                                return (
+                                                    <div key={loc.id} className="relative pl-6 pb-4 last:pb-0 border-l-2 border-accent/30">
+                                                        <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-accent shadow-md"></div>
+                                                        <div className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4">
+                                                            <div className="flex justify-between items-start">
+                                                                <div className="flex-1">
+                                                                    <p className="font-semibold text-text-h">{loc.location}</p>
+                                                                    <p className="text-sm text-gray-500 mt-1">
+                                                                        {new Date(loc.startDate).toLocaleString('ru-RU')} – {loc.endDate ? new Date(loc.endDate).toLocaleString('ru-RU') : 'настоящее время'}
+                                                                    </p>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 ml-4">
+                                                                    <button
+                                                                        onClick={() => handleEditLocation(loc)}
+                                                                        disabled={!isLast}
+                                                                        className={`transition-colors ${!isLast
+                                                                                ? 'text-gray-400 cursor-not-allowed'
+                                                                                : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
+                                                                            }`}
+                                                                        title={!isLast ? 'Редактирование разрешено только для последней записи' : 'Редактировать местоположение'}
+                                                                    >
+                                                                        <Edit size={16} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteLocation(loc)}
+                                                                        disabled={!isLast}
+                                                                        className={`transition-colors ${!isLast
+                                                                                ? 'text-gray-400 cursor-not-allowed'
+                                                                                : 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
+                                                                            }`}
+                                                                        title={!isLast ? 'Удаление разрешено только для последней записи' : 'Удалить запись'}
+                                                                    >
+                                                                        <Trash2 size={16} />
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                     <Pagination
@@ -293,15 +396,17 @@ export default function MotorDetails() {
                         </div>
                     )}
 
+                    {/* Вкладка "Журнал обслуживания" */}
                     {activeTab === 'maintenance' && (
                         <div className="space-y-6">
-                            <div className="flex justify-end">
-                                <button
-                                    onClick={() => setIsMaintenanceModalOpen(true)}
-                                    className="btn-primary inline-flex items-center gap-2"
-                                >
-                                    <PlusCircle size={18} />
-                                    Добавить запись обслуживания
+                            <div className="flex justify-between items-center flex-wrap gap-2">
+                                {/* Подсказка о правиле редактирования замен подшипников */}
+                                <div className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded-full">
+                                    <Info size={14} />
+                                    <span>Только последнюю запись замены подшипника можно редактировать/удалять</span>
+                                </div>
+                                <button onClick={() => setIsMaintenanceModalOpen(true)} className="btn-primary inline-flex items-center gap-2">
+                                    <PlusCircle size={18} /> Добавить запись обслуживания
                                 </button>
                             </div>
                             <div className="card">
@@ -310,94 +415,104 @@ export default function MotorDetails() {
                                         <p className="text-gray-500 text-center py-4">Нет записей об обслуживании</p>
                                     ) : (
                                         <div className="space-y-3">
-                                            {maintenanceLogs.map(log => (
-                                                <div key={log.id} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 hover:shadow-md transition-shadow">
-                                                    <div className="flex justify-between items-start flex-wrap gap-2">
-                                                        <span className="font-semibold text-text-h px-2 py-1 bg-accent/10 rounded-lg text-sm">
-                                                            {maintenanceTypeLabels[log.workType] || log.workType}
-                                                        </span>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
-                                                            <button
-                                                                onClick={() => handleEditLog(log)}
-                                                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                                                                title="Редактировать запись"
-                                                            >
-                                                                <Edit size={16} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteLog(log)}
-                                                                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
-                                                                title="Удалить запись"
-                                                            >
-                                                                <Trash2 size={16} />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    {/* Смазка */}
-                                                    {log.workType === 'Lubrication' && (
-                                                        <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                                                            <span className="font-medium">Позиция подшипника:</span> {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
-                                                            {log.lubricantTypeName && (
-                                                                <>
-                                                                    {' '}&nbsp;|&nbsp;
-                                                                    <span className="font-medium">Смазка:</span> {log.lubricantTypeName}
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                    {/* Замена подшипника – отображаем старый и новый подшипники с деталями */}
-                                                    {log.workType === 'BearingReplacement' && (
-                                                        <div className="mt-3">
-                                                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                                                <span className="font-medium">Позиция:</span>
-                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700">
-                                                                    <span>⚙️</span>
-                                                                    {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
-                                                                </span>
+                                            {maintenanceLogs.map(log => {
+                                                const isEditable = canEditOrDeleteBearingLog(log);
+                                                return (
+                                                    <div key={log.id} className="bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 hover:shadow-md transition-shadow">
+                                                        <div className="flex justify-between items-start flex-wrap gap-2">
+                                                            <span className="font-semibold text-text-h px-2 py-1 bg-accent/10 rounded-lg text-sm">
+                                                                {maintenanceTypeLabels[log.workType] || log.workType}
+                                                            </span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-xs text-gray-500">{new Date(log.date).toLocaleString('ru-RU')}</span>
+                                                                <button
+                                                                    onClick={() => handleEditLog(log)}
+                                                                    disabled={log.workType === 'BearingReplacement' && !isEditable}
+                                                                    className={`transition-colors ${log.workType === 'BearingReplacement' && !isEditable
+                                                                            ? 'text-gray-400 cursor-not-allowed'
+                                                                            : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
+                                                                        }`}
+                                                                    title={log.workType === 'BearingReplacement' && !isEditable ? 'Редактирование только для последней записи' : 'Редактировать запись'}
+                                                                >
+                                                                    <Edit size={16} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDeleteLog(log)}
+                                                                    disabled={log.workType === 'BearingReplacement' && !isEditable}
+                                                                    className={`transition-colors ${log.workType === 'BearingReplacement' && !isEditable
+                                                                            ? 'text-gray-400 cursor-not-allowed'
+                                                                            : 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
+                                                                        }`}
+                                                                    title={log.workType === 'BearingReplacement' && !isEditable ? 'Удаление только для последней записи' : 'Удалить запись'}
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
                                                             </div>
-                                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-                                                                {log.oldBearing && log.newBearing && log.oldBearing.type === log.newBearing.type && log.oldBearing.manufacturer === log.newBearing.manufacturer && log.oldBearing.supplier === log.newBearing.supplier ? (
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span className="font-medium text-gray-500 dark:text-gray-400">Подшипник:</span>
-                                                                        <span className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                                                            {log.newBearing.type} ({log.newBearing.manufacturer}, {log.newBearing.supplier})
-                                                                        </span>
-                                                                        <span className="text-xs text-gray-400 ml-1">(не изменялся)</span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        {log.oldBearing && (
-                                                                            <div className="flex flex-col gap-0.5">
-                                                                                <span className="font-medium text-gray-500 dark:text-gray-400">Старый:</span>
-                                                                                <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                                                                    {log.oldBearing.type} ({log.oldBearing.manufacturer}, {log.oldBearing.supplier})
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
-                                                                        {log.oldBearing && log.newBearing && <ArrowRight size={16} className="text-accent flex-shrink-0" />}
-                                                                        {log.newBearing && (
-                                                                            <div className="flex flex-col gap-0.5">
-                                                                                <span className="font-medium text-green-600 dark:text-green-400">
-                                                                                    {log.oldBearing ? 'Новый:' : 'Установлен:'}
-                                                                                </span>
-                                                                                <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
-                                                                                    {log.newBearing.type} ({log.newBearing.manufacturer}, {log.newBearing.supplier})
-                                                                                </span>
-                                                                            </div>
-                                                                        )}
+                                                        </div>
+                                                        {/* Отображение для смазки */}
+                                                        {log.workType === 'Lubrication' && (
+                                                            <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                                                                <span className="font-medium">Позиция подшипника:</span> {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
+                                                                {log.lubricantTypeName && (
+                                                                    <> &nbsp;|&nbsp;
+                                                                        <span className="font-medium">Смазка:</span> {log.lubricantTypeName}
                                                                     </>
                                                                 )}
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                    {log.comment && (
-                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 pt-1 border-t border-gray-100 dark:border-slate-700">
-                                                            {log.comment}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                        )}
+                                                        {/* Отображение для замены подшипника */}
+                                                        {log.workType === 'BearingReplacement' && (
+                                                            <div className="mt-3">
+                                                                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                                                    <span className="font-medium">Позиция:</span>
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700">
+                                                                        <span>⚙️</span>
+                                                                        {bearingPositionLabels[log.bearingPosition || ''] || (log.bearingPosition === 'Front' ? 'Передний' : log.bearingPosition === 'Rear' ? 'Задний' : log.bearingPosition || '—')}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+                                                                    {log.oldBearing && log.newBearing && log.oldBearing.type === log.newBearing.type && log.oldBearing.manufacturer === log.newBearing.manufacturer && log.oldBearing.supplier === log.newBearing.supplier ? (
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-medium text-gray-500 dark:text-gray-400">Подшипник:</span>
+                                                                            <span className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                                                {log.newBearing.type} ({log.newBearing.manufacturer}, {log.newBearing.supplier})
+                                                                            </span>
+                                                                            <span className="text-xs text-gray-400 ml-1">(не изменялся)</span>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            {log.oldBearing && (
+                                                                                <div className="flex flex-col gap-0.5">
+                                                                                    <span className="font-medium text-gray-500 dark:text-gray-400">Старый:</span>
+                                                                                    <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                                                                                        {log.oldBearing.type} ({log.oldBearing.manufacturer}, {log.oldBearing.supplier})
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                            {log.oldBearing && log.newBearing && <ArrowRight size={16} className="text-accent flex-shrink-0" />}
+                                                                            {log.newBearing && (
+                                                                                <div className="flex flex-col gap-0.5">
+                                                                                    <span className="font-medium text-green-600 dark:text-green-400">
+                                                                                        {log.oldBearing ? 'Новый:' : 'Установлен:'}
+                                                                                    </span>
+                                                                                    <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
+                                                                                        {log.newBearing.type} ({log.newBearing.manufacturer}, {log.newBearing.supplier})
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {log.comment && (
+                                                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 pt-1 border-t border-gray-100 dark:border-slate-700">
+                                                                {log.comment}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                     <Pagination
@@ -504,7 +619,7 @@ export default function MotorDetails() {
                     onClose={() => setEditingLocation(null)}
                     onSuccess={() => {
                         loadLocationHistory();
-                        loadMotorData(); // обновляем паспортные данные (если изменилось текущее расположение)
+                        loadMotorData();
                         setEditingLocation(null);
                     }}
                 />
