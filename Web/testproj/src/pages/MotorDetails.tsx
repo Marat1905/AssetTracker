@@ -1,8 +1,10 @@
+// pages/MotorDetails.tsx
 /**
  * Страница детальной информации о двигателе.
  * Отображает паспортные данные, историю перемещений и журнал обслуживания.
  * Поддерживает добавление/редактирование/удаление записей.
  * Для замены подшипника и истории перемещений разрешает редактирование/удаление только последней записи.
+ * Реализована фильтрация журнала обслуживания по типу работ и периоду.
  */
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -13,11 +15,11 @@ import MaintenanceForm from '../components/MaintenanceForm';
 import EditMaintenanceModal from '../components/EditMaintenanceModal';
 import EditLocationModal from '../components/EditLocationModal';
 import { motorApi } from '../services/api';
-import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
+import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto, MaintenanceType } from '../types';
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';
-import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2, Info } from 'lucide-react';
+import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2, Info, Filter, X } from 'lucide-react';
 
 export default function MotorDetails() {
     // Получаем идентификатор двигателя из URL
@@ -47,12 +49,16 @@ export default function MotorDetails() {
     const [locationTotalCount, setLocationTotalCount] = useState(0);
     const [locationPageSize, setLocationPageSize] = useState(5);
 
-    // Пагинация журнала обслуживания
+    // Пагинация и фильтрация журнала обслуживания
     const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLogDto[]>([]);
     const [maintenancePage, setMaintenancePage] = useState(1);
     const [maintenanceTotalPages, setMaintenanceTotalPages] = useState(1);
     const [maintenanceTotalCount, setMaintenanceTotalCount] = useState(0);
     const [maintenancePageSize, setMaintenancePageSize] = useState(5);
+    // Фильтры для журнала обслуживания
+    const [maintenanceWorkType, setMaintenanceWorkType] = useState<string>('');          // пустая строка = все типы
+    const [maintenanceFromDate, setMaintenanceFromDate] = useState<string>('');
+    const [maintenanceToDate, setMaintenanceToDate] = useState<string>('');
 
     /**
      * Загружает паспортные данные двигателя и полную историю (используется для отображения последней смазки и т.д.)
@@ -82,11 +88,18 @@ export default function MotorDetails() {
     };
 
     /**
-     * Загружает пагинированный журнал обслуживания для вкладки "Журнал обслуживания"
+     * Загружает пагинированный журнал обслуживания с учётом фильтров
      */
     const loadMaintenanceLogs = async () => {
         try {
-            const data = await motorApi.getMaintenanceLogsPaged(motorId, maintenancePage, maintenancePageSize);
+            const data = await motorApi.getMaintenanceLogsPaged(
+                motorId,
+                maintenancePage,
+                maintenancePageSize,
+                maintenanceWorkType || undefined,
+                maintenanceFromDate || undefined,
+                maintenanceToDate || undefined
+            );
             setMaintenanceLogs(data.items);
             setMaintenanceTotalPages(data.totalPages);
             setMaintenanceTotalCount(data.totalCount);
@@ -95,14 +108,32 @@ export default function MotorDetails() {
         }
     };
 
-    // Загружаем все данные при изменении параметров пагинации или ID двигателя
+    // Загружаем все данные при изменении параметров пагинации, фильтров или ID двигателя
     useEffect(() => {
         if (!isNaN(motorId) && motorId > 0) {
             loadMotorData();
             loadLocationHistory();
             loadMaintenanceLogs();
         }
-    }, [motorId, locationPage, locationPageSize, maintenancePage, maintenancePageSize]);
+    }, [motorId, locationPage, locationPageSize, maintenancePage, maintenancePageSize, maintenanceWorkType, maintenanceFromDate, maintenanceToDate]);
+
+    /**
+     * Применяет фильтры журнала обслуживания (сбрасывает на первую страницу)
+     */
+    const handleApplyMaintenanceFilters = () => {
+        setMaintenancePage(1);
+        // loadMaintenanceLogs вызовется автоматически через useEffect
+    };
+
+    /**
+     * Сбрасывает все фильтры журнала обслуживания
+     */
+    const handleResetMaintenanceFilters = () => {
+        setMaintenanceWorkType('');
+        setMaintenanceFromDate('');
+        setMaintenanceToDate('');
+        setMaintenancePage(1);
+    };
 
     /**
      * Удаление двигателя (безвозвратно)
@@ -250,6 +281,12 @@ export default function MotorDetails() {
         );
     }
 
+    // Массив типов работ для выпадающего списка фильтра
+    const workTypeOptions = [
+        { value: '', label: 'Все типы' },
+        ...Object.entries(maintenanceTypeLabels).map(([value, label]) => ({ value, label }))
+    ];
+
     return (
         <div className="animate-fade-in">
             {/* Верхняя панель: кнопки назад, редактировать, удалить */}
@@ -292,8 +329,8 @@ export default function MotorDetails() {
                         <button
                             onClick={() => setActiveTab('location')}
                             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'location'
-                                    ? 'border-b-2 border-accent text-accent'
-                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                ? 'border-b-2 border-accent text-accent'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                 }`}
                         >
                             <Map size={18} />
@@ -302,8 +339,8 @@ export default function MotorDetails() {
                         <button
                             onClick={() => setActiveTab('maintenance')}
                             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'maintenance'
-                                    ? 'border-b-2 border-accent text-accent'
-                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                ? 'border-b-2 border-accent text-accent'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                 }`}
                         >
                             <ClipboardList size={18} />
@@ -354,8 +391,8 @@ export default function MotorDetails() {
                                                                         onClick={() => handleEditLocation(loc)}
                                                                         disabled={!isLast}
                                                                         className={`transition-colors ${!isLast
-                                                                                ? 'text-gray-400 cursor-not-allowed'
-                                                                                : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
+                                                                            ? 'text-gray-400 cursor-not-allowed'
+                                                                            : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
                                                                             }`}
                                                                         title={!isLast ? 'Редактирование разрешено только для последней записи' : 'Редактировать местоположение'}
                                                                     >
@@ -365,8 +402,8 @@ export default function MotorDetails() {
                                                                         onClick={() => handleDeleteLocation(loc)}
                                                                         disabled={!isLast}
                                                                         className={`transition-colors ${!isLast
-                                                                                ? 'text-gray-400 cursor-not-allowed'
-                                                                                : 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
+                                                                            ? 'text-gray-400 cursor-not-allowed'
+                                                                            : 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
                                                                             }`}
                                                                         title={!isLast ? 'Удаление разрешено только для последней записи' : 'Удалить запись'}
                                                                     >
@@ -409,6 +446,53 @@ export default function MotorDetails() {
                                     <PlusCircle size={18} /> Добавить запись обслуживания
                                 </button>
                             </div>
+
+                            {/* Блок фильтрации */}
+                            <div className="card p-4 bg-gray-50 dark:bg-slate-800/30">
+                                <div className="flex flex-wrap items-end gap-4">
+                                    <div className="flex-1 min-w-[160px]">
+                                        <label className="form-label text-xs">Тип работ</label>
+                                        <select
+                                            value={maintenanceWorkType}
+                                            onChange={(e) => setMaintenanceWorkType(e.target.value)}
+                                            className="form-input py-1.5"
+                                        >
+                                            {workTypeOptions.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="flex-1 min-w-[160px]">
+                                        <label className="form-label text-xs">Дата с</label>
+                                        <input
+                                            type="date"
+                                            value={maintenanceFromDate}
+                                            onChange={(e) => setMaintenanceFromDate(e.target.value)}
+                                            className="form-input py-1.5"
+                                        />
+                                    </div>
+                                    <div className="flex-1 min-w-[160px]">
+                                        <label className="form-label text-xs">Дата по</label>
+                                        <input
+                                            type="date"
+                                            value={maintenanceToDate}
+                                            onChange={(e) => setMaintenanceToDate(e.target.value)}
+                                            className="form-input py-1.5"
+                                        />
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={handleApplyMaintenanceFilters} className="btn-primary py-1.5 px-4 inline-flex items-center gap-1">
+                                            <Filter size={16} />
+                                            Применить
+                                        </button>
+                                        <button onClick={handleResetMaintenanceFilters} className="btn-secondary py-1.5 px-4 inline-flex items-center gap-1">
+                                            <X size={16} />
+                                            Сброс
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="card">
                                 <div className="p-6">
                                     {maintenanceLogs.length === 0 ? (
@@ -429,8 +513,8 @@ export default function MotorDetails() {
                                                                     onClick={() => handleEditLog(log)}
                                                                     disabled={log.workType === 'BearingReplacement' && !isEditable}
                                                                     className={`transition-colors ${log.workType === 'BearingReplacement' && !isEditable
-                                                                            ? 'text-gray-400 cursor-not-allowed'
-                                                                            : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
+                                                                        ? 'text-gray-400 cursor-not-allowed'
+                                                                        : 'text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
                                                                         }`}
                                                                     title={log.workType === 'BearingReplacement' && !isEditable ? 'Редактирование только для последней записи' : 'Редактировать запись'}
                                                                 >
@@ -440,8 +524,8 @@ export default function MotorDetails() {
                                                                     onClick={() => handleDeleteLog(log)}
                                                                     disabled={log.workType === 'BearingReplacement' && !isEditable}
                                                                     className={`transition-colors ${log.workType === 'BearingReplacement' && !isEditable
-                                                                            ? 'text-gray-400 cursor-not-allowed'
-                                                                            : 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
+                                                                        ? 'text-gray-400 cursor-not-allowed'
+                                                                        : 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300'
                                                                         }`}
                                                                     title={log.workType === 'BearingReplacement' && !isEditable ? 'Удаление только для последней записи' : 'Удалить запись'}
                                                                 >

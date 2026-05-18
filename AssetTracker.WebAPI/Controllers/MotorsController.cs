@@ -121,20 +121,36 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение пагинированного журнала обслуживания двигателя (для UI)
+    /// Получение пагинированного журнала обслуживания двигателя с возможностью фильтрации по типу работ и периоду времени (для UI)
     /// </summary>
     [HttpGet("{id}/maintenance-logs/paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<MaintenanceLogDto>>> GetMaintenanceLogsPaged(
         int id,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        [FromQuery] MaintenanceType? workType = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
-        var result = await _motorService.GetMotorMaintenanceLogsPagedAsync(id, page, pageSize);
-        return Ok(result);
+
+        try
+        {
+            var result = await _motorService.GetMotorMaintenanceLogsPagedAsync(id, page, pageSize, workType, fromDate, toDate);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     /// <summary>

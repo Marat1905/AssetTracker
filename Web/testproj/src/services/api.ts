@@ -56,7 +56,7 @@ export const motorApi = {
         await api.patch(`/motors/${id}/move`, data);
     },
 
-    // Добавить обслуживание (с учётом смазки)
+    // Добавить обслуживание
     addMaintenance: async (id: number, data: MaintenanceDto): Promise<void> => {
         await api.post(`/motors/${id}/maintenance`, data);
     },
@@ -104,15 +104,30 @@ export const motorApi = {
         return response.data;
     },
 
-    // Пагинированный журнал обслуживания
+    /**
+     * Пагинированный журнал обслуживания с поддержкой фильтрации
+     * @param id - идентификатор двигателя
+     * @param page - номер страницы
+     * @param pageSize - размер страницы
+     * @param workType - тип работ (Lubrication, BearingReplacement, StatorRewinding, ShaftRepair) или null
+     * @param fromDate - дата начала периода (YYYY-MM-DD)
+     * @param toDate - дата окончания периода (YYYY-MM-DD)
+     */
     getMaintenanceLogsPaged: async (
         id: number,
         page: number = 1,
-        pageSize: number = 10
+        pageSize: number = 10,
+        workType?: string,
+        fromDate?: string,
+        toDate?: string
     ): Promise<PagedResult<MaintenanceLogDto>> => {
-        const response = await api.get<PagedResult<MaintenanceLogDto>>(
-            `/motors/${id}/maintenance-logs/paged?page=${page}&pageSize=${pageSize}`
-        );
+        const params = new URLSearchParams();
+        params.append('page', page.toString());
+        params.append('pageSize', pageSize.toString());
+        if (workType) params.append('workType', workType);
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        const response = await api.get<PagedResult<MaintenanceLogDto>>(`/motors/${id}/maintenance-logs/paged?${params.toString()}`);
         return response.data;
     },
 

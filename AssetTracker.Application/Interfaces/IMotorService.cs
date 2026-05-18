@@ -84,14 +84,24 @@ public interface IMotorService
     Task<PagedResult<LocationHistoryDto>> GetMotorLocationHistoryPagedAsync(int motorId, int page, int pageSize);
 
     /// <summary>
-    /// Получение пагинированного журнала обслуживания двигателя (для UI)
+    /// Получение пагинированного журнала обслуживания двигателя с возможностью фильтрации по типу работ и периоду времени (для UI)
     /// </summary>
     /// <param name="motorId">Инвентарный номер двигателя</param>
     /// <param name="page">Номер страницы (начиная с 1)</param>
     /// <param name="pageSize">Размер страницы</param>
+    /// <param name="workType">Фильтр по типу работ (опционально)</param>
+    /// <param name="fromDate">Фильтр по дате – записи не ранее указанной даты (опционально)</param>
+    /// <param name="toDate">Фильтр по дате – записи не позднее указанной даты (опционально)</param>
     /// <returns>Страница записей обслуживания</returns>
     /// <exception cref="KeyNotFoundException">Двигатель не найден</exception>
-    Task<PagedResult<MaintenanceLogDto>> GetMotorMaintenanceLogsPagedAsync(int motorId, int page, int pageSize);
+    /// <exception cref="ArgumentException">Некорректный диапазон дат</exception>
+    Task<PagedResult<MaintenanceLogDto>> GetMotorMaintenanceLogsPagedAsync(
+        int motorId,
+        int page,
+        int pageSize,
+        MaintenanceType? workType,
+        DateTime? fromDate,
+        DateTime? toDate);
 
     /// <summary>
     /// Редактирование записи обслуживания (разрешены только Comment и, для смазки, LubricantTypeId)

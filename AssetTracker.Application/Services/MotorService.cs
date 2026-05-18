@@ -400,19 +400,46 @@ public class MotorService : IMotorService
         };
     }
 
-    public async Task<PagedResult<MaintenanceLogDto>> GetMotorMaintenanceLogsPagedAsync(int motorId, int page, int pageSize)
+    public async Task<PagedResult<MaintenanceLogDto>> GetMotorMaintenanceLogsPagedAsync(
+        int motorId,
+        int page,
+        int pageSize,
+        MaintenanceType? workType,
+        DateTime? fromDate,
+        DateTime? toDate)
     {
-        _logger.LogInformation("Fetching maintenance logs for motor {MotorId}, page={Page}, pageSize={PageSize}", motorId, page, pageSize);
+        _logger.LogInformation("Fetching maintenance logs for motor {MotorId}, page={Page}, pageSize={PageSize}, workType={WorkType}, from={From}, to={To}",
+            motorId, page, pageSize, workType, fromDate, toDate);
 
+        // Проверка существования мотора
         var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motorExists == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
+        // Валидация диапазона дат
+        if (fromDate.HasValue && toDate.HasValue && fromDate > toDate)
+            throw new ArgumentException("Дата начала не может быть позже даты окончания");
+
+        // Базовый запрос
         var query = _unitOfWork.MaintenanceLogs.GetQueryable()
-            .Where(m => m.MotorId == motorId)
-            .OrderByDescending(m => m.Date);
+            .Where(m => m.MotorId == motorId);
+
+        // Применяем фильтры
+        if (workType.HasValue)
+            query = query.Where(m => m.WorkType == workType.Value);
+
+        if (fromDate.HasValue)
+            query = query.Where(m => m.Date >= fromDate.Value);
+
+        if (toDate.HasValue)
+            // Чтобы включить весь указанный день, добавляем один день и берём меньше
+            query = query.Where(m => m.Date < toDate.Value.AddDays(1));
+
+        // Сортировка по убыванию даты (свежие сверху)
+        query = query.OrderByDescending(m => m.Date);
 
         var totalCount = await query.CountAsync();
+
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
