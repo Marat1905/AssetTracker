@@ -6,31 +6,29 @@ public class CreateMotorDto
 {
     public int InventoryNumber { get; set; }
     public string Type { get; set; } = string.Empty;
-    public double ShaftDiameter { get; set; }
+    public double ShaftDiameter { get; set; } // мм
     public double Power { get; set; }
     public int Speed { get; set; }
-
-    // Вместо строковых полей – объекты с информацией о подшипниках
-    public BearingInfoDto FrontBearing { get; set; } = new();
-    public BearingInfoDto RearBearing { get; set; } = new();
-
+    public string FrontBearingType { get; set; } = string.Empty;
+    public string RearBearingType { get; set; } = string.Empty;
     public MotorStatus Status { get; set; } = MotorStatus.InOperation;
     public string InitialLocation { get; set; } = string.Empty;
+
+    /// <summary>Тип монтажа (лапы, лапы и фланец, фланец)</summary>
     public MountingType MountingType { get; set; }
 }
 
 public class UpdateMotorDto
 {
     public string Type { get; set; } = string.Empty;
-    public double ShaftDiameter { get; set; }
+    public double ShaftDiameter { get; set; } // мм
     public double Power { get; set; }
     public int Speed { get; set; }
-
-    // Можно обновлять и подшипники (опционально)
-    public BearingInfoDto? FrontBearing { get; set; }
-    public BearingInfoDto? RearBearing { get; set; }
-
+    public string FrontBearingType { get; set; } = string.Empty;
+    public string RearBearingType { get; set; } = string.Empty;
     public MotorStatus Status { get; set; }
+
+    /// <summary>Тип монтажа (лапы, лапы и фланец, фланец)</summary>
     public MountingType MountingType { get; set; }
 }
 

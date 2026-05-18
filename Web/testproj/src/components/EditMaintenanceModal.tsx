@@ -1,7 +1,7 @@
 // components/EditMaintenanceModal.tsx
 import { useState, useEffect } from 'react';
 import { motorApi, lubricantApi } from '../services/api';
-import type { MaintenanceLogDto, LubricantType, UpdateMaintenanceLogDto, CreateBearingDto } from '../types';
+import type { MaintenanceLogDto, LubricantType, UpdateMaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
 
 interface Props {
@@ -15,10 +15,7 @@ interface Props {
 export default function EditMaintenanceModal({ isOpen, motorId, log, onClose, onSuccess }: Props) {
     const [comment, setComment] = useState(log.comment || '');
     const [lubricantTypeId, setLubricantTypeId] = useState<number | ''>(log.lubricantTypeId ?? '');
-    // Поля для нового подшипника при замене
     const [newBearingType, setNewBearingType] = useState(log.newBearingType || '');
-    const [newBearingManufacturer, setNewBearingManufacturer] = useState(log.newBearingManufacturer || '');
-    const [newBearingSupplier, setNewBearingSupplier] = useState(log.newBearingSupplier || '');
     const [lubricants, setLubricants] = useState<LubricantType[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingLubricants, setLoadingLubricants] = useState(false);
@@ -55,37 +52,19 @@ export default function EditMaintenanceModal({ isOpen, motorId, log, onClose, on
 
             // В зависимости от типа работ добавляем специфичные поля
             if (log.workType === 'Lubrication') {
+                // Для смазки – обновляем тип смазки, если изменился
                 if (lubricantTypeId !== log.lubricantTypeId) {
                     payload.lubricantTypeId = lubricantTypeId === '' ? undefined : Number(lubricantTypeId);
                 }
             } else if (log.workType === 'BearingReplacement') {
-                // Проверяем, изменился ли новый подшипник
-                const bearingChanged =
-                    newBearingType.trim() !== (log.newBearingType || '') ||
-                    newBearingManufacturer.trim() !== (log.newBearingManufacturer || '') ||
-                    newBearingSupplier.trim() !== (log.newBearingSupplier || '');
-                if (bearingChanged) {
+                // Для замены подшипника – обновляем новый тип подшипника, если изменился
+                if (newBearingType.trim() !== (log.newBearingType || '')) {
                     if (!newBearingType.trim()) {
                         toast.error('Тип подшипника не может быть пустым');
                         setLoading(false);
                         return;
                     }
-                    if (!newBearingManufacturer.trim()) {
-                        toast.error('Производитель подшипника не может быть пустым');
-                        setLoading(false);
-                        return;
-                    }
-                    if (!newBearingSupplier.trim()) {
-                        toast.error('Поставщик подшипника не может быть пустым');
-                        setLoading(false);
-                        return;
-                    }
-                    const newBearingDto: CreateBearingDto = {
-                        type: newBearingType.trim(),
-                        manufacturer: newBearingManufacturer.trim(),
-                        supplier: newBearingSupplier.trim(),
-                    };
-                    payload.newBearing = newBearingDto;
+                    payload.newBearingType = newBearingType.trim();
                 }
             }
 
@@ -165,83 +144,25 @@ export default function EditMaintenanceModal({ isOpen, motorId, log, onClose, on
                             </div>
                         )}
 
-                        {/* Для замены подшипника – отображение текущих данных и поля для редактирования */}
+                        {/* Для замены подшипника – поле ввода нового типа подшипника */}
                         {isBearingReplacement && (
-                            <div className="space-y-4">
-                                {/* Блок с текущим (старым) подшипником, который был до замены */}
-                                {log.oldBearingType && (
-                                    <div className="p-3 bg-gray-100 dark:bg-slate-700 rounded-lg">
-                                        <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            Старый подшипник (был заменён):
-                                        </div>
-                                        <div className="text-sm space-y-1">
-                                            <div><span className="text-gray-500">Тип:</span> {log.oldBearingType}</div>
-                                            {log.oldBearingManufacturer && (
-                                                <div><span className="text-gray-500">Производитель:</span> {log.oldBearingManufacturer}</div>
-                                            )}
-                                            {log.oldBearingSupplier && (
-                                                <div><span className="text-gray-500">Поставщик:</span> {log.oldBearingSupplier}</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Блок с текущим новым подшипником (тот, который установлен сейчас в двигателе) */}
-                                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                    <div className="text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
-                                        Текущий подшипник (установлен):
-                                    </div>
-                                    <div className="text-sm space-y-1">
-                                        <div><span className="text-gray-500">Тип:</span> {log.newBearingType || '—'}</div>
-                                        <div><span className="text-gray-500">Производитель:</span> {log.newBearingManufacturer || '—'}</div>
-                                        <div><span className="text-gray-500">Поставщик:</span> {log.newBearingSupplier || '—'}</div>
-                                    </div>
+                            <div>
+                                <label className="form-label">Новый тип подшипника</label>
+                                <input
+                                    type="text"
+                                    value={newBearingType}
+                                    onChange={(e) => setNewBearingType(e.target.value)}
+                                    className="form-input"
+                                    placeholder="например: 6310"
+                                    required
+                                />
+                                <div className="text-xs text-gray-500 mt-1">
+                                    {log.oldBearingType && (
+                                        <span>Старый тип подшипника: <span className="font-mono">{log.oldBearingType}</span></span>
+                                    )}
                                 </div>
-
-                                {/* Поля для редактирования – новые данные подшипника */}
-                                <div className="border-t border-gray-200 dark:border-slate-600 pt-3 mt-2">
-                                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                        Новые данные (при изменении подшипника):
-                                    </div>
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label className="form-label">Тип подшипника</label>
-                                            <input
-                                                type="text"
-                                                value={newBearingType}
-                                                onChange={(e) => setNewBearingType(e.target.value)}
-                                                className="form-input"
-                                                placeholder="например: 6310"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="form-label">Производитель</label>
-                                            <input
-                                                type="text"
-                                                value={newBearingManufacturer}
-                                                onChange={(e) => setNewBearingManufacturer(e.target.value)}
-                                                className="form-input"
-                                                placeholder="SKF, FAG, ..."
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="form-label">Поставщик</label>
-                                            <input
-                                                type="text"
-                                                value={newBearingSupplier}
-                                                onChange={(e) => setNewBearingSupplier(e.target.value)}
-                                                className="form-input"
-                                                placeholder="ООО «ТехСнаб»"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p className="text-xs text-amber-600 dark:text-amber-400">
-                                    Если вы измените данные подшипника, они обновят соответствующий подшипник в паспортных данных двигателя.
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                    Изменение типа подшипника также обновит соответствующий подшипник в паспортных данных двигателя.
                                 </p>
                             </div>
                         )}

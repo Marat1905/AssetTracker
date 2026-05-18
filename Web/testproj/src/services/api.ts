@@ -1,4 +1,3 @@
-// services/api.ts
 import axios from 'axios';
 import type {
     CreateMotorDto,
@@ -57,7 +56,7 @@ export const motorApi = {
         await api.patch(`/motors/${id}/move`, data);
     },
 
-    // Добавить обслуживание (с учётом смазки или замены подшипника)
+    // Добавить обслуживание (с учётом смазки)
     addMaintenance: async (id: number, data: MaintenanceDto): Promise<void> => {
         await api.post(`/motors/${id}/maintenance`, data);
     },
@@ -126,11 +125,22 @@ export const motorApi = {
         await api.delete(`/motors/${motorId}/maintenance/${logId}`);
     },
 
-    // === МЕТОДЫ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ===
+    // === НОВЫЕ МЕТОДЫ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ===
+    /**
+     * Редактирование записи истории перемещений (только location)
+     * @param motorId - инвентарный номер двигателя
+     * @param locationHistoryId - идентификатор записи истории
+     * @param data - объект с новым местоположением
+     */
     updateLocationHistory: async (motorId: number, locationHistoryId: number, data: UpdateLocationHistoryDto): Promise<void> => {
         await api.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
     },
 
+    /**
+     * Удаление записи истории перемещений
+     * @param motorId - инвентарный номер двигателя
+     * @param locationHistoryId - идентификатор записи истории
+     */
     deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
     }

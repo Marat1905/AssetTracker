@@ -28,28 +28,6 @@ export enum BearingPosition {
     Rear = "Rear"
 }
 
-// DTO для вывода информации о подшипнике
-export interface BearingDto {
-    id: number;
-    type: string;
-    manufacturer: string;
-    supplier: string;
-}
-
-// DTO для создания подшипника (используется внутри при создании двигателя или замене)
-export interface CreateBearingDto {
-    type: string;
-    manufacturer: string;
-    supplier: string;
-}
-
-// Информация о подшипнике для использования в CreateMotorDto и UpdateMotorDto
-export interface BearingInfoDto {
-    type: string;
-    manufacturer: string;
-    supplier: string;
-}
-
 export interface LocationHistoryDto {
     id: number;
     location: string;
@@ -57,7 +35,6 @@ export interface LocationHistoryDto {
     endDate: string | null;
 }
 
-// DTO для записи в журнале обслуживания
 export interface MaintenanceLogDto {
     id: number;
     workType: string;
@@ -66,14 +43,8 @@ export interface MaintenanceLogDto {
     bearingPosition?: string;       // "Front" / "Rear"
     lubricantTypeId?: number;
     lubricantTypeName?: string;
-    oldBearingId?: number;
-    oldBearingType?: string;
-    oldBearingManufacturer?: string;  // производитель старого подшипника
-    oldBearingSupplier?: string;      // поставщик старого подшипника
-    newBearingId?: number;
-    newBearingType?: string;
-    newBearingManufacturer?: string;  // производитель нового подшипника
-    newBearingSupplier?: string;      // поставщик нового подшипника
+    oldBearingType?: string;        // Старый тип подшипника (при замене)
+    newBearingType?: string;        // Новый тип подшипника (при замене)
 }
 
 export interface MotorFullHistoryDto {
@@ -82,8 +53,8 @@ export interface MotorFullHistoryDto {
     shaftDiameter: number;
     power: number;
     speed: number;
-    frontBearing: BearingDto;
-    rearBearing: BearingDto;
+    frontBearingType: string;
+    rearBearingType: string;
     status: MotorStatus;
     mountingType: MountingType;
     locationHistory: LocationHistoryDto[];
@@ -98,21 +69,10 @@ export interface CreateMotorDto {
     shaftDiameter: number;   // мм
     power: number;
     speed: number;
-    frontBearing: BearingInfoDto;
-    rearBearing: BearingInfoDto;
+    frontBearingType: string;
+    rearBearingType: string;
     status: MotorStatus;
     initialLocation: string;
-    mountingType: MountingType;
-}
-
-export interface UpdateMotorRequest {
-    type: string;
-    shaftDiameter: number;
-    power: number;
-    speed: number;
-    frontBearing?: BearingInfoDto;  // опционально, можно обновить
-    rearBearing?: BearingInfoDto;
-    status: MotorStatus;
     mountingType: MountingType;
 }
 
@@ -121,13 +81,13 @@ export interface MoveMotorDto {
     newStatus?: MotorStatus;
 }
 
-// DTO для добавления обслуживания
+// ДОБАВЛЕНО поле newBearingType для замены подшипника
 export interface MaintenanceDto {
     workType: MaintenanceType;
     comment: string;
     bearingPosition?: BearingPosition;   // для смазки и замены подшипника
     lubricantTypeId?: number;            // только для смазки
-    newBearing?: CreateBearingDto;       // только для замены подшипника
+    newBearingType?: string;             // только для замены подшипника
 }
 
 export interface MotorListItem {
@@ -136,6 +96,21 @@ export interface MotorListItem {
     power: number;
     status: MotorStatus;
     currentLocation: string;
+}
+
+export interface UpdateMotorStatusDto {
+    status: MotorStatus;
+}
+
+export interface UpdateMotorRequest {
+    type: string;
+    shaftDiameter: number;
+    power: number;
+    speed: number;
+    frontBearingType: string;
+    rearBearingType: string;
+    status: MotorStatus;
+    mountingType: MountingType;
 }
 
 // --- DTO для типа смазки ---
@@ -155,14 +130,13 @@ export interface UpdateLubricantTypeDto {
     description?: string;
 }
 
-// DTO для редактирования записи обслуживания
 export interface UpdateMaintenanceLogDto {
     comment?: string;
     lubricantTypeId?: number;
-    newBearing?: CreateBearingDto;
+    newBearingType?: string;
 }
 
-// DTO для редактирования истории перемещений
+// НОВЫЙ DTO для редактирования истории перемещений
 export interface UpdateLocationHistoryDto {
     location: string;
 }

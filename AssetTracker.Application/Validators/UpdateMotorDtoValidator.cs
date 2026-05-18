@@ -20,23 +20,13 @@ public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
         RuleFor(x => x.Speed)
             .GreaterThan(0).WithMessage("Обороты должны быть больше 0");
 
+        RuleFor(x => x.FrontBearingType)
+            .NotEmpty().WithMessage("Тип переднего подшипника обязателен");
+
+        RuleFor(x => x.RearBearingType)
+            .NotEmpty().WithMessage("Тип заднего подшипника обязателен");
+
         RuleFor(x => x.MountingType)
-            .IsInEnum().WithMessage("Укажите корректный тип монтажа");
-
-        // Если переданы данные переднего подшипника – валидируем
-        When(x => x.FrontBearing != null, () =>
-        {
-            RuleFor(x => x.FrontBearing!.Type).NotEmpty().WithMessage("Тип переднего подшипника обязателен");
-            RuleFor(x => x.FrontBearing!.Manufacturer).NotEmpty().WithMessage("Производитель переднего подшипника обязателен");
-            RuleFor(x => x.FrontBearing!.Supplier).NotEmpty().WithMessage("Поставщик переднего подшипника обязателен");
-        });
-
-        // Если переданы данные заднего подшипника – валидируем
-        When(x => x.RearBearing != null, () =>
-        {
-            RuleFor(x => x.RearBearing!.Type).NotEmpty().WithMessage("Тип заднего подшипника обязателен");
-            RuleFor(x => x.RearBearing!.Manufacturer).NotEmpty().WithMessage("Производитель заднего подшипника обязателен");
-            RuleFor(x => x.RearBearing!.Supplier).NotEmpty().WithMessage("Поставщик заднего подшипника обязателен");
-        });
+            .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, Flange, FeetAndFlange, SmallFlange, FeetAndSmallFlange");
     }
 }

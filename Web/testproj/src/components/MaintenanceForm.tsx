@@ -1,4 +1,3 @@
-// components/MaintenanceForm.tsx
 import { useState, useEffect } from 'react';
 import { MaintenanceType, BearingPosition, type LubricantType, type MotorFullHistoryDto } from '../types';
 import { motorApi, lubricantApi } from '../services/api';
@@ -26,10 +25,7 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel,
     const [lubricants, setLubricants] = useState<LubricantType[]>([]);
     const [bearingPosition, setBearingPosition] = useState<BearingPosition>(BearingPosition.Front);
     const [lubricantTypeId, setLubricantTypeId] = useState<number | ''>('');
-    // Поля для нового подшипника при замене
     const [newBearingType, setNewBearingType] = useState('');
-    const [newBearingManufacturer, setNewBearingManufacturer] = useState('');
-    const [newBearingSupplier, setNewBearingSupplier] = useState('');
 
     // Загрузка списка типов смазки при монтировании
     useEffect(() => {
@@ -67,33 +63,34 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel,
                 setLubricantTypeId(lubricants[0].id);
             }
         } else if (workType === MaintenanceType.BearingReplacement) {
-            // Для замены подшипника: подставляем текущий тип, производителя и поставщика выбранного подшипника
-            const currentBearing = bearingPosition === BearingPosition.Front
-                ? motorData.frontBearing
-                : motorData.rearBearing;
-            setNewBearingType(currentBearing.type);
-            setNewBearingManufacturer(currentBearing.manufacturer);
-            setNewBearingSupplier(currentBearing.supplier);
+            // Для замены подшипника: подставляем текущий тип выбранного подшипника
+            const currentBearingType = bearingPosition === BearingPosition.Front
+                ? motorData.frontBearingType
+                : motorData.rearBearingType;
+            setNewBearingType(currentBearingType);
         }
-    }, [workType, bearingPosition, motorData, lubricants]);
+    }, [workType, bearingPosition, motorData, lubricants]); // Срабатывает при изменении любой из зависимостей
 
+    // Обработчик смены типа работ
     const handleWorkTypeChange = (newType: MaintenanceType) => {
         setWorkType(newType);
-        // Сбрасываем специфические поля
+        // Сбрасываем специфические поля, но предустановки применятся через эффект
         if (newType === MaintenanceType.BearingReplacement) {
             setLubricantTypeId('');
         } else if (newType === MaintenanceType.Lubrication) {
             setNewBearingType('');
-            setNewBearingManufacturer('');
-            setNewBearingSupplier('');
         } else {
             // Для остальных типов очищаем всё
             setBearingPosition(BearingPosition.Front);
             setLubricantTypeId('');
             setNewBearingType('');
-            setNewBearingManufacturer('');
-            setNewBearingSupplier('');
         }
+    };
+
+    // Обработчик смены позиции подшипника
+    const handleBearingPositionChange = (pos: BearingPosition) => {
+        setBearingPosition(pos);
+        // Эффект сам обновит предустановки, отдельно вызывать не нужно
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -122,26 +119,12 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel,
                     return;
                 }
                 if (!newBearingType.trim()) {
-                    toast.error('Введите тип нового подшипника');
-                    setLoading(false);
-                    return;
-                }
-                if (!newBearingManufacturer.trim()) {
-                    toast.error('Введите производителя нового подшипника');
-                    setLoading(false);
-                    return;
-                }
-                if (!newBearingSupplier.trim()) {
-                    toast.error('Введите поставщика нового подшипника');
+                    toast.error('Введите новый тип подшипника');
                     setLoading(false);
                     return;
                 }
                 payload.bearingPosition = bearingPosition;
-                payload.newBearing = {
-                    type: newBearingType.trim(),
-                    manufacturer: newBearingManufacturer.trim(),
-                    supplier: newBearingSupplier.trim(),
-                };
+                payload.newBearingType = newBearingType.trim();
             }
 
             await motorApi.addMaintenance(motorId, payload);
@@ -150,10 +133,9 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel,
             setComment('');
             setWorkType(MaintenanceType.Lubrication);
             setBearingPosition(BearingPosition.Front);
+            // Сбросим специфические поля, эффект потом установит предустановки
             setLubricantTypeId('');
             setNewBearingType('');
-            setNewBearingManufacturer('');
-            setNewBearingSupplier('');
             onAdded?.();
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка добавления записи');
@@ -188,7 +170,7 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel,
                     <label className="form-label">Позиция подшипника</label>
                     <select
                         value={bearingPosition}
-                        onChange={(e) => setBearingPosition(e.target.value as BearingPosition)}
+                        onChange={(e) => handleBearingPositionChange(e.target.value as BearingPosition)}
                         className="form-input"
                     >
                         <option value={BearingPosition.Front}>Передний</option>
@@ -219,41 +201,17 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel,
 
             {/* Поля только для замены подшипника */}
             {isBearingReplacement && (
-                <div className="space-y-3">
-                    <div>
-                        <label className="form-label">Новый тип подшипника</label>
-                        <input
-                            type="text"
-                            value={newBearingType}
-                            onChange={(e) => setNewBearingType(e.target.value)}
-                            className="form-input"
-                            placeholder="например: 6310"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="form-label">Производитель нового подшипника</label>
-                        <input
-                            type="text"
-                            value={newBearingManufacturer}
-                            onChange={(e) => setNewBearingManufacturer(e.target.value)}
-                            className="form-input"
-                            placeholder="SKF, FAG, NSK ..."
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="form-label">Поставщик нового подшипника</label>
-                        <input
-                            type="text"
-                            value={newBearingSupplier}
-                            onChange={(e) => setNewBearingSupplier(e.target.value)}
-                            className="form-input"
-                            placeholder="ООО «ТехСнаб»"
-                            required
-                        />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Предустановлены текущие данные подшипника, вы можете их изменить</p>
+                <div>
+                    <label className="form-label">Новый тип подшипника</label>
+                    <input
+                        type="text"
+                        value={newBearingType}
+                        onChange={(e) => setNewBearingType(e.target.value)}
+                        className="form-input"
+                        placeholder="например: 6310"
+                        required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Текущий тип подшипника предустановлен, вы можете его изменить</p>
                 </div>
             )}
 
