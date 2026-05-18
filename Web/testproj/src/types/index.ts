@@ -22,19 +22,34 @@ export enum MountingType {
     FeetAndSmallFlange = "FeetAndSmallFlange" // Лапы и малый фланец
 }
 
-// Позиция подшипника
 export enum BearingPosition {
     Front = "Front",
     Rear = "Rear"
 }
 
+// --- DTO для подшипников (с полями производителя и поставщика) ---
+export interface BearingDto {
+    id: number;
+    type: string;
+    manufacturer: string;
+    supplier: string;
+}
+
+export interface CreateBearingDto {
+    type: string;
+    manufacturer: string;
+    supplier: string;
+}
+
+// --- DTO для истории перемещений ---
 export interface LocationHistoryDto {
     id: number;
     location: string;
-    startDate: string;      // ISO string
+    startDate: string;
     endDate: string | null;
 }
 
+// --- DTO для журнала обслуживания (использует BearingDto) ---
 export interface MaintenanceLogDto {
     id: number;
     workType: string;
@@ -43,18 +58,19 @@ export interface MaintenanceLogDto {
     bearingPosition?: string;       // "Front" / "Rear"
     lubricantTypeId?: number;
     lubricantTypeName?: string;
-    oldBearingType?: string;        // Старый тип подшипника (при замене)
-    newBearingType?: string;        // Новый тип подшипника (при замене)
+    oldBearing?: BearingDto | null; // старый подшипник (при замене)
+    newBearing?: BearingDto | null; // новый подшипник (при замене)
 }
 
+// --- DTO полной истории двигателя (использует BearingDto) ---
 export interface MotorFullHistoryDto {
     inventoryNumber: number;
     type: string;
     shaftDiameter: number;
     power: number;
     speed: number;
-    frontBearingType: string;
-    rearBearingType: string;
+    frontBearing: BearingDto;      // объект подшипника вместо строки
+    rearBearing: BearingDto;
     status: MotorStatus;
     mountingType: MountingType;
     locationHistory: LocationHistoryDto[];
@@ -63,33 +79,50 @@ export interface MotorFullHistoryDto {
     rearBearingLastLubricant?: string;    // Название последней смазки заднего подшипника
 }
 
+// --- DTO для создания двигателя (использует CreateBearingDto) ---
 export interface CreateMotorDto {
     inventoryNumber: number;
     type: string;
-    shaftDiameter: number;   // мм
+    shaftDiameter: number;
     power: number;
     speed: number;
-    frontBearingType: string;
-    rearBearingType: string;
+    frontBearing: CreateBearingDto;
+    rearBearing: CreateBearingDto;
     status: MotorStatus;
     initialLocation: string;
     mountingType: MountingType;
 }
 
+// --- DTO для перемещения ---
 export interface MoveMotorDto {
     newLocation: string;
     newStatus?: MotorStatus;
 }
 
-// ДОБАВЛЕНО поле newBearingType для замены подшипника
+// --- DTO для добавления обслуживания (поддержка существующего или нового подшипника) ---
 export interface MaintenanceDto {
     workType: MaintenanceType;
     comment: string;
-    bearingPosition?: BearingPosition;   // для смазки и замены подшипника
-    lubricantTypeId?: number;            // только для смазки
-    newBearingType?: string;             // только для замены подшипника
+    bearingPosition?: BearingPosition;
+    lubricantTypeId?: number;
+    existingBearingId?: number;      // ID существующего подшипника (при замене)
+    newBearing?: CreateBearingDto;   // данные нового подшипника (при замене)
 }
 
+// --- DTO для редактирования записи обслуживания ---
+export interface UpdateMaintenanceLogDto {
+    comment?: string;
+    lubricantTypeId?: number;
+    existingBearingId?: number;
+    newBearing?: CreateBearingDto;
+}
+
+// --- DTO для редактирования истории перемещений ---
+export interface UpdateLocationHistoryDto {
+    location: string;
+}
+
+// --- Другие DTO ---
 export interface MotorListItem {
     inventoryNumber: number;
     type: string;
@@ -98,22 +131,17 @@ export interface MotorListItem {
     currentLocation: string;
 }
 
-export interface UpdateMotorStatusDto {
-    status: MotorStatus;
-}
-
 export interface UpdateMotorRequest {
     type: string;
     shaftDiameter: number;
     power: number;
     speed: number;
-    frontBearingType: string;
+    frontBearingType: string;   // В бекенде UpdateMotorDto не меняет подшипники, оставляем строку для совместимости
     rearBearingType: string;
     status: MotorStatus;
     mountingType: MountingType;
 }
 
-// --- DTO для типа смазки ---
 export interface LubricantType {
     id: number;
     name: string;
@@ -128,17 +156,6 @@ export interface CreateLubricantTypeDto {
 export interface UpdateLubricantTypeDto {
     name: string;
     description?: string;
-}
-
-export interface UpdateMaintenanceLogDto {
-    comment?: string;
-    lubricantTypeId?: number;
-    newBearingType?: string;
-}
-
-// НОВЫЙ DTO для редактирования истории перемещений
-export interface UpdateLocationHistoryDto {
-    location: string;
 }
 
 export interface PagedResult<T> {

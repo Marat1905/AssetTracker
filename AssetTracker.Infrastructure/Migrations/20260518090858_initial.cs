@@ -13,6 +13,21 @@ namespace AssetTracker.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Bearings",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Manufacturer = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Supplier = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bearings", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LubricantTypes",
                 columns: table => new
                 {
@@ -35,14 +50,26 @@ namespace AssetTracker.Infrastructure.Migrations
                     ShaftDiameter = table.Column<double>(type: "double precision", precision: 10, scale: 2, nullable: false),
                     Power = table.Column<double>(type: "double precision", precision: 10, scale: 2, nullable: false),
                     Speed = table.Column<int>(type: "integer", nullable: false),
-                    FrontBearingType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    RearBearingType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    FrontBearingId = table.Column<int>(type: "integer", nullable: false),
+                    RearBearingId = table.Column<int>(type: "integer", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false),
                     MountingType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Motors", x => x.InventoryNumber);
+                    table.ForeignKey(
+                        name: "FK_Motors_Bearings_FrontBearingId",
+                        column: x => x.FrontBearingId,
+                        principalTable: "Bearings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Motors_Bearings_RearBearingId",
+                        column: x => x.RearBearingId,
+                        principalTable: "Bearings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -79,12 +106,24 @@ namespace AssetTracker.Infrastructure.Migrations
                     Comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     BearingPosition = table.Column<string>(type: "text", nullable: true),
                     LubricantTypeId = table.Column<int>(type: "integer", nullable: true),
-                    OldBearingType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
-                    NewBearingType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
+                    OldBearingId = table.Column<int>(type: "integer", nullable: true),
+                    NewBearingId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MaintenanceLogs", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceLogs_Bearings_NewBearingId",
+                        column: x => x.NewBearingId,
+                        principalTable: "Bearings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MaintenanceLogs_Bearings_OldBearingId",
+                        column: x => x.OldBearingId,
+                        principalTable: "Bearings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_MaintenanceLogs_LubricantTypes_LubricantTypeId",
                         column: x => x.LubricantTypeId,
@@ -113,6 +152,26 @@ namespace AssetTracker.Infrastructure.Migrations
                 name: "IX_MaintenanceLogs_LubricantTypeId",
                 table: "MaintenanceLogs",
                 column: "LubricantTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceLogs_NewBearingId",
+                table: "MaintenanceLogs",
+                column: "NewBearingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaintenanceLogs_OldBearingId",
+                table: "MaintenanceLogs",
+                column: "OldBearingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Motors_FrontBearingId",
+                table: "Motors",
+                column: "FrontBearingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Motors_RearBearingId",
+                table: "Motors",
+                column: "RearBearingId");
         }
 
         /// <inheritdoc />
@@ -129,6 +188,9 @@ namespace AssetTracker.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Motors");
+
+            migrationBuilder.DropTable(
+                name: "Bearings");
         }
     }
 }

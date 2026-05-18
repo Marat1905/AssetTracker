@@ -11,8 +11,6 @@ const schema = z.object({
     shaftDiameter: z.number().positive('Диаметр вала > 0'),
     power: z.number().positive('Мощность > 0'),
     speed: z.number().positive('Обороты > 0'),
-    frontBearingType: z.string().min(1, 'Передний подшипник обязателен'),
-    rearBearingType: z.string().min(1, 'Задний подшипник обязателен'),
     status: z.nativeEnum(MotorStatus),
     mountingType: z.nativeEnum(MountingType),
 });
@@ -34,8 +32,6 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
             shaftDiameter: motor.shaftDiameter,
             power: motor.power,
             speed: motor.speed,
-            frontBearingType: motor.frontBearingType,
-            rearBearingType: motor.rearBearingType,
             status: motor.status,
             mountingType: motor.mountingType,
         }
@@ -43,7 +39,19 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
 
     const onSubmit = async (data: FormData) => {
         try {
-            await motorApi.updateMotor(motor.inventoryNumber, data as UpdateMotorRequest);
+            // Подготовка данных для обновления (подшипники не изменяются через этот API)
+            const updateData: UpdateMotorRequest = {
+                type: data.type,
+                shaftDiameter: data.shaftDiameter,
+                power: data.power,
+                speed: data.speed,
+                // Поля для обратной совместимости (бекенд может их не использовать)
+                frontBearingType: motor.frontBearing.type,
+                rearBearingType: motor.rearBearing.type,
+                status: data.status,
+                mountingType: data.mountingType,
+            };
+            await motorApi.updateMotor(motor.inventoryNumber, updateData);
             toast.success('Данные двигателя обновлены');
             onSuccess();
             onClose();
@@ -68,6 +76,9 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                         <h3 className="text-lg font-semibold text-text-h">
                             Редактирование двигателя №{motor.inventoryNumber}
                         </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Изменение подшипников выполняется через «Замену подшипника» в журнале обслуживания.
+                        </p>
                     </div>
                     <form onSubmit={handleSubmit(onSubmit)} className="p-6">
                         <div className="space-y-4">
@@ -92,16 +103,6 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                 {errors.speed && <p className="text-danger text-xs mt-1">{errors.speed.message}</p>}
                             </div>
                             <div>
-                                <label className="form-label">Передний подшипник</label>
-                                <input {...register('frontBearingType')} className="form-input" />
-                                {errors.frontBearingType && <p className="text-danger text-xs mt-1">{errors.frontBearingType.message}</p>}
-                            </div>
-                            <div>
-                                <label className="form-label">Задний подшипник</label>
-                                <input {...register('rearBearingType')} className="form-input" />
-                                {errors.rearBearingType && <p className="text-danger text-xs mt-1">{errors.rearBearingType.message}</p>}
-                            </div>
-                            <div>
                                 <label className="form-label">Статус</label>
                                 <select {...register('status')} className="form-input">
                                     {Object.entries(motorStatusLabels).map(([value, label]) => (
@@ -118,7 +119,29 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                 </select>
                                 {errors.mountingType && <p className="text-danger text-xs mt-1">{errors.mountingType.message}</p>}
                             </div>
+
+                            {/* Информационные блоки о подшипниках (только для чтения) */}
+                            <div className="border-t border-gray-200 dark:border-slate-700 pt-4 mt-2">
+                                <h4 className="text-sm font-semibold text-text-h mb-2">Передний подшипник (только для информации)</h4>
+                                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 text-sm space-y-1">
+                                    <div><span className="text-gray-500">Тип:</span> {motor.frontBearing.type}</div>
+                                    <div><span className="text-gray-500">Производитель:</span> {motor.frontBearing.manufacturer}</div>
+                                    <div><span className="text-gray-500">Поставщик:</span> {motor.frontBearing.supplier}</div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-semibold text-text-h mb-2">Задний подшипник (только для информации)</h4>
+                                <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-3 text-sm space-y-1">
+                                    <div><span className="text-gray-500">Тип:</span> {motor.rearBearing.type}</div>
+                                    <div><span className="text-gray-500">Производитель:</span> {motor.rearBearing.manufacturer}</div>
+                                    <div><span className="text-gray-500">Поставщик:</span> {motor.rearBearing.supplier}</div>
+                                </div>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                                    Для изменения подшипника используйте операцию «Замена подшипника» в журнале обслуживания.
+                                </p>
+                            </div>
                         </div>
+
                         <div className="mt-8 flex justify-end gap-3">
                             <button type="button" onClick={onClose} className="btn-secondary">
                                 Отмена

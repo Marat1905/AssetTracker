@@ -125,22 +125,21 @@ export const motorApi = {
         await api.delete(`/motors/${motorId}/maintenance/${logId}`);
     },
 
-    // === НОВЫЕ МЕТОДЫ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ===
     /**
-     * Редактирование записи истории перемещений (только location)
-     * @param motorId - инвентарный номер двигателя
-     * @param locationHistoryId - идентификатор записи истории
-     * @param data - объект с новым местоположением
-     */
+    * Редактирование записи истории перемещений (только location)
+    * @param motorId - инвентарный номер двигателя
+    * @param locationHistoryId - идентификатор записи истории
+    * @param data - объект с новым местоположением
+    */
     updateLocationHistory: async (motorId: number, locationHistoryId: number, data: UpdateLocationHistoryDto): Promise<void> => {
         await api.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
     },
 
     /**
-     * Удаление записи истории перемещений
-     * @param motorId - инвентарный номер двигателя
-     * @param locationHistoryId - идентификатор записи истории
-     */
+    * Удаление записи истории перемещений
+    * @param motorId - инвентарный номер двигателя
+    * @param locationHistoryId - идентификатор записи истории
+    */
     deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
     }

@@ -1,7 +1,4 @@
-﻿// ============================================================
-// Файл: Application/Services/MotorService.cs (изменённый, полный код)
-// ============================================================
-using AssetTracker.Application.DTOs;
+﻿using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Entities;
 using AssetTracker.Domain.Enums;
@@ -455,6 +452,23 @@ public class MotorService : IMotorService
         };
     }
 
+    /// <summary>
+    /// Проверяет, является ли запись о замене подшипника последней для данной позиции (передней/задней).
+    /// Возвращает true, если это последняя запись замены для указанной позиции.
+    /// </summary>
+    private async Task<bool> IsLastBearingReplacementAsync(int motorId, BearingPosition position, int logId)
+    {
+        // Находим самую последнюю запись замены подшипника для указанной позиции
+        var lastLog = await _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Where(m => m.MotorId == motorId
+                        && m.WorkType == MaintenanceType.BearingReplacement
+                        && m.BearingPosition == position)
+            .OrderByDescending(m => m.Date)
+            .FirstOrDefaultAsync();
+
+        return lastLog != null && lastLog.Id == logId;
+    }
+
     public async Task UpdateMaintenanceLogAsync(int motorId, int logId, UpdateMaintenanceLogDto dto)
     {
         _logger.LogInformation("Updating maintenance log {LogId} for motor {MotorId}", logId, motorId);
@@ -471,7 +485,7 @@ public class MotorService : IMotorService
         if (log == null)
             throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
 
-        // Обновляем комментарий
+        // Обновляем комментарий, если передан
         if (dto.Comment != null)
             log.Comment = dto.Comment;
 
@@ -489,6 +503,11 @@ public class MotorService : IMotorService
         }
         else if (log.WorkType == MaintenanceType.BearingReplacement)
         {
+            // Разрешаем редактирование ТОЛЬКО если это последняя запись замены для данного подшипника
+            if (!await IsLastBearingReplacementAsync(motorId, log.BearingPosition!.Value, logId))
+                throw new InvalidOperationException("Редактирование разрешено только для последней записи замены подшипника. " +
+                                                    "Чтобы изменить более раннюю замену, удалите последующие записи.");
+
             // Можно изменить подшипник (новый) на другой
             int? newBearingId = null;
             if (dto.ExistingBearingId.HasValue)
@@ -546,14 +565,22 @@ public class MotorService : IMotorService
         if (log == null || log.MotorId != motorId)
             throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
 
-        // Если это замена подшипника, то откатываем мотор на старый подшипник
-        if (log.WorkType == MaintenanceType.BearingReplacement && log.OldBearingId.HasValue)
+        // Если это замена подшипника, разрешаем удаление ТОЛЬКО если это последняя запись замены для данной позиции
+        if (log.WorkType == MaintenanceType.BearingReplacement)
         {
-            if (log.BearingPosition == BearingPosition.Front)
-                motor.FrontBearingId = log.OldBearingId.Value;
-            else if (log.BearingPosition == BearingPosition.Rear)
-                motor.RearBearingId = log.OldBearingId.Value;
-            _unitOfWork.Motors.Update(motor);
+            if (!await IsLastBearingReplacementAsync(motorId, log.BearingPosition!.Value, logId))
+                throw new InvalidOperationException("Удаление разрешено только для последней записи замены подшипника. " +
+                                                    "Чтобы удалить более раннюю замену, сначала удалите последующие записи.");
+
+            // Откатываем мотор на старый подшипник
+            if (log.OldBearingId.HasValue)
+            {
+                if (log.BearingPosition == BearingPosition.Front)
+                    motor.FrontBearingId = log.OldBearingId.Value;
+                else if (log.BearingPosition == BearingPosition.Rear)
+                    motor.RearBearingId = log.OldBearingId.Value;
+                _unitOfWork.Motors.Update(motor);
+            }
         }
 
         _unitOfWork.MaintenanceLogs.Remove(log);

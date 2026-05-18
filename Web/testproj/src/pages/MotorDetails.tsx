@@ -5,7 +5,7 @@ import EditMotorModal from '../components/EditMotorModal';
 import MoveMotorForm from '../components/MoveMotorForm';
 import MaintenanceForm from '../components/MaintenanceForm';
 import EditMaintenanceModal from '../components/EditMaintenanceModal';
-import EditLocationModal from '../components/EditLocationModal'; // новый импорт
+import EditLocationModal from '../components/EditLocationModal';
 import { motorApi } from '../services/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
@@ -346,7 +346,7 @@ export default function MotorDetails() {
                                                             )}
                                                         </div>
                                                     )}
-                                                    {/* Замена подшипника */}
+                                                    {/* Замена подшипника – отображаем старый и новый подшипники с деталями */}
                                                     {log.workType === 'BearingReplacement' && (
                                                         <div className="mt-3">
                                                             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
@@ -357,34 +357,32 @@ export default function MotorDetails() {
                                                                 </span>
                                                             </div>
                                                             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-                                                                {log.oldBearingType && log.newBearingType && log.oldBearingType === log.newBearingType ? (
+                                                                {log.oldBearing && log.newBearing && log.oldBearing.type === log.newBearing.type && log.oldBearing.manufacturer === log.newBearing.manufacturer && log.oldBearing.supplier === log.newBearing.supplier ? (
                                                                     <div className="flex items-center gap-1.5">
-                                                                        <span className="font-medium text-gray-500 dark:text-gray-400">Тип подшипника:</span>
+                                                                        <span className="font-medium text-gray-500 dark:text-gray-400">Подшипник:</span>
                                                                         <span className="text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                                                            {log.newBearingType}
+                                                                            {log.newBearing.type} ({log.newBearing.manufacturer}, {log.newBearing.supplier})
                                                                         </span>
                                                                         <span className="text-xs text-gray-400 ml-1">(не изменялся)</span>
                                                                     </div>
                                                                 ) : (
                                                                     <>
-                                                                        {log.oldBearingType && (
-                                                                            <div className="flex items-center gap-1.5">
+                                                                        {log.oldBearing && (
+                                                                            <div className="flex flex-col gap-0.5">
                                                                                 <span className="font-medium text-gray-500 dark:text-gray-400">Старый:</span>
                                                                                 <span className="line-through text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-md">
-                                                                                    {log.oldBearingType}
+                                                                                    {log.oldBearing.type} ({log.oldBearing.manufacturer}, {log.oldBearing.supplier})
                                                                                 </span>
                                                                             </div>
                                                                         )}
-                                                                        {log.oldBearingType && log.newBearingType && (
-                                                                            <ArrowRight size={16} className="text-accent flex-shrink-0" />
-                                                                        )}
-                                                                        {log.newBearingType && (
-                                                                            <div className="flex items-center gap-1.5">
+                                                                        {log.oldBearing && log.newBearing && <ArrowRight size={16} className="text-accent flex-shrink-0" />}
+                                                                        {log.newBearing && (
+                                                                            <div className="flex flex-col gap-0.5">
                                                                                 <span className="font-medium text-green-600 dark:text-green-400">
-                                                                                    {log.oldBearingType ? 'Новый:' : 'Установлен:'}
+                                                                                    {log.oldBearing ? 'Новый:' : 'Установлен:'}
                                                                                 </span>
                                                                                 <span className="font-semibold text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-md">
-                                                                                    {log.newBearingType}
+                                                                                    {log.newBearing.type} ({log.newBearing.manufacturer}, {log.newBearing.supplier})
                                                                                 </span>
                                                                             </div>
                                                                         )}
