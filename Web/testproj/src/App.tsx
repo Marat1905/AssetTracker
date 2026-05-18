@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import Dashboard from './pages/Dashboard';
 import MotorDetails from './pages/MotorDetails';
 import LubricantTypesPage from './pages/LubricantTypesPage';
+import BearingList from './components/BearingList';   // новый импорт
 
 function Header() {
     return (
@@ -15,12 +16,19 @@ function Header() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                         </div>
-                        <span className="font-bold text-xl text-purple-600 dark:text-purple-400">
-                            MotorTrack
-                        </span>
+                        <span className="font-bold text-xl text-purple-600 dark:text-purple-400">MotorTrack</span>
                     </Link>
                     <div className="flex items-center space-x-4">
-                        {/* Кнопка перехода к справочнику типов смазки */}
+                        {/* Ссылка на справочник подшипников */}
+                        <Link
+                            to="/bearings"
+                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors"
+                        >
+                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                            Подшипники
+                        </Link>
                         <Link
                             to="/lubricant-types"
                             className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50 transition-colors"
@@ -50,17 +58,7 @@ function Header() {
 function App() {
     return (
         <BrowserRouter>
-            <Toaster
-                position="top-right"
-                toastOptions={{
-                    duration: 4000,
-                    style: {
-                        background: 'var(--card-bg)',
-                        color: 'var(--text-h)',
-                        border: '1px solid var(--border)',
-                    },
-                }}
-            />
+            <Toaster position="top-right" toastOptions={{ duration: 4000, style: { background: 'var(--card-bg)', color: 'var(--text-h)', border: '1px solid var(--border)' } }} />
             <Header />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <Routes>
@@ -68,6 +66,7 @@ function App() {
                     <Route path="/motors/new" element={<Dashboard />} />
                     <Route path="/motors/:id" element={<MotorDetails />} />
                     <Route path="/lubricant-types" element={<LubricantTypesPage />} />
+                    <Route path="/bearings" element={<BearingList />} />   {/* новый роут */}
                 </Routes>
             </main>
         </BrowserRouter>

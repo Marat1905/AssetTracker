@@ -2,17 +2,18 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import { motorApi } from '../services/api';
-import { MotorStatus, MountingType, type MotorFullHistoryDto, type UpdateMotorRequest } from '../types';
+import { motorApi, bearingApi } from '../services/api';
+import { MotorStatus, MountingType, type MotorFullHistoryDto, type UpdateMotorRequest, type Bearing } from '../types';
 import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
+import { useEffect, useState } from 'react';
 
 const schema = z.object({
     type: z.string().min(1, 'Тип обязателен'),
     shaftDiameter: z.number().positive('Диаметр вала > 0'),
     power: z.number().positive('Мощность > 0'),
     speed: z.number().positive('Обороты > 0'),
-    frontBearingType: z.string().min(1, 'Передний подшипник обязателен'),
-    rearBearingType: z.string().min(1, 'Задний подшипник обязателен'),
+    frontBearingId: z.number().optional(),
+    rearBearingId: z.number().optional(),
     status: z.nativeEnum(MotorStatus),
     mountingType: z.nativeEnum(MountingType),
 });
@@ -27,19 +28,49 @@ interface Props {
 }
 
 export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Props) {
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+    const [bearings, setBearings] = useState<Bearing[]>([]);
+    const [loadingBearings, setLoadingBearings] = useState(false);
+
+    const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
             type: motor.type,
             shaftDiameter: motor.shaftDiameter,
             power: motor.power,
             speed: motor.speed,
-            frontBearingType: motor.frontBearingType,
-            rearBearingType: motor.rearBearingType,
+            frontBearingId: motor.frontBearingId,
+            rearBearingId: motor.rearBearingId,
             status: motor.status,
             mountingType: motor.mountingType,
         }
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            const fetchBearings = async () => {
+                setLoadingBearings(true);
+                try {
+                    const data = await bearingApi.getAll();
+                    setBearings(data);
+                } catch (err) {
+                    toast.error('Не удалось загрузить подшипники');
+                } finally {
+                    setLoadingBearings(false);
+                }
+            };
+            fetchBearings();
+            reset({
+                type: motor.type,
+                shaftDiameter: motor.shaftDiameter,
+                power: motor.power,
+                speed: motor.speed,
+                frontBearingId: motor.frontBearingId,
+                rearBearingId: motor.rearBearingId,
+                status: motor.status,
+                mountingType: motor.mountingType,
+            });
+        }
+    }, [isOpen, motor, reset]);
 
     const onSubmit = async (data: FormData) => {
         try {
@@ -48,9 +79,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
             onSuccess();
             onClose();
         } catch (err: any) {
-            console.error('Ошибка обновления:', err);
-            const message = err.response?.data?.error || 'Ошибка обновления двигателя';
-            toast.error(message);
+            toast.error(err.response?.data?.error || 'Ошибка обновления двигателя');
         }
     };
 
@@ -93,13 +122,33 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                             </div>
                             <div>
                                 <label className="form-label">Передний подшипник</label>
-                                <input {...register('frontBearingType')} className="form-input" />
-                                {errors.frontBearingType && <p className="text-danger text-xs mt-1">{errors.frontBearingType.message}</p>}
+                                <select {...register('frontBearingId', { valueAsNumber: true })} className="form-input">
+                                    <option value="">-- Не выбран --</option>
+                                    {loadingBearings ? (
+                                        <option disabled>Загрузка...</option>
+                                    ) : (
+                                        bearings.map(b => (
+                                            <option key={b.id} value={b.id}>
+                                                {b.type} {b.manufacturer ? `(${b.manufacturer})` : ''}
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
                             </div>
                             <div>
                                 <label className="form-label">Задний подшипник</label>
-                                <input {...register('rearBearingType')} className="form-input" />
-                                {errors.rearBearingType && <p className="text-danger text-xs mt-1">{errors.rearBearingType.message}</p>}
+                                <select {...register('rearBearingId', { valueAsNumber: true })} className="form-input">
+                                    <option value="">-- Не выбран --</option>
+                                    {loadingBearings ? (
+                                        <option disabled>Загрузка...</option>
+                                    ) : (
+                                        bearings.map(b => (
+                                            <option key={b.id} value={b.id}>
+                                                {b.type} {b.manufacturer ? `(${b.manufacturer})` : ''}
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
                             </div>
                             <div>
                                 <label className="form-label">Статус</label>
@@ -116,13 +165,10 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                         <option key={value} value={value}>{label}</option>
                                     ))}
                                 </select>
-                                {errors.mountingType && <p className="text-danger text-xs mt-1">{errors.mountingType.message}</p>}
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end gap-3">
-                            <button type="button" onClick={onClose} className="btn-secondary">
-                                Отмена
-                            </button>
+                            <button type="button" onClick={onClose} className="btn-secondary">Отмена</button>
                             <button type="submit" disabled={isSubmitting} className="btn-primary">
                                 {isSubmitting ? 'Сохранение...' : 'Сохранить'}
                             </button>

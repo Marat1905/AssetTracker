@@ -14,6 +14,9 @@ import type {
     UpdateLubricantTypeDto,
     UpdateMaintenanceLogDto,
     UpdateLocationHistoryDto,
+    Bearing,
+    CreateBearingDto,
+    UpdateBearingDto,
 } from '../types';
 
 const api = axios.create({
@@ -34,46 +37,62 @@ api.interceptors.response.use(
     }
 );
 
+// ---- API для подшипников ----
+export const bearingApi = {
+    getAll: async (): Promise<Bearing[]> => {
+        const response = await api.get<Bearing[]>('/bearings');
+        return response.data;
+    },
+    getById: async (id: number): Promise<Bearing> => {
+        const response = await api.get<Bearing>(`/bearings/${id}`);
+        return response.data;
+    },
+    create: async (data: CreateBearingDto): Promise<Bearing> => {
+        const response = await api.post<Bearing>('/bearings', data);
+        return response.data;
+    },
+    update: async (id: number, data: UpdateBearingDto): Promise<Bearing> => {
+        const response = await api.put<Bearing>(`/bearings/${id}`, data);
+        return response.data;
+    },
+    delete: async (id: number): Promise<void> => {
+        await api.delete(`/bearings/${id}`);
+    }
+};
+
+// ---- API для двигателей (обновлённые сигнатуры) ----
 export const motorApi = {
-    // Создать двигатель
     createMotor: async (data: CreateMotorDto): Promise<MotorFullHistoryDto> => {
         const response = await api.post<MotorFullHistoryDto>('/motors', data);
         return response.data;
     },
 
-    // Редактировать двигатель
     updateMotor: async (id: number, data: UpdateMotorRequest): Promise<void> => {
         await api.put(`/motors/${id}`, data);
     },
 
-    // Удалить двигатель
     deleteMotor: async (id: number): Promise<void> => {
         await api.delete(`/motors/${id}`);
     },
 
-    // Переместить двигатель
     moveMotor: async (id: number, data: MoveMotorDto): Promise<void> => {
         await api.patch(`/motors/${id}/move`, data);
     },
 
-    // Добавить обслуживание (с учётом смазки)
     addMaintenance: async (id: number, data: MaintenanceDto): Promise<void> => {
         await api.post(`/motors/${id}/maintenance`, data);
     },
 
-    // Получить полную историю
     getFullHistory: async (id: number): Promise<MotorFullHistoryDto> => {
         const response = await api.get<MotorFullHistoryDto>(`/motors/${id}/full-history`);
         return response.data;
     },
 
-    // Получить список всех двигателей (устаревший)
     getAllMotors: async (): Promise<MotorListItem[]> => {
         const response = await api.get<MotorListItem[]>('/motors');
         return response.data;
     },
 
-    // Пагинированный список с фильтрацией
     getMotorsPaged: async (
         page: number = 1,
         pageSize: number = 10,
@@ -87,12 +106,10 @@ export const motorApi = {
         if (inventoryNumber) params.append('inventoryNumber', inventoryNumber);
         if (location) params.append('location', location);
         if (status) params.append('status', status);
-
         const response = await api.get<PagedResult<MotorListItem>>(`/motors/paged?${params.toString()}`);
         return response.data;
     },
 
-    // Пагинированная история перемещений
     getLocationHistoryPaged: async (
         id: number,
         page: number = 1,
@@ -104,7 +121,6 @@ export const motorApi = {
         return response.data;
     },
 
-    // Пагинированный журнал обслуживания
     getMaintenanceLogsPaged: async (
         id: number,
         page: number = 1,
@@ -116,7 +132,6 @@ export const motorApi = {
         return response.data;
     },
 
-    // === МЕТОДЫ ДЛЯ РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ ЗАПИСЕЙ ОБСЛУЖИВАНИЯ ===
     updateMaintenanceLog: async (motorId: number, logId: number, data: UpdateMaintenanceLogDto): Promise<void> => {
         await api.put(`/motors/${motorId}/maintenance/${logId}`, data);
     },
@@ -125,48 +140,33 @@ export const motorApi = {
         await api.delete(`/motors/${motorId}/maintenance/${logId}`);
     },
 
-    // === НОВЫЕ МЕТОДЫ ДЛЯ ИСТОРИИ ПЕРЕМЕЩЕНИЙ ===
-    /**
-     * Редактирование записи истории перемещений (только location)
-     * @param motorId - инвентарный номер двигателя
-     * @param locationHistoryId - идентификатор записи истории
-     * @param data - объект с новым местоположением
-     */
     updateLocationHistory: async (motorId: number, locationHistoryId: number, data: UpdateLocationHistoryDto): Promise<void> => {
         await api.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
     },
 
-    /**
-     * Удаление записи истории перемещений
-     * @param motorId - инвентарный номер двигателя
-     * @param locationHistoryId - идентификатор записи истории
-     */
     deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
     }
 };
 
+// ---- API для типов смазки (без изменений) ----
 export const lubricantApi = {
     getAll: async (): Promise<LubricantType[]> => {
         const response = await api.get<LubricantType[]>('/lubricanttypes');
         return response.data;
     },
-
     getById: async (id: number): Promise<LubricantType> => {
         const response = await api.get<LubricantType>(`/lubricanttypes/${id}`);
         return response.data;
     },
-
     create: async (data: CreateLubricantTypeDto): Promise<LubricantType> => {
         const response = await api.post<LubricantType>('/lubricanttypes', data);
         return response.data;
     },
-
     update: async (id: number, data: UpdateLubricantTypeDto): Promise<LubricantType> => {
         const response = await api.put<LubricantType>(`/lubricanttypes/${id}`, data);
         return response.data;
     },
-
     delete: async (id: number): Promise<void> => {
         await api.delete(`/lubricanttypes/${id}`);
     }

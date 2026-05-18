@@ -9,15 +9,19 @@ public class MotorFullHistoryDto
     public double ShaftDiameter { get; set; }
     public double Power { get; set; }
     public int Speed { get; set; }
-    public string FrontBearingType { get; set; } = string.Empty;
-    public string RearBearingType { get; set; } = string.Empty;
+    public int? FrontBearingId { get; set; }
+    public int? RearBearingId { get; set; }
+    public string? FrontBearingType { get; set; }   // для отображения типа подшипника (из связанной сущности)
+    public string? RearBearingType { get; set; }
+    public string? FrontBearingManufacturer { get; set; }
+    public string? RearBearingManufacturer { get; set; }
+    public string? FrontBearingSupplier { get; set; }
+    public string? RearBearingSupplier { get; set; }
     public MotorStatus Status { get; set; }
-    /// <summary>Тип монтажа (лапы, лапы и фланец, фланец)</summary>
     public MountingType MountingType { get; set; }
 
-    // Новые поля для последней использованной смазки
-    public string? FrontBearingLastLubricant { get; set; }   // Название последней смазки переднего подшипника
-    public string? RearBearingLastLubricant { get; set; }    // Название последней смазки заднего подшипника
+    public string? FrontBearingLastLubricant { get; set; }
+    public string? RearBearingLastLubricant { get; set; }
 
     public List<LocationHistoryDto> LocationHistory { get; set; } = new();
     public List<MaintenanceLogDto> MaintenanceLogs { get; set; } = new();
@@ -40,8 +44,10 @@ public class MaintenanceLogDto
     public string? BearingPosition { get; set; }
     public int? LubricantTypeId { get; set; }
     public string? LubricantTypeName { get; set; }
-    public string? OldBearingType { get; set; }   // Старый тип подшипника (при замене)
-    public string? NewBearingType { get; set; }   // Новый тип подшипника (при замене)
+    public int? OldBearingId { get; set; }
+    public string? OldBearingType { get; set; }
+    public int? NewBearingId { get; set; }
+    public string? NewBearingType { get; set; }
 }
 
 /// <summary>

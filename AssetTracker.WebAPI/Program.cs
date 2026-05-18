@@ -36,9 +36,9 @@ builder.Services.Configure<Microsoft.AspNetCore.Mvc.JsonOptions>(options =>
 builder.Services.AddAutoMapper(cfg => {
     // настройки если нужны
 }, AppDomain.CurrentDomain.GetAssemblies());
-//builder.Services.AddAutoMapper(Assembly.GetEntryAssembly());
 builder.Services.AddScoped<IMotorService, MotorService>();
 builder.Services.AddScoped<ILubricantTypeService, LubricantTypeService>();
+builder.Services.AddScoped<IBearingService, BearingService>(); // новый сервис
 
 // FluentValidation
 builder.Services.AddFluentValidationAutoValidation();
@@ -55,7 +55,6 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
-    //dbContext.Database.EnsureCreated();
 }
 
 // Middleware

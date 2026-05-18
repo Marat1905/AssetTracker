@@ -1,4 +1,3 @@
-// components/MotorHistory.tsx
 import type { MotorFullHistoryDto } from '../types';
 import { motorStatusLabels, mountingTypeLabels, mountingCodes } from '../utils/locales';
 import MotorDiagram from './MotorDiagram';
@@ -8,21 +7,19 @@ interface Props {
     onMotorUpdated?: () => void;
 }
 
-export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
+export default function MotorHistory({ motorData }: Props) {
     const codes = mountingCodes[motorData.mountingType] || { numeric: '', alpha: '' };
 
     return (
         <div className="card">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-accent/5 to-transparent">
-                <div>
-                    <h2 className="text-2xl font-bold text-text-h">Двигатель №{motorData.inventoryNumber}</h2>
-                    <p className="text-gray-500 mt-1 text-sm">Паспортные данные и технические характеристики</p>
-                </div>
+                <h2 className="text-2xl font-bold text-text-h">Двигатель №{motorData.inventoryNumber}</h2>
+                <p className="text-gray-500 mt-1 text-sm">Паспортные данные и технические характеристики</p>
             </div>
 
             <div className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* ЛЕВАЯ КОЛОНКА – Рисунок ЭД с типами смазки */}
+                    {/* Схема двигателя */}
                     <div className="flex justify-center items-center w-96 max-w-full mx-auto">
                         <MotorDiagram
                             shaftDiameter={motorData.shaftDiameter}
@@ -34,7 +31,7 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                         />
                     </div>
 
-                    {/* ПРАВАЯ КОЛОНКА – Технические характеристики */}
+                    {/* Технические характеристики */}
                     <div className="flex flex-col justify-start">
                         <h3 className="text-md font-semibold text-text-h mb-3 flex items-center gap-2">
                             <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,11 +60,34 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                                 <span className="text-sm text-gray-500">Передний подшипник:</span>
                                 <span className="text-sm font-medium text-text-h">{motorData.frontBearingType}</span>
                             </div>
+                            {motorData.frontBearingManufacturer && (
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700 pl-4">
+                                    <span className="text-xs text-gray-400">Производитель:</span>
+                                    <span className="text-xs text-text-h">{motorData.frontBearingManufacturer}</span>
+                                </div>
+                            )}
+                            {motorData.frontBearingSupplier && (
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700 pl-4">
+                                    <span className="text-xs text-gray-400">Поставщик:</span>
+                                    <span className="text-xs text-text-h">{motorData.frontBearingSupplier}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
                                 <span className="text-sm text-gray-500">Задний подшипник:</span>
                                 <span className="text-sm font-medium text-text-h">{motorData.rearBearingType}</span>
                             </div>
-                            {/* Отображение последней смазки в таблице (опционально) */}
+                            {motorData.rearBearingManufacturer && (
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700 pl-4">
+                                    <span className="text-xs text-gray-400">Производитель:</span>
+                                    <span className="text-xs text-text-h">{motorData.rearBearingManufacturer}</span>
+                                </div>
+                            )}
+                            {motorData.rearBearingSupplier && (
+                                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700 pl-4">
+                                    <span className="text-xs text-gray-400">Поставщик:</span>
+                                    <span className="text-xs text-text-h">{motorData.rearBearingSupplier}</span>
+                                </div>
+                            )}
                             {motorData.frontBearingLastLubricant && (
                                 <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
                                     <span className="text-sm text-gray-500">Последняя смазка (передний):</span>
