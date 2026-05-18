@@ -9,10 +9,12 @@ public class MotorFullHistoryDto
     public double ShaftDiameter { get; set; }
     public double Power { get; set; }
     public int Speed { get; set; }
-    public string FrontBearingType { get; set; } = string.Empty;
-    public string RearBearingType { get; set; } = string.Empty;
+
+    // Вместо строковых типов подшипников используем DTO подшипников
+    public BearingDto FrontBearing { get; set; } = new BearingDto();
+    public BearingDto RearBearing { get; set; } = new BearingDto();
+
     public MotorStatus Status { get; set; }
-    /// <summary>Тип монтажа (лапы, лапы и фланец, фланец)</summary>
     public MountingType MountingType { get; set; }
 
     // Новые поля для последней использованной смазки
@@ -40,8 +42,10 @@ public class MaintenanceLogDto
     public string? BearingPosition { get; set; }
     public int? LubricantTypeId { get; set; }
     public string? LubricantTypeName { get; set; }
-    public string? OldBearingType { get; set; }   // Старый тип подшипника (при замене)
-    public string? NewBearingType { get; set; }   // Новый тип подшипника (при замене)
+
+    // Вместо OldBearingType/NewBearingType используем DTO подшипников
+    public BearingDto? OldBearing { get; set; }
+    public BearingDto? NewBearing { get; set; }
 }
 
 /// <summary>

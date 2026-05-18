@@ -1,4 +1,7 @@
-﻿using AssetTracker.Application.DTOs;
+﻿// ============================================================
+// Файл: Application/Services/MotorService.cs (изменённый, полный код)
+// ============================================================
+using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Entities;
 using AssetTracker.Domain.Enums;
@@ -27,13 +30,25 @@ public class MotorService : IMotorService
         _logger.LogInformation("Fetching all motors");
         var motors = await _unitOfWork.Motors.GetAllAsync();
 
-        return motors.Select(m => new MotorListItemDto
+        // Для получения текущего местоположения нужно подгрузить LocationHistories
+        var motorList = new List<MotorListItemDto>();
+        foreach (var motor in motors)
         {
-            InventoryNumber = m.InventoryNumber,
-            Type = m.Type,
-            Power = m.Power,
-            Status = m.Status.ToString()
-        });
+            var currentLocation = await _unitOfWork.LocationHistories.GetQueryable()
+                .Where(l => l.MotorId == motor.InventoryNumber && l.EndDate == null)
+                .Select(l => l.Location)
+                .FirstOrDefaultAsync() ?? string.Empty;
+
+            motorList.Add(new MotorListItemDto
+            {
+                InventoryNumber = motor.InventoryNumber,
+                Type = motor.Type,
+                Power = motor.Power,
+                Status = motor.Status.ToString(),
+                CurrentLocation = currentLocation
+            });
+        }
+        return motorList;
     }
 
     public async Task<MotorFullHistoryDto> CreateMotorAsync(CreateMotorDto dto)
@@ -44,7 +59,16 @@ public class MotorService : IMotorService
         if (existingMotor != null)
             throw new InvalidOperationException($"Двигатель с инвентарным номером {dto.InventoryNumber} уже существует");
 
+        // Создаём подшипники
+        var frontBearing = _mapper.Map<Bearing>(dto.FrontBearing);
+        var rearBearing = _mapper.Map<Bearing>(dto.RearBearing);
+        await _unitOfWork.Bearings.AddAsync(frontBearing);
+        await _unitOfWork.Bearings.AddAsync(rearBearing);
+        await _unitOfWork.SaveChangesAsync(); // чтобы получить Id
+
         var motor = _mapper.Map<Motor>(dto);
+        motor.FrontBearingId = frontBearing.Id;
+        motor.RearBearingId = rearBearing.Id;
         motor.Status = dto.Status;
 
         await _unitOfWork.Motors.AddAsync(motor);
@@ -73,25 +97,12 @@ public class MotorService : IMotorService
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        // Обновляем статус, если передан и отличается от текущего
         if (dto.NewStatus.HasValue && motor.Status != dto.NewStatus.Value)
         {
             _logger.LogInformation("Changing motor {MotorId} status from {OldStatus} to {NewStatus}",
                 motorId, motor.Status, dto.NewStatus.Value);
             motor.Status = dto.NewStatus.Value;
             _unitOfWork.Motors.Update(motor);
-
-            // Опционально: добавить запись в журнал обслуживания/ремонта о смене статуса
-            // Это позволит видеть изменения статуса в истории.
-            var statusChangeLog = new MaintenanceLog
-            {
-                MotorId = motorId,
-                WorkType = MaintenanceType.Lubrication, // или добавить новый тип? можно закомментировать, если не нужно
-                Date = DateTime.UtcNow,
-                Comment = $"Изменение статуса: {dto.NewStatus.Value} (при перемещении в {dto.NewLocation})"
-            };
-            // Не добавляем принудительно, т.к. WorkType не соответствует. Лучше создать отдельный тип.
-            // Для чистоты просто обновим статус, без дополнительной записи.
         }
 
         // Закрыть активную запись перемещения
@@ -124,7 +135,8 @@ public class MotorService : IMotorService
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        string? oldBearingType = null;
+        int? oldBearingId = null;
+        int? newBearingId = null;
 
         // Валидация для смазки
         if (dto.WorkType == MaintenanceType.Lubrication)
@@ -139,25 +151,45 @@ public class MotorService : IMotorService
                 throw new ArgumentException($"Тип смазки с id {dto.LubricantTypeId} не существует");
         }
 
-        // Валидация для замены подшипника
+        // Валидация и обработка замены подшипника
         if (dto.WorkType == MaintenanceType.BearingReplacement)
         {
             if (!dto.BearingPosition.HasValue)
                 throw new ArgumentException("Для замены подшипника необходимо указать позицию (передний/задний)");
-            if (string.IsNullOrWhiteSpace(dto.NewBearingType))
-                throw new ArgumentException("Для замены подшипника необходимо указать новый тип подшипника");
 
-            // Сохраняем старый тип подшипника до обновления
+            // Сохраняем старый подшипник
             if (dto.BearingPosition.Value == BearingPosition.Front)
+                oldBearingId = motor.FrontBearingId;
+            else
+                oldBearingId = motor.RearBearingId;
+
+            // Определяем новый подшипник
+            if (dto.ExistingBearingId.HasValue)
             {
-                oldBearingType = motor.FrontBearingType;
-                motor.FrontBearingType = dto.NewBearingType;
+                // Используем существующий подшипник
+                var existingBearing = await _unitOfWork.Bearings.GetByIdAsync(dto.ExistingBearingId.Value);
+                if (existingBearing == null)
+                    throw new ArgumentException($"Подшипник с id {dto.ExistingBearingId.Value} не существует");
+                newBearingId = existingBearing.Id;
             }
-            else if (dto.BearingPosition.Value == BearingPosition.Rear)
+            else if (dto.NewBearing != null)
             {
-                oldBearingType = motor.RearBearingType;
-                motor.RearBearingType = dto.NewBearingType;
+                // Создаём новый подшипник
+                var newBearing = _mapper.Map<Bearing>(dto.NewBearing);
+                await _unitOfWork.Bearings.AddAsync(newBearing);
+                await _unitOfWork.SaveChangesAsync(); // чтобы получить Id
+                newBearingId = newBearing.Id;
             }
+            else
+            {
+                throw new ArgumentException("Для замены подшипника необходимо указать ExistingBearingId или NewBearing");
+            }
+
+            // Обновляем ссылку в моторе
+            if (dto.BearingPosition.Value == BearingPosition.Front)
+                motor.FrontBearingId = newBearingId.Value;
+            else
+                motor.RearBearingId = newBearingId.Value;
 
             _unitOfWork.Motors.Update(motor);
         }
@@ -170,8 +202,8 @@ public class MotorService : IMotorService
             Comment = dto.Comment,
             BearingPosition = dto.BearingPosition,
             LubricantTypeId = dto.LubricantTypeId,
-            OldBearingType = oldBearingType,                 // Сохраняем старый тип
-            NewBearingType = dto.WorkType == MaintenanceType.BearingReplacement ? dto.NewBearingType : null
+            OldBearingId = oldBearingId,
+            NewBearingId = newBearingId
         };
 
         await _unitOfWork.MaintenanceLogs.AddAsync(maintenance);
@@ -184,14 +216,17 @@ public class MotorService : IMotorService
     {
         _logger.LogInformation("Fetching full history for motor {MotorId}", motorId);
 
-        // 1. Загружаем только сам двигатель (без навигационных коллекций)
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetQueryable()
+            .Include(m => m.FrontBearing)
+            .Include(m => m.RearBearing)
+            .FirstOrDefaultAsync(m => m.InventoryNumber == motorId);
+
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
         var dto = _mapper.Map<MotorFullHistoryDto>(motor);
 
-        // 2. История перемещений (обычно не миллионы записей, но всё же делаем проекцию)
+        // История перемещений
         dto.LocationHistory = await _unitOfWork.LocationHistories.GetQueryable()
             .Where(l => l.MotorId == motorId)
             .OrderBy(l => l.StartDate)
@@ -204,9 +239,7 @@ public class MotorService : IMotorService
             })
             .ToListAsync();
 
-        // 3. История обслуживания – ограничиваем последними 100 записями для мобильных устройств
-        //    Полную историю можно получить через пагинированный эндпоинт
-        // ИСПРАВЛЕНО: добавлены поля OldBearingType и NewBearingType
+        // История обслуживания (последние 100 записей)
         dto.MaintenanceLogs = await _unitOfWork.MaintenanceLogs.GetQueryable()
             .Where(m => m.MotorId == motorId)
             .OrderByDescending(m => m.Date)
@@ -220,12 +253,24 @@ public class MotorService : IMotorService
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
                 LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
-                OldBearingType = m.OldBearingType,
-                NewBearingType = m.NewBearingType
+                OldBearing = m.OldBearing != null ? new BearingDto
+                {
+                    Id = m.OldBearing.Id,
+                    Type = m.OldBearing.Type,
+                    Manufacturer = m.OldBearing.Manufacturer,
+                    Supplier = m.OldBearing.Supplier
+                } : null,
+                NewBearing = m.NewBearing != null ? new BearingDto
+                {
+                    Id = m.NewBearing.Id,
+                    Type = m.NewBearing.Type,
+                    Manufacturer = m.NewBearing.Manufacturer,
+                    Supplier = m.NewBearing.Supplier
+                } : null
             })
             .ToListAsync();
 
-        // 4. Последняя смазка переднего подшипника – один быстрый запрос с индексом
+        // Последняя смазка переднего подшипника
         var frontLubricant = await _unitOfWork.MaintenanceLogs.GetQueryable()
             .Where(m => m.MotorId == motorId
                         && m.WorkType == MaintenanceType.Lubrication
@@ -235,7 +280,7 @@ public class MotorService : IMotorService
             .Select(m => m.LubricantType!.Name)
             .FirstOrDefaultAsync();
 
-        // 5. Последняя смазка заднего подшипника
+        // Последняя смазка заднего подшипника
         var rearLubricant = await _unitOfWork.MaintenanceLogs.GetQueryable()
             .Where(m => m.MotorId == motorId
                         && m.WorkType == MaintenanceType.Lubrication
@@ -251,7 +296,6 @@ public class MotorService : IMotorService
         return dto;
     }
 
-    //  Обновление основных характеристик двигателя
     public async Task UpdateMotorAsync(int motorId, UpdateMotorDto dto)
     {
         _logger.LogInformation("Updating motor {MotorId}", motorId);
@@ -260,14 +304,13 @@ public class MotorService : IMotorService
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        _mapper.Map(dto, motor); // Обновляем только разрешённые поля
+        _mapper.Map(dto, motor);
         _unitOfWork.Motors.Update(motor);
         await _unitOfWork.SaveChangesAsync();
 
         _logger.LogInformation("Motor {MotorId} updated successfully", motorId);
     }
 
-    // Удаление двигателя и всей связанной истории (каскадное удаление в БД)
     public async Task DeleteMotorAsync(int motorId)
     {
         _logger.LogInformation("Deleting motor {MotorId}", motorId);
@@ -282,31 +325,22 @@ public class MotorService : IMotorService
         _logger.LogInformation("Motor {MotorId} deleted successfully", motorId);
     }
 
-    // Реализация новых методов
-
     public async Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(int page, int pageSize, string? inventoryNumberFilter, string? locationFilter, MotorStatus? statusFilter)
     {
-        _logger.LogInformation("Fetching motors paged: page={Page}, pageSize={PageSize}, inventoryFilter={InventoryFilter}, locationFilter={LocationFilter}, statusFilter={StatusFilter}",
-            page, pageSize, inventoryNumberFilter, locationFilter, statusFilter);
+        _logger.LogInformation("Fetching motors paged: page={Page}, pageSize={PageSize}", page, pageSize);
 
         var query = _unitOfWork.Motors.GetQueryable();
 
-        // Фильтрация по инвентарному номеру (частичное совпадение, как строка)
         if (!string.IsNullOrEmpty(inventoryNumberFilter))
-        {
             query = query.Where(m => m.InventoryNumber.ToString().Contains(inventoryNumberFilter));
-        }
 
-        // Фильтрация по текущему месту установки (активная запись LocationHistory)
+        if (statusFilter.HasValue)
+            query = query.Where(m => m.Status == statusFilter.Value);
+
+        // Фильтрация по текущему местоположению требует подзапроса
         if (!string.IsNullOrEmpty(locationFilter))
         {
             query = query.Where(m => m.LocationHistories.Any(l => l.EndDate == null && l.Location.Contains(locationFilter)));
-        }
-
-        // Фильтрация по статусу
-        if (statusFilter.HasValue)
-        {
-            query = query.Where(m => m.Status == statusFilter.Value);
         }
 
         var totalCount = await query.CountAsync();
@@ -320,10 +354,7 @@ public class MotorService : IMotorService
                 Type = m.Type,
                 Power = m.Power,
                 Status = m.Status.ToString(),
-                CurrentLocation = m.LocationHistories
-                    .Where(l => l.EndDate == null)
-                    .Select(l => l.Location)
-                    .FirstOrDefault() ?? string.Empty
+                CurrentLocation = m.LocationHistories.Where(l => l.EndDate == null).Select(l => l.Location).FirstOrDefault() ?? string.Empty
             })
             .ToListAsync();
 
@@ -347,7 +378,7 @@ public class MotorService : IMotorService
 
         var query = _unitOfWork.LocationHistories.GetQueryable()
             .Where(l => l.MotorId == motorId)
-            .OrderBy(l => l.StartDate); // как в GetFullHistory – по возрастанию
+            .OrderBy(l => l.StartDate);
 
         var totalCount = await query.CountAsync();
         var items = await query
@@ -385,7 +416,6 @@ public class MotorService : IMotorService
             .OrderByDescending(m => m.Date);
 
         var totalCount = await query.CountAsync();
-        // ИСПРАВЛЕНО: добавлены поля OldBearingType и NewBearingType
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -398,8 +428,20 @@ public class MotorService : IMotorService
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
                 LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
-                OldBearingType = m.OldBearingType,
-                NewBearingType = m.NewBearingType
+                OldBearing = m.OldBearing != null ? new BearingDto
+                {
+                    Id = m.OldBearing.Id,
+                    Type = m.OldBearing.Type,
+                    Manufacturer = m.OldBearing.Manufacturer,
+                    Supplier = m.OldBearing.Supplier
+                } : null,
+                NewBearing = m.NewBearing != null ? new BearingDto
+                {
+                    Id = m.NewBearing.Id,
+                    Type = m.NewBearing.Type,
+                    Manufacturer = m.NewBearing.Manufacturer,
+                    Supplier = m.NewBearing.Supplier
+                } : null
             })
             .ToListAsync();
 
@@ -413,9 +455,6 @@ public class MotorService : IMotorService
         };
     }
 
-    /// <summary>
-    /// Редактирование записи обслуживания
-    /// </summary>
     public async Task UpdateMaintenanceLogAsync(int motorId, int logId, UpdateMaintenanceLogDto dto)
     {
         _logger.LogInformation("Updating maintenance log {LogId} for motor {MotorId}", logId, motorId);
@@ -424,11 +463,15 @@ public class MotorService : IMotorService
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        var log = await _unitOfWork.MaintenanceLogs.GetByIdAsync(logId);
-        if (log == null || log.MotorId != motorId)
+        var log = await _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Include(l => l.OldBearing)
+            .Include(l => l.NewBearing)
+            .FirstOrDefaultAsync(l => l.Id == logId && l.MotorId == motorId);
+
+        if (log == null)
             throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
 
-        // Обновляем комментарий, если передан
+        // Обновляем комментарий
         if (dto.Comment != null)
             log.Comment = dto.Comment;
 
@@ -441,33 +484,48 @@ public class MotorService : IMotorService
                     throw new ArgumentException($"Тип смазки с id {dto.LubricantTypeId} не существует");
                 log.LubricantTypeId = dto.LubricantTypeId;
             }
-            if (dto.NewBearingType != null)
-                throw new InvalidOperationException("Невозможно изменить тип подшипника для операции смазки");
+            if (dto.ExistingBearingId.HasValue || dto.NewBearing != null)
+                throw new InvalidOperationException("Для операции смазки нельзя изменять подшипник");
         }
         else if (log.WorkType == MaintenanceType.BearingReplacement)
         {
-            // Разрешаем менять новый тип подшипника
-            if (dto.NewBearingType != null)
+            // Можно изменить подшипник (новый) на другой
+            int? newBearingId = null;
+            if (dto.ExistingBearingId.HasValue)
             {
-                log.NewBearingType = dto.NewBearingType;
-
-                // Обновляем соответствующий подшипник в двигателе
-                if (log.BearingPosition == BearingPosition.Front)
-                    motor.FrontBearingType = dto.NewBearingType;
-                else if (log.BearingPosition == BearingPosition.Rear)
-                    motor.RearBearingType = dto.NewBearingType;
-
-                _unitOfWork.Motors.Update(motor);
+                var existingBearing = await _unitOfWork.Bearings.GetByIdAsync(dto.ExistingBearingId.Value);
+                if (existingBearing == null)
+                    throw new ArgumentException($"Подшипник с id {dto.ExistingBearingId.Value} не существует");
+                newBearingId = existingBearing.Id;
             }
+            else if (dto.NewBearing != null)
+            {
+                var newBearing = _mapper.Map<Bearing>(dto.NewBearing);
+                await _unitOfWork.Bearings.AddAsync(newBearing);
+                await _unitOfWork.SaveChangesAsync();
+                newBearingId = newBearing.Id;
+            }
+
+            if (newBearingId.HasValue)
+            {
+                // Обновляем ссылку в моторе
+                if (log.BearingPosition == BearingPosition.Front)
+                    motor.FrontBearingId = newBearingId.Value;
+                else if (log.BearingPosition == BearingPosition.Rear)
+                    motor.RearBearingId = newBearingId.Value;
+                _unitOfWork.Motors.Update(motor);
+
+                // Обновляем запись обслуживания
+                log.NewBearingId = newBearingId;
+            }
+
             if (dto.LubricantTypeId.HasValue)
                 throw new InvalidOperationException("Для замены подшипника нельзя указывать тип смазки");
         }
         else
         {
-            if (dto.LubricantTypeId.HasValue)
-                throw new InvalidOperationException("Для данного типа работ нельзя указывать тип смазки");
-            if (dto.NewBearingType != null)
-                throw new InvalidOperationException("Для данного типа работ нельзя указывать тип подшипника");
+            if (dto.LubricantTypeId.HasValue || dto.ExistingBearingId.HasValue || dto.NewBearing != null)
+                throw new InvalidOperationException("Для данного типа работ нельзя изменять смазку или подшипник");
         }
 
         _unitOfWork.MaintenanceLogs.Update(log);
@@ -476,26 +534,28 @@ public class MotorService : IMotorService
         _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} updated", logId, motorId);
     }
 
-    /// <summary>
-    /// Удаление записи обслуживания
-    /// </summary>
     public async Task DeleteMaintenanceLogAsync(int motorId, int logId)
     {
         _logger.LogInformation("Deleting maintenance log {LogId} for motor {MotorId}", logId, motorId);
 
-        // Проверяем существование двигателя
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        // Загружаем запись обслуживания
         var log = await _unitOfWork.MaintenanceLogs.GetByIdAsync(logId);
         if (log == null || log.MotorId != motorId)
             throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
 
-        // При удалении записи о замене подшипника не откатываем состояние двигателя,
-        // так как замена уже произошла физически. Удаление записи – лишь удаление исторического факта.
-        // Просто удаляем запись.
+        // Если это замена подшипника, то откатываем мотор на старый подшипник
+        if (log.WorkType == MaintenanceType.BearingReplacement && log.OldBearingId.HasValue)
+        {
+            if (log.BearingPosition == BearingPosition.Front)
+                motor.FrontBearingId = log.OldBearingId.Value;
+            else if (log.BearingPosition == BearingPosition.Rear)
+                motor.RearBearingId = log.OldBearingId.Value;
+            _unitOfWork.Motors.Update(motor);
+        }
+
         _unitOfWork.MaintenanceLogs.Remove(log);
         await _unitOfWork.SaveChangesAsync();
 
@@ -506,17 +566,14 @@ public class MotorService : IMotorService
     {
         _logger.LogInformation("Updating location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
 
-        // Проверяем существование двигателя
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        // Загружаем запись истории
         var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
         if (locationHistory == null || locationHistory.MotorId != motorId)
             throw new KeyNotFoundException($"Запись истории перемещений с id {locationHistoryId} не найдена для двигателя {motorId}");
 
-        // Редактируем только Location, даты не трогаем
         locationHistory.Location = dto.Location;
         _unitOfWork.LocationHistories.Update(locationHistory);
         await _unitOfWork.SaveChangesAsync();
@@ -528,17 +585,14 @@ public class MotorService : IMotorService
     {
         _logger.LogInformation("Deleting location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
 
-        // Проверяем двигатель
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
-        // Загружаем запись
         var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
         if (locationHistory == null || locationHistory.MotorId != motorId)
             throw new KeyNotFoundException($"Запись истории перемещений с id {locationHistoryId} не найдена для двигателя {motorId}");
 
-        // Получаем все записи истории для этого двигателя, отсортированные по StartDate
         var allHistories = await _unitOfWork.LocationHistories.GetQueryable()
             .Where(l => l.MotorId == motorId)
             .OrderBy(l => l.StartDate)
@@ -547,42 +601,35 @@ public class MotorService : IMotorService
         if (allHistories.Count == 1)
             throw new InvalidOperationException("Нельзя удалить единственную запись истории перемещений – двигатель должен иметь текущее местоположение");
 
-        // Определяем индекс удаляемой записи
         var index = allHistories.FindIndex(h => h.Id == locationHistoryId);
 
-        // Случай 1: запись активная (EndDate == null)
-        if (locationHistory.EndDate == null)
+        if (locationHistory.EndDate == null) // активная запись
         {
-            // Находим предыдущую запись (если есть)
             if (index > 0)
             {
                 var previous = allHistories[index - 1];
-                previous.EndDate = null; // делаем предыдущую запись активной
+                previous.EndDate = null;
                 _unitOfWork.LocationHistories.Update(previous);
             }
             else
             {
-                // Это первая запись, и она активная – удалять нельзя, т.к. не останется активной записи
                 throw new InvalidOperationException("Нельзя удалить единственную активную запись местоположения – двигатель останется без текущего места");
             }
-
             _unitOfWork.LocationHistories.Remove(locationHistory);
             await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation("Active location history {LocationHistoryId} for motor {MotorId} deleted, previous record became active", locationHistoryId, motorId);
             return;
         }
 
-        // Случай 2: запись закрытая (EndDate != null) – удаляем только если это последняя запись
+        // Закрытая запись
         if (index == allHistories.Count - 1)
         {
-            // Последняя запись, просто удаляем
             _unitOfWork.LocationHistories.Remove(locationHistory);
             await _unitOfWork.SaveChangesAsync();
             _logger.LogInformation("Closed last location history {LocationHistoryId} for motor {MotorId} deleted", locationHistoryId, motorId);
         }
         else
         {
-            // Запись не последняя – удаление разорвёт временную цепочку, запрещаем
             throw new InvalidOperationException("Удаление промежуточных записей истории перемещений запрещено, так как это нарушит непрерывность временной линии. Можно отредактировать Location или удалить только последнюю запись.");
         }
     }

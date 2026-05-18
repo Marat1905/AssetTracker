@@ -9,11 +9,13 @@ public class CreateMotorDto
     public double ShaftDiameter { get; set; } // мм
     public double Power { get; set; }
     public int Speed { get; set; }
-    public string FrontBearingType { get; set; } = string.Empty;
-    public string RearBearingType { get; set; } = string.Empty;
+
+    // Вместо строк FrontBearingType/RearBearingType используем вложенные DTO для создания подшипников
+    public CreateBearingDto FrontBearing { get; set; } = new CreateBearingDto();
+    public CreateBearingDto RearBearing { get; set; } = new CreateBearingDto();
+
     public MotorStatus Status { get; set; } = MotorStatus.InOperation;
     public string InitialLocation { get; set; } = string.Empty;
-
     /// <summary>Тип монтажа (лапы, лапы и фланец, фланец)</summary>
     public MountingType MountingType { get; set; }
 }
@@ -24,10 +26,7 @@ public class UpdateMotorDto
     public double ShaftDiameter { get; set; } // мм
     public double Power { get; set; }
     public int Speed { get; set; }
-    public string FrontBearingType { get; set; } = string.Empty;
-    public string RearBearingType { get; set; } = string.Empty;
     public MotorStatus Status { get; set; }
-
     /// <summary>Тип монтажа (лапы, лапы и фланец, фланец)</summary>
     public MountingType MountingType { get; set; }
 }

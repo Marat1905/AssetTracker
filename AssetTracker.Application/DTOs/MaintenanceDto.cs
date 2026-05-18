@@ -11,8 +11,12 @@ public class MaintenanceDto
     public BearingPosition? BearingPosition { get; set; }
     public int? LubricantTypeId { get; set; }
 
-    // Поле для замены подшипника (обязательно, если WorkType == BearingReplacement)
-    public string? NewBearingType { get; set; }
+    // Поля для замены подшипника (обязательны, если WorkType == BearingReplacement)
+    // Можно указать ExistingBearingId (использовать существующий подшипник) 
+    // или передать данные для нового подшипника в NewBearing.
+    // Если указаны оба, приоритет у ExistingBearingId.
+    public int? ExistingBearingId { get; set; }
+    public CreateBearingDto? NewBearing { get; set; }
 }
 
 /// <summary>
@@ -31,7 +35,12 @@ public class UpdateMaintenanceLogDto
     public int? LubricantTypeId { get; set; }
 
     /// <summary>
-    /// Новый тип подшипника (только для операций замены подшипника, опционально)
+    /// Для замены подшипника: можно изменить подшипник на другой существующий
     /// </summary>
-    public string? NewBearingType { get; set; }
+    public int? ExistingBearingId { get; set; }
+
+    /// <summary>
+    /// Для замены подшипника: можно создать новый подшипник (если ExistingBearingId не указан)
+    /// </summary>
+    public CreateBearingDto? NewBearing { get; set; }
 }

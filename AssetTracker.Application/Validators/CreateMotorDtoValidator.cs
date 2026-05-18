@@ -23,16 +23,41 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
         RuleFor(x => x.Speed)
             .GreaterThan(0).WithMessage("Обороты должны быть больше 0");
 
-        RuleFor(x => x.FrontBearingType)
-            .NotEmpty().WithMessage("Тип переднего подшипника обязателен");
+        // Валидация переднего подшипника
+        RuleFor(x => x.FrontBearing)
+            .NotNull().WithMessage("Необходимо указать данные переднего подшипника")
+            .ChildRules(bearing =>
+            {
+                bearing.RuleFor(b => b.Type)
+                    .NotEmpty().WithMessage("Тип переднего подшипника обязателен")
+                    .MaximumLength(100);
+                bearing.RuleFor(b => b.Manufacturer)
+                    .NotEmpty().WithMessage("Производитель переднего подшипника обязателен")
+                    .MaximumLength(200);
+                bearing.RuleFor(b => b.Supplier)
+                    .NotEmpty().WithMessage("Поставщик переднего подшипника обязателен")
+                    .MaximumLength(200);
+            });
 
-        RuleFor(x => x.RearBearingType)
-            .NotEmpty().WithMessage("Тип заднего подшипника обязателен");
+        // Валидация заднего подшипника
+        RuleFor(x => x.RearBearing)
+            .NotNull().WithMessage("Необходимо указать данные заднего подшипника")
+            .ChildRules(bearing =>
+            {
+                bearing.RuleFor(b => b.Type)
+                    .NotEmpty().WithMessage("Тип заднего подшипника обязателен")
+                    .MaximumLength(100);
+                bearing.RuleFor(b => b.Manufacturer)
+                    .NotEmpty().WithMessage("Производитель заднего подшипника обязателен")
+                    .MaximumLength(200);
+                bearing.RuleFor(b => b.Supplier)
+                    .NotEmpty().WithMessage("Поставщик заднего подшипника обязателен")
+                    .MaximumLength(200);
+            });
 
         RuleFor(x => x.InitialLocation)
             .NotEmpty().WithMessage("Начальное место установки обязательно");
 
-        // Проверка, что тип монтажа имеет допустимое значение (из объявленного перечисления)
         RuleFor(x => x.MountingType)
             .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, Flange, FeetAndFlange, SmallFlange, FeetAndSmallFlange");
     }
