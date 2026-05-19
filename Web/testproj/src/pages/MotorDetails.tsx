@@ -10,6 +10,7 @@
  * На экранах меньше 768px табличный режим недоступен (только карточки) для избежания горизонтальной прокрутки.
  * Табличный режим использует table-layout: fixed и word-break: break-word для предотвращения горизонтальной прокрутки.
  * Переключатель режимов (карточки/таблица) расположен в блоке фильтрации, рядом с кнопками "Применить/Сброс".
+ * В режиме карточки комментарий переносится на новую строку с помощью break-words.
  */
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -660,8 +661,9 @@ export default function MotorDetails() {
                                                                     </div>
                                                                 </div>
                                                             )}
+                                                            {/* Комментарий с переносом строки */}
                                                             {log.comment && (
-                                                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 pt-1 border-t border-gray-100 dark:border-slate-700">
+                                                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 pt-1 border-t border-gray-100 dark:border-slate-700 break-words whitespace-normal">
                                                                     {log.comment}
                                                                 </p>
                                                             )}
@@ -770,7 +772,7 @@ export default function MotorDetails() {
                                                             </td>
                                                             <td className="p-3 align-top whitespace-normal break-words">
                                                                 {log.comment ? (
-                                                                    <span className="text-sm text-gray-600 dark:text-gray-400 break-words">
+                                                                    <span className="text-sm text-gray-600 dark:text-gray-400 break-words whitespace-normal">
                                                                         {log.comment}
                                                                     </span>
                                                                 ) : '—'}
