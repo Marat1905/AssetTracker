@@ -1,7 +1,7 @@
 // pages/MotorDetails.tsx
 /**
  * Страница детальной информации о двигателе.
- * Отображает паспортные данные, историю перемещений и журнал обслуживания.
+ * Отображает паспортные данные, историю перемещений и журнал обслуживания в трёх вкладках.
  * Поддерживает добавление/редактирование/удаление записей.
  * Для замены подшипника и истории перемещений разрешает редактирование/удаление только последней записи.
  * Реализована фильтрация журнала обслуживания по типу работ и периоду.
@@ -19,7 +19,7 @@ import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto, Mainte
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';
-import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2, Info, Filter, X } from 'lucide-react';
+import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2, Info, Filter, X, Settings } from 'lucide-react';
 
 export default function MotorDetails() {
     // Получаем идентификатор двигателя из URL
@@ -30,7 +30,7 @@ export default function MotorDetails() {
     // Состояния данных
     const [motorData, setMotorData] = useState<MotorFullHistoryDto | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState<'location' | 'maintenance'>('location');
+    const [activeTab, setActiveTab] = useState<'passport' | 'location' | 'maintenance'>('passport');
 
     // Модальные окна для добавления записей
     const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
@@ -319,13 +319,20 @@ export default function MotorDetails() {
                 </div>
             </div>
 
-            {/* Блок паспортных данных и схемы */}
-            {motorData && <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />}
-
-            {/* Вкладки: история перемещений и журнал обслуживания */}
-            <div className="mt-6">
+            {/* Вкладки: паспортные данные, история перемещений, журнал обслуживания */}
+            <div className="mt-2">
                 <div className="border-b border-gray-200 dark:border-gray-700">
                     <nav className="flex gap-6">
+                        <button
+                            onClick={() => setActiveTab('passport')}
+                            className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'passport'
+                                ? 'border-b-2 border-accent text-accent'
+                                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                }`}
+                        >
+                            <Settings size={18} />
+                            Паспортные данные
+                        </button>
                         <button
                             onClick={() => setActiveTab('location')}
                             className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'location'
@@ -350,6 +357,11 @@ export default function MotorDetails() {
                 </div>
 
                 <div className="mt-6">
+                    {/* Вкладка "Паспортные данные" */}
+                    {activeTab === 'passport' && motorData && (
+                        <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
+                    )}
+
                     {/* Вкладка "История перемещений" */}
                     {activeTab === 'location' && (
                         <div className="space-y-6">

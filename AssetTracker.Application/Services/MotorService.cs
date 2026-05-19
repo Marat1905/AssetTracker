@@ -324,7 +324,12 @@ public class MotorService : IMotorService
         _logger.LogInformation("Motor {MotorId} deleted successfully", motorId);
     }
 
-    public async Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(int page, int pageSize, string? inventoryNumberFilter, string? locationFilter, MotorStatus? statusFilter)
+    public async Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(
+        int page,
+        int pageSize,
+        string? inventoryNumberFilter,
+        string? locationFilter,
+        MotorStatus? statusFilter)
     {
         _logger.LogInformation("Fetching motors paged: page={Page}, pageSize={PageSize}", page, pageSize);
 
@@ -336,10 +341,11 @@ public class MotorService : IMotorService
         if (statusFilter.HasValue)
             query = query.Where(m => m.Status == statusFilter.Value);
 
-        // Фильтрация по текущему местоположению требует подзапроса
+        // Фильтрация по текущему местоположению с регистронезависимым поиском (ILike)
         if (!string.IsNullOrEmpty(locationFilter))
         {
-            query = query.Where(m => m.LocationHistories.Any(l => l.EndDate == null && l.Location.Contains(locationFilter)));
+            query = query.Where(m => m.LocationHistories.Any(l =>
+                l.EndDate == null && EF.Functions.ILike(l.Location, $"%{locationFilter}%")));
         }
 
         var totalCount = await query.CountAsync();
@@ -353,7 +359,10 @@ public class MotorService : IMotorService
                 Type = m.Type,
                 Power = m.Power,
                 Status = m.Status.ToString(),
-                CurrentLocation = m.LocationHistories.Where(l => l.EndDate == null).Select(l => l.Location).FirstOrDefault() ?? string.Empty
+                CurrentLocation = m.LocationHistories
+                    .Where(l => l.EndDate == null)
+                    .Select(l => l.Location)
+                    .FirstOrDefault() ?? string.Empty
             })
             .ToListAsync();
 
