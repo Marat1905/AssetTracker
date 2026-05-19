@@ -223,10 +223,10 @@ public class MotorService : IMotorService
 
         var dto = _mapper.Map<MotorFullHistoryDto>(motor);
 
-        // История перемещений
+        // История перемещений – сортировка по убыванию даты начала (сначала новые)
         dto.LocationHistory = await _unitOfWork.LocationHistories.GetQueryable()
             .Where(l => l.MotorId == motorId)
-            .OrderBy(l => l.StartDate)
+            .OrderByDescending(l => l.StartDate)
             .Select(l => new LocationHistoryDto
             {
                 Id = l.Id,
@@ -373,9 +373,10 @@ public class MotorService : IMotorService
         if (motorExists == null)
             throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
 
+        // Сортировка по убыванию даты начала (самые новые перемещения первыми)
         var query = _unitOfWork.LocationHistories.GetQueryable()
             .Where(l => l.MotorId == motorId)
-            .OrderBy(l => l.StartDate);
+            .OrderByDescending(l => l.StartDate);
 
         var totalCount = await query.CountAsync();
         var items = await query
