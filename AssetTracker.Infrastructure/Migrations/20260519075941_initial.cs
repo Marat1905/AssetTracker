@@ -105,6 +105,7 @@ namespace AssetTracker.Infrastructure.Migrations
                     WorkType = table.Column<string>(type: "text", nullable: false),
                     Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    PerformedBy = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     BearingPosition = table.Column<string>(type: "text", nullable: true),
                     LubricantTypeId = table.Column<int>(type: "integer", nullable: true),
                     OldBearingId = table.Column<int>(type: "integer", nullable: true),

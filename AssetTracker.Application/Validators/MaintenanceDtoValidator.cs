@@ -1,5 +1,4 @@
-﻿// Application/Validators/MaintenanceDtoValidator.cs
-using AssetTracker.Application.DTOs;
+﻿using AssetTracker.Application.DTOs;
 using AssetTracker.Domain.Enums;
 using FluentValidation;
 
@@ -10,6 +9,11 @@ public class MaintenanceDtoValidator : AbstractValidator<MaintenanceDto>
     public MaintenanceDtoValidator()
     {
         RuleFor(x => x.WorkType).IsInEnum();
+
+        // Общее правило для PerformedBy
+        RuleFor(x => x.PerformedBy)
+            .NotEmpty().WithMessage("Необходимо указать, кто выполнил обслуживание")
+            .MaximumLength(100).WithMessage("Имя исполнителя не должно превышать 100 символов");
 
         // Правила для смазки
         When(x => x.WorkType == MaintenanceType.Lubrication, () =>
@@ -72,6 +76,10 @@ public class UpdateMaintenanceLogDtoValidator : AbstractValidator<UpdateMaintena
     {
         RuleFor(x => x.Comment)
             .MaximumLength(500).WithMessage("Комментарий не должен превышать 500 символов");
+
+        RuleFor(x => x.PerformedBy)
+            .MaximumLength(100).WithMessage("Имя исполнителя не должно превышать 100 символов")
+            .When(x => x.PerformedBy != null);
 
         // Если указан LubricantTypeId, он должен быть положительным
         When(x => x.LubricantTypeId.HasValue, () =>

@@ -21,6 +21,7 @@ interface Props {
 export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel }: Props) {
     const [workType, setWorkType] = useState<MaintenanceType>(MaintenanceType.Lubrication);
     const [comment, setComment] = useState('');
+    const [performedBy, setPerformedBy] = useState('');      // новое поле
     const [loading, setLoading] = useState(false);
     const [lubricants, setLubricants] = useState<LubricantType[]>([]);
     const [bearingPosition, setBearingPosition] = useState<BearingPosition>(BearingPosition.Front);
@@ -92,9 +93,17 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!performedBy.trim()) {
+            toast.error('Укажите, кто выполнил обслуживание');
+            return;
+        }
         setLoading(true);
         try {
-            const payload: any = { workType, comment };
+            const payload: any = {
+                workType,
+                comment,
+                performedBy: performedBy.trim()
+            };
 
             if (workType === MaintenanceType.Lubrication) {
                 if (!bearingPosition) {
@@ -137,6 +146,7 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel 
             toast.success('Запись обслуживания добавлена');
             // Сброс
             setComment('');
+            setPerformedBy('');
             setWorkType(MaintenanceType.Lubrication);
             setBearingPosition(BearingPosition.Front);
             setLubricantTypeId('');
@@ -169,6 +179,18 @@ export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel 
                         </option>
                     ))}
                 </select>
+            </div>
+
+            <div>
+                <label className="form-label">Кто выполнил *</label>
+                <input
+                    type="text"
+                    value={performedBy}
+                    onChange={(e) => setPerformedBy(e.target.value)}
+                    className="form-input"
+                    placeholder="ФИО или должность"
+                    required
+                />
             </div>
 
             {(isLubrication || isBearingReplacement) && (

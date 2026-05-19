@@ -10,6 +10,9 @@ public class MaintenanceLog
     public DateTime Date { get; set; }
     public string Comment { get; set; } = string.Empty;
 
+    /// <summary>Кто выполнил обслуживание (ФИО, логин, табельный номер)</summary>
+    public string PerformedBy { get; set; } = string.Empty;
+
     /// <summary>Позиция подшипника (только для смазки и замены подшипника)</summary>
     public BearingPosition? BearingPosition { get; set; }
 

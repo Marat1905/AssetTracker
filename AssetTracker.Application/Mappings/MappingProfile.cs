@@ -33,7 +33,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.BearingPosition, opt => opt.MapFrom(src => src.BearingPosition.HasValue ? src.BearingPosition.Value.ToString() : null))
             .ForMember(dest => dest.LubricantTypeName, opt => opt.MapFrom(src => src.LubricantType != null ? src.LubricantType.Name : null))
             .ForMember(dest => dest.OldBearing, opt => opt.MapFrom(src => src.OldBearing))
-            .ForMember(dest => dest.NewBearing, opt => opt.MapFrom(src => src.NewBearing));
+            .ForMember(dest => dest.NewBearing, opt => opt.MapFrom(src => src.NewBearing))
+            .ForMember(dest => dest.PerformedBy, opt => opt.MapFrom(src => src.PerformedBy));
 
         // Маппинг полной истории двигателя
         CreateMap<Motor, MotorFullHistoryDto>()

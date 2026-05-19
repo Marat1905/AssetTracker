@@ -55,6 +55,7 @@ export interface MaintenanceLogDto {
     workType: string;
     date: string;
     comment: string;
+    performedBy: string;                // Кто выполнил
     bearingPosition?: string;       // "Front" / "Rear"
     lubricantTypeId?: number;
     lubricantTypeName?: string;
@@ -103,6 +104,7 @@ export interface MoveMotorDto {
 export interface MaintenanceDto {
     workType: MaintenanceType;
     comment: string;
+    performedBy: string;                 // Кто выполнил
     bearingPosition?: BearingPosition;
     lubricantTypeId?: number;
     existingBearingId?: number;      // ID существующего подшипника (при замене)
@@ -112,6 +114,7 @@ export interface MaintenanceDto {
 // --- DTO для редактирования записи обслуживания ---
 export interface UpdateMaintenanceLogDto {
     comment?: string;
+    performedBy?: string;               // Кто выполнил (опционально)
     lubricantTypeId?: number;
     existingBearingId?: number;
     newBearing?: CreateBearingDto;

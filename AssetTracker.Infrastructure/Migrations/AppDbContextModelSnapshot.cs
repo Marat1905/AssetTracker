@@ -136,6 +136,11 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.Property<int?>("OldBearingId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("WorkType")
                         .IsRequired()
                         .HasColumnType("text");

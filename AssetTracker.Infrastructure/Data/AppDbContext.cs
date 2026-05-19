@@ -44,7 +44,6 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Location).IsRequired().HasMaxLength(200);
 
-            // Статус храним как строку
             entity.Property(e => e.Status).HasConversion<string>();
 
             entity.HasOne(e => e.Motor)
@@ -61,6 +60,10 @@ public class AppDbContext : DbContext
             entity.Property(e => e.BearingPosition)
                 .HasConversion<string>()
                 .IsRequired(false);
+
+            entity.Property(e => e.PerformedBy)
+                .IsRequired()
+                .HasMaxLength(100);
 
             entity.HasOne(e => e.OldBearing)
                 .WithMany()

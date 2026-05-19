@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AssetTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260519051544_initial")]
+    [Migration("20260519075941_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -138,6 +138,11 @@ namespace AssetTracker.Infrastructure.Migrations
 
                     b.Property<int?>("OldBearingId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("WorkType")
                         .IsRequired()

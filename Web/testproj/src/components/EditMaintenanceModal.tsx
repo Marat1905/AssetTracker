@@ -13,6 +13,7 @@ interface Props {
 
 export default function EditMaintenanceModal({ isOpen, motorId, log, onClose, onSuccess }: Props) {
     const [comment, setComment] = useState(log.comment || '');
+    const [performedBy, setPerformedBy] = useState(log.performedBy || '');   // новое поле
     const [lubricantTypeId, setLubricantTypeId] = useState<number | ''>(log.lubricantTypeId ?? '');
     // Поля для замены подшипника (если тип работ - замена)
     const [newBearingType, setNewBearingType] = useState(log.newBearing?.type || '');
@@ -53,6 +54,9 @@ export default function EditMaintenanceModal({ isOpen, motorId, log, onClose, on
             // Обновляем комментарий, если изменился
             if (comment !== log.comment) {
                 payload.comment = comment;
+            }
+            if (performedBy !== log.performedBy && performedBy.trim()) {
+                payload.performedBy = performedBy.trim();
             }
 
             if (isLubrication) {
@@ -129,6 +133,17 @@ export default function EditMaintenanceModal({ isOpen, motorId, log, onClose, on
                         </p>
                     </div>
                     <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                        <div>
+                            <label className="form-label">Кто выполнил</label>
+                            <input
+                                type="text"
+                                value={performedBy}
+                                onChange={(e) => setPerformedBy(e.target.value)}
+                                className="form-input"
+                                placeholder="ФИО или должность"
+                            />
+                        </div>
+
                         <div>
                             <label className="form-label">Комментарий</label>
                             <textarea

@@ -7,14 +7,14 @@ public class MaintenanceDto
     public MaintenanceType WorkType { get; set; }
     public string Comment { get; set; } = string.Empty;
 
+    /// <summary>Кто выполнил обслуживание (обязательное поле)</summary>
+    public string PerformedBy { get; set; } = string.Empty;
+
     // Поля для смазки (обязательны, если WorkType == Lubrication)
     public BearingPosition? BearingPosition { get; set; }
     public int? LubricantTypeId { get; set; }
 
     // Поля для замены подшипника (обязательны, если WorkType == BearingReplacement)
-    // Можно указать ExistingBearingId (использовать существующий подшипник) 
-    // или передать данные для нового подшипника в NewBearing.
-    // Если указаны оба, приоритет у ExistingBearingId.
     public int? ExistingBearingId { get; set; }
     public CreateBearingDto? NewBearing { get; set; }
 }
@@ -28,6 +28,11 @@ public class UpdateMaintenanceLogDto
     /// Новый комментарий (опционально)
     /// </summary>
     public string? Comment { get; set; }
+
+    /// <summary>
+    /// Кто выполнил обслуживание (опционально, можно изменить)
+    /// </summary>
+    public string? PerformedBy { get; set; }
 
     /// <summary>
     /// Новый тип смазки (только для операций смазки, опционально)

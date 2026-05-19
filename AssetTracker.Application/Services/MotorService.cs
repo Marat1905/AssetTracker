@@ -199,6 +199,7 @@ public class MotorService : IMotorService
             WorkType = dto.WorkType,
             Date = DateTime.UtcNow,
             Comment = dto.Comment,
+            PerformedBy = dto.PerformedBy,   // добавлено
             BearingPosition = dto.BearingPosition,
             LubricantTypeId = dto.LubricantTypeId,
             OldBearingId = oldBearingId,
@@ -234,7 +235,8 @@ public class MotorService : IMotorService
                 Id = l.Id,
                 Location = l.Location,
                 StartDate = l.StartDate,
-                EndDate = l.EndDate
+                EndDate = l.EndDate,
+                Status = l.Status.ToString()
             })
             .ToListAsync();
 
@@ -249,6 +251,7 @@ public class MotorService : IMotorService
                 WorkType = m.WorkType.ToString(),
                 Date = m.Date,
                 Comment = m.Comment,
+                PerformedBy = m.PerformedBy,   // добавлено
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
                 LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
@@ -462,6 +465,7 @@ public class MotorService : IMotorService
                 WorkType = m.WorkType.ToString(),
                 Date = m.Date,
                 Comment = m.Comment,
+                PerformedBy = m.PerformedBy,   // добавлено
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
                 LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
@@ -528,6 +532,10 @@ public class MotorService : IMotorService
         // Обновляем комментарий, если передан
         if (dto.Comment != null)
             log.Comment = dto.Comment;
+
+        // Обновляем исполнителя, если передан
+        if (!string.IsNullOrWhiteSpace(dto.PerformedBy))
+            log.PerformedBy = dto.PerformedBy;
 
         if (log.WorkType == MaintenanceType.Lubrication)
         {

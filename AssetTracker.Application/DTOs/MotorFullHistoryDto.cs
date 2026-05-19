@@ -39,6 +39,8 @@ public class MaintenanceLogDto
     public string WorkType { get; set; } = string.Empty;
     public DateTime Date { get; set; }
     public string Comment { get; set; } = string.Empty;
+    /// <summary>Кто выполнил обслуживание</summary>
+    public string PerformedBy { get; set; } = string.Empty;
     public string? BearingPosition { get; set; }
     public int? LubricantTypeId { get; set; }
     public string? LubricantTypeName { get; set; }
