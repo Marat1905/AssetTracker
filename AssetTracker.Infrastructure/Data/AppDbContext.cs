@@ -11,7 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<LocationHistory> LocationHistories { get; set; }
     public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
     public DbSet<LubricantType> LubricantTypes { get; set; }
-    public DbSet<Bearing> Bearings { get; set; } // Новая сущность
+    public DbSet<Bearing> Bearings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,11 +28,10 @@ public class AppDbContext : DbContext
                 .HasMaxLength(20)
                 .IsRequired();
 
-            // Связи с текущими подшипниками
             entity.HasOne(e => e.FrontBearing)
                 .WithMany()
                 .HasForeignKey(e => e.FrontBearingId)
-                .OnDelete(DeleteBehavior.Restrict); // Запрещаем каскадное удаление, удаляем вручную в сервисе
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.RearBearing)
                 .WithMany()
@@ -44,6 +43,10 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Location).IsRequired().HasMaxLength(200);
+
+            // Статус храним как строку
+            entity.Property(e => e.Status).HasConversion<string>();
+
             entity.HasOne(e => e.Motor)
                   .WithMany(m => m.LocationHistories)
                   .HasForeignKey(e => e.MotorId)
@@ -59,7 +62,6 @@ public class AppDbContext : DbContext
                 .HasConversion<string>()
                 .IsRequired(false);
 
-            // Связи с подшипниками (старый и новый)
             entity.HasOne(e => e.OldBearing)
                 .WithMany()
                 .HasForeignKey(e => e.OldBearingId)
@@ -80,7 +82,6 @@ public class AppDbContext : DbContext
                   .HasForeignKey(e => e.LubricantTypeId)
                   .OnDelete(DeleteBehavior.Restrict);
 
-            // Составной индекс для ускорения запросов последней смазки
             entity.HasIndex(m => new { m.MotorId, m.WorkType, m.BearingPosition, m.Date })
                 .HasDatabaseName("IX_MaintenanceLogs_LastLubricant");
         });

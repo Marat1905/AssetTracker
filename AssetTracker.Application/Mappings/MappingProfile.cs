@@ -24,7 +24,8 @@ public class MappingProfile : Profile
         CreateMap<UpdateBearingDto, Bearing>();
 
         // Маппинг истории перемещений
-        CreateMap<LocationHistory, LocationHistoryDto>();
+        CreateMap<LocationHistory, LocationHistoryDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()));
 
         // Маппинг записей обслуживания
         CreateMap<MaintenanceLog, MaintenanceLogDto>()

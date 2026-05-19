@@ -1,4 +1,6 @@
-﻿namespace AssetTracker.Domain.Entities;
+﻿using AssetTracker.Domain.Enums;
+
+namespace AssetTracker.Domain.Entities;
 public class LocationHistory
 {
     public int Id { get; set; }
@@ -6,6 +8,8 @@ public class LocationHistory
     public string Location { get; set; } = string.Empty; // "Цех/Агрегат"
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+
+    public MotorStatus Status { get; set; }
 
     public virtual Motor Motor { get; set; } = null!;
 }

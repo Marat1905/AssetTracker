@@ -10,16 +10,14 @@ public class MotorFullHistoryDto
     public double Power { get; set; }
     public int Speed { get; set; }
 
-    // Вместо строковых типов подшипников используем DTO подшипников
     public BearingDto FrontBearing { get; set; } = new BearingDto();
     public BearingDto RearBearing { get; set; } = new BearingDto();
 
     public MotorStatus Status { get; set; }
     public MountingType MountingType { get; set; }
 
-    // Новые поля для последней использованной смазки
-    public string? FrontBearingLastLubricant { get; set; }   // Название последней смазки переднего подшипника
-    public string? RearBearingLastLubricant { get; set; }    // Название последней смазки заднего подшипника
+    public string? FrontBearingLastLubricant { get; set; }
+    public string? RearBearingLastLubricant { get; set; }
 
     public List<LocationHistoryDto> LocationHistory { get; set; } = new();
     public List<MaintenanceLogDto> MaintenanceLogs { get; set; } = new();
@@ -31,6 +29,8 @@ public class LocationHistoryDto
     public string Location { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+    /// <summary>Статус двигателя на момент нахождения на этом месте</summary>
+    public string Status { get; set; } = string.Empty;
 }
 
 public class MaintenanceLogDto
@@ -43,7 +43,6 @@ public class MaintenanceLogDto
     public int? LubricantTypeId { get; set; }
     public string? LubricantTypeName { get; set; }
 
-    // Вместо OldBearingType/NewBearingType используем DTO подшипников
     public BearingDto? OldBearing { get; set; }
     public BearingDto? NewBearing { get; set; }
 }

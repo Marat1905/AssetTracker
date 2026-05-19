@@ -71,13 +71,14 @@ public class MotorService : IMotorService
         await _unitOfWork.Motors.AddAsync(motor);
         await _unitOfWork.SaveChangesAsync();
 
-        // Создаём первую запись о местоположении
+        // Создаём первую запись о местоположении, фиксируя статус
         var location = new LocationHistory
         {
             MotorId = motor.InventoryNumber,
             Location = dto.InitialLocation,
             StartDate = DateTime.UtcNow,
-            EndDate = null
+            EndDate = null,
+            Status = motor.Status   // сохраняем начальный статус
         };
         await _unitOfWork.LocationHistories.AddAsync(location);
         await _unitOfWork.SaveChangesAsync();
@@ -110,13 +111,14 @@ public class MotorService : IMotorService
             _unitOfWork.LocationHistories.Update(activeLocation);
         }
 
-        // Создать новую запись
+        // Создать новую запись, сохраняя текущий статус двигателя (уже мог измениться)
         var newLocation = new LocationHistory
         {
             MotorId = motorId,
             Location = dto.NewLocation,
             StartDate = DateTime.UtcNow,
-            EndDate = null
+            EndDate = null,
+            Status = motor.Status   // фиксируем статус на момент перемещения
         };
         await _unitOfWork.LocationHistories.AddAsync(newLocation);
         await _unitOfWork.SaveChangesAsync();
@@ -387,7 +389,8 @@ public class MotorService : IMotorService
                 Id = l.Id,
                 Location = l.Location,
                 StartDate = l.StartDate,
-                EndDate = l.EndDate
+                EndDate = l.EndDate,
+                Status = l.Status.ToString()
             })
             .ToListAsync();
 
@@ -668,13 +671,18 @@ public class MotorService : IMotorService
 
         var index = allHistories.FindIndex(h => h.Id == locationHistoryId);
 
-        if (locationHistory.EndDate == null) // активная запись
+        // Удаляем активную (последнюю) запись
+        if (locationHistory.EndDate == null)
         {
             if (index > 0)
             {
                 var previous = allHistories[index - 1];
                 previous.EndDate = null;
                 _unitOfWork.LocationHistories.Update(previous);
+
+                // Восстанавливаем статус двигателя из предыдущей записи
+                motor.Status = previous.Status;
+                _unitOfWork.Motors.Update(motor);
             }
             else
             {
@@ -682,11 +690,12 @@ public class MotorService : IMotorService
             }
             _unitOfWork.LocationHistories.Remove(locationHistory);
             await _unitOfWork.SaveChangesAsync();
-            _logger.LogInformation("Active location history {LocationHistoryId} for motor {MotorId} deleted, previous record became active", locationHistoryId, motorId);
+            _logger.LogInformation("Active location history {LocationHistoryId} for motor {MotorId} deleted, previous record became active with status {Status}",
+                locationHistoryId, motorId, motor.Status);
             return;
         }
 
-        // Закрытая запись
+        // Закрытая запись – разрешаем удаление только если она последняя в хронологии
         if (index == allHistories.Count - 1)
         {
             _unitOfWork.LocationHistories.Remove(locationHistory);
