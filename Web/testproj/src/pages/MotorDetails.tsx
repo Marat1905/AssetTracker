@@ -11,6 +11,7 @@
  * Табличный режим использует table-layout: fixed и word-break: break-word для предотвращения горизонтальной прокрутки.
  * Переключатель режимов (карточки/таблица) расположен в блоке фильтрации, рядом с кнопками "Применить/Сброс".
  * В режиме карточки комментарий переносится на новую строку с помощью break-words.
+ * Кнопки редактирования и удаления двигателя перенесены в блок паспортных данных (компонент MotorHistory).
  */
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -314,7 +315,7 @@ export default function MotorDetails() {
 
     return (
         <div className="animate-fade-in">
-            {/* Верхняя панель: кнопки назад, редактировать, удалить */}
+            {/* Верхняя панель: только кнопка назад (кнопки редактирования/удаления перенесены в паспортные данные) */}
             <div className="flex justify-between items-center mb-6">
                 <Link to="/" className="inline-flex items-center text-accent hover:text-accent-dark transition-colors group">
                     <svg className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,26 +323,6 @@ export default function MotorDetails() {
                     </svg>
                     Назад к списку
                 </Link>
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => setIsEditModalOpen(true)}
-                        className="btn-secondary inline-flex items-center gap-1"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                        </svg>
-                        Редактировать
-                    </button>
-                    <button
-                        onClick={handleDelete}
-                        className="btn-secondary inline-flex items-center gap-1 text-danger hover:bg-red-50 dark:hover:bg-red-950/30"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Удалить
-                    </button>
-                </div>
             </div>
 
             {/* Вкладки: паспортные данные, история перемещений, журнал обслуживания */}
@@ -384,7 +365,12 @@ export default function MotorDetails() {
                 <div className="mt-6">
                     {/* Вкладка "Паспортные данные" */}
                     {activeTab === 'passport' && motorData && (
-                        <MotorHistory motorData={motorData} onMotorUpdated={refreshAll} />
+                        <MotorHistory
+                            motorData={motorData}
+                            onMotorUpdated={refreshAll}
+                            onEdit={() => setIsEditModalOpen(true)}
+                            onDelete={handleDelete}
+                        />
                     )}
 
                     {/* Вкладка "История перемещений" */}

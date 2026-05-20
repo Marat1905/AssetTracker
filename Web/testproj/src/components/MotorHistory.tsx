@@ -6,6 +6,8 @@ import MotorDiagram from './MotorDiagram';
 interface Props {
     motorData: MotorFullHistoryDto;
     onMotorUpdated?: () => void;
+    onEdit?: () => void;      // callback для открытия модального окна редактирования
+    onDelete?: () => void;    // callback для удаления двигателя
 }
 
 // Функция для получения цветовых классов статуса (Tailwind)
@@ -24,7 +26,7 @@ const getStatusColorClasses = (status: MotorStatus): string => {
     }
 };
 
-export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
+export default function MotorHistory({ motorData, onMotorUpdated, onEdit, onDelete }: Props) {
     const codes = mountingCodes[motorData.mountingType] || { numeric: '', alpha: '' };
 
     // Вычисляем текущее местоположение из истории перемещений
@@ -32,7 +34,7 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
 
     return (
         <div className="card">
-            {/* Шапка: заголовок + статус слева, местоположение справа */}
+            {/* Шапка: заголовок + статус и кнопки редактирования/удаления */}
             <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-accent/5 to-transparent">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-wrap">
@@ -44,6 +46,34 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                             {motorStatusLabels[motorData.status] || motorData.status}
                         </span>
                     </div>
+                    <div className="flex items-center gap-2">
+                        {/* Кнопки редактирования и удаления – перенесены из MotorDetails */}
+                        {onEdit && (
+                            <button
+                                onClick={onEdit}
+                                className="btn-secondary inline-flex items-center gap-1"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                Редактировать
+                            </button>
+                        )}
+                        {onDelete && (
+                            <button
+                                onClick={onDelete}
+                                className="btn-secondary inline-flex items-center gap-1 text-danger hover:bg-red-50 dark:hover:bg-red-950/30"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Удалить
+                            </button>
+                        )}
+                    </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3 mt-2">
+                    <p className="text-gray-500 text-sm">Паспортные данные и технические характеристики</p>
                     {currentLocation && (
                         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-3 py-1.5 rounded-full">
                             <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,7 +84,6 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                         </div>
                     )}
                 </div>
-                <p className="text-gray-500 mt-1 text-sm">Паспортные данные и технические характеристики</p>
             </div>
 
             <div className="p-5">
