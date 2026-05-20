@@ -48,11 +48,6 @@ export default function MotorList() {
         fetchMotors();
     }, [currentPage, pageSize, filterInventory, filterLocation, filterStatus]);
 
-    const handleApplyFilters = () => {
-        setCurrentPage(1); // сброс на первую страницу при новом фильтре
-        // fetchMotors вызовется автоматически через useEffect
-    };
-
     const handleResetFilters = () => {
         setFilterInventory('');
         setFilterLocation('');
@@ -66,7 +61,6 @@ export default function MotorList() {
         try {
             await motorApi.deleteMotor(id);
             toast.success('Двигатель удалён');
-            // если удалён последний элемент на странице и страница > 1, переходим на предыдущую
             if (motors.length === 1 && currentPage > 1) {
                 setCurrentPage(currentPage - 1);
             } else {
@@ -90,15 +84,6 @@ export default function MotorList() {
     const handleRowClick = (inventoryNumber: number) => {
         navigate(`/motors/${inventoryNumber}`);
     };
-
-    if (loading && motors.length === 0) {
-        return (
-            <div className="card p-12 text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accent border-t-transparent"></div>
-                <p className="mt-4 text-gray-500">Загрузка данных...</p>
-            </div>
-        );
-    }
 
     return (
         <>
@@ -150,9 +135,6 @@ export default function MotorList() {
                             </select>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={handleApplyFilters} className="btn-primary py-1.5 px-4">
-                                Применить
-                            </button>
                             <button onClick={handleResetFilters} className="btn-secondary py-1.5 px-4">
                                 Сброс
                             </button>
@@ -160,17 +142,15 @@ export default function MotorList() {
                     </div>
                 </div>
 
-                <div className="table-container">
-                    {motors.length === 0 ? (
+                {/* Контейнер таблицы с возможностью горизонтальной прокрутки и шириной 100% */}
+                <div className="w-full overflow-x-auto">
+                    {loading && motors.length === 0 ? (
                         <div className="p-12 text-center">
-                            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                            <h3 className="text-lg font-semibold text-text-h mb-2">Нет двигателей</h3>
-                            <p className="text-gray-500">Измените условия поиска или зарегистрируйте новый двигатель</p>
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accent border-t-transparent"></div>
+                            <p className="mt-4 text-gray-500">Загрузка данных...</p>
                         </div>
                     ) : (
-                        <table className="table">
+                        <table className="table w-full min-w-[640px]">
                             <thead>
                                 <tr>
                                     <th>Инв. номер</th>
@@ -182,7 +162,26 @@ export default function MotorList() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {motors.map(motor => (
+                                {loading && motors.length > 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="text-center py-8">
+                                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-accent border-t-transparent"></div>
+                                            <span className="ml-2 text-gray-500">Загрузка...</span>
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loading && motors.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="text-center py-12">
+                                            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            <h3 className="text-lg font-semibold text-text-h mb-2">Нет двигателей</h3>
+                                            <p className="text-gray-500">Измените условия поиска или зарегистрируйте новый двигатель</p>
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loading && motors.map(motor => (
                                     <tr
                                         key={motor.inventoryNumber}
                                         onClick={() => handleRowClick(motor.inventoryNumber)}
@@ -234,7 +233,7 @@ export default function MotorList() {
                         pageSize={pageSize}
                         onPageSizeChange={(newSize) => {
                             setPageSize(newSize);
-                            setCurrentPage(1); // сброс страницы при изменении размера
+                            setCurrentPage(1);
                         }}
                         totalCount={totalCount}
                     />
@@ -247,7 +246,7 @@ export default function MotorList() {
                     isOpen={!!editingMotor}
                     onClose={() => setEditingMotor(null)}
                     onSuccess={() => {
-                        fetchMotors();   // обновить список после редактирования
+                        fetchMotors();
                         setEditingMotor(null);
                     }}
                 />
