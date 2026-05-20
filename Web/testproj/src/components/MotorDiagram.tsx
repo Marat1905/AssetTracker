@@ -1,4 +1,3 @@
-import React from 'react';
 import { MountingType } from '../types';
 
 interface MotorDiagramProps {
@@ -38,10 +37,10 @@ export default function MotorDiagram({
         <div className="w-full flex justify-center items-center">
             <svg
                 version="1.1"
-                viewBox="-30 0 460 340"
+                viewBox="-30 -30 460 340"
                 className="w-full"
                 preserveAspectRatio="xMidYMid meet"
-                style={{ enableBackground: 'new -60 0 460 340' }}
+                style={{}}  // убрано устаревшее enableBackground
             >
                 <defs>
                     <style>{`
@@ -217,11 +216,22 @@ export default function MotorDiagram({
                     <circle cx="100" cy="35" r="2" fill="#10b981" />
                     {/* Текст подшипника – ещё выше */}
                     <text x="100" y="28" textAnchor="middle" className="bearing-text">{frontBearingType}</text>
-                    {/* Тип смазки (если есть) – ниже */}
+                    {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
                     {frontBearingLastLubricant && (
-                        <text x="100" y="10" textAnchor="middle" className="lubricant-text">
-                            🛢️ {frontBearingLastLubricant}
-                        </text>
+                        <foreignObject x="40" y="-20" width="120" height="40" className="lubricant-text">
+                            <div style={{
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                fontFamily: 'monospace',
+                                color: '#f59e0b',
+                                textAlign: 'center',
+                                wordWrap: 'break-word',
+                                whiteSpace: 'normal',
+                                lineHeight: '1.2'
+                            }}>
+                                🛢️ {frontBearingLastLubricant}
+                            </div>
+                        </foreignObject>
                     )}
                 </g>
 
@@ -232,11 +242,22 @@ export default function MotorDiagram({
                     <circle cx="290" cy="35" r="2" fill="#10b981" />
                     {/* Тип подшипника */}
                     <text x="290" y="28" textAnchor="middle" className="bearing-text">{rearBearingType}</text>
-                    {/* Тип смазки (если есть) – ниже */}
+                    {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
                     {rearBearingLastLubricant && (
-                        <text x="290" y="10" textAnchor="middle" className="lubricant-text">
-                            🛢️ {rearBearingLastLubricant}
-                        </text>
+                        <foreignObject x="230" y="-20" width="120" height="40" className="lubricant-text">
+                            <div style={{
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                fontFamily: 'monospace',
+                                color: '#f59e0b',
+                                textAlign: 'center',
+                                wordWrap: 'break-word',
+                                whiteSpace: 'normal',
+                                lineHeight: '1.2'
+                            }}>
+                                🛢️ {rearBearingLastLubricant}
+                            </div>
+                        </foreignObject>
                     )}
                 </g>
 
