@@ -1,5 +1,5 @@
 // components/MotorHistory.tsx
-import type { MotorFullHistoryDto } from '../types';
+import type { MotorFullHistoryDto, MotorStatus } from '../types';
 import { motorStatusLabels, mountingTypeLabels, mountingCodes } from '../utils/locales';
 import MotorDiagram from './MotorDiagram';
 
@@ -8,16 +8,53 @@ interface Props {
     onMotorUpdated?: () => void;
 }
 
+// Функция для получения цветовых классов статуса (Tailwind)
+const getStatusColorClasses = (status: MotorStatus): string => {
+    switch (status) {
+        case 'InOperation':
+            return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
+        case 'Reserve':
+            return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+        case 'Repair':
+            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+        case 'Scrapped':
+            return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+        default:
+            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+    }
+};
+
 export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
     const codes = mountingCodes[motorData.mountingType] || { numeric: '', alpha: '' };
 
+    // Вычисляем текущее местоположение из истории перемещений
+    const currentLocation = motorData.locationHistory.find(loc => loc.endDate === null)?.location;
+
     return (
         <div className="card">
+            {/* Шапка: заголовок + статус слева, местоположение справа */}
             <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-gradient-to-r from-accent/5 to-transparent">
-                <div>
-                    <h2 className="text-2xl font-bold text-text-h">Двигатель №{motorData.inventoryNumber}</h2>
-                    <p className="text-gray-500 mt-1 text-sm">Паспортные данные и технические характеристики</p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <h2 className="text-2xl font-bold text-text-h">
+                            Двигатель №{motorData.inventoryNumber}
+                        </h2>
+                        {/* Цветной бейдж статуса */}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColorClasses(motorData.status)}`}>
+                            {motorStatusLabels[motorData.status] || motorData.status}
+                        </span>
+                    </div>
+                    {currentLocation && (
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 px-3 py-1.5 rounded-full">
+                            <svg className="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{currentLocation}</span>
+                        </div>
+                    )}
                 </div>
+                <p className="text-gray-500 mt-1 text-sm">Паспортные данные и технические характеристики</p>
             </div>
 
             <div className="p-5">
@@ -59,12 +96,6 @@ export default function MotorHistory({ motorData, onMotorUpdated }: Props) {
                             <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
                                 <span className="text-sm text-gray-500">Обороты:</span>
                                 <span className="text-sm font-medium text-text-h">{motorData.speed} об/мин</span>
-                            </div>
-                            <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
-                                <span className="text-sm text-gray-500">Статус:</span>
-                                <span className={`status-badge status-badge-${motorData.status}`}>
-                                    {motorStatusLabels[motorData.status] || motorData.status}
-                                </span>
                             </div>
                             <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
                                 <span className="text-sm text-gray-500">Тип монтажа:</span>
