@@ -1,22 +1,22 @@
 ﻿namespace AssetTracker.Domain.Enums;
 
 /// <summary>
-/// Тип монтажа (крепления) электродвигателя
+/// Тип монтажа (крепления) электродвигателя.
 /// </summary>
 public enum MountingType
 {
-    /// <summary>Лапы</summary>
+    /// <summary>Лапы.</summary>
     Feet,
 
-    /// <summary>Лапы и фланец (комбинированный)</summary>
+    /// <summary>Лапы и фланец (комбинированный).</summary>
     FeetAndFlange,
 
-    /// <summary>Фланец</summary>
+    /// <summary>Фланец.</summary>
     Flange,
 
-    /// <summary>Малый фланец</summary>
+    /// <summary>Малый фланец.</summary>
     SmallFlange,
 
-    /// <summary>Комбинированный с малым фланцем (лапы + малый фланец)</summary>
+    /// <summary>Комбинированный с малым фланцем (лапы + малый фланец).</summary>
     FeetAndSmallFlange
 }
