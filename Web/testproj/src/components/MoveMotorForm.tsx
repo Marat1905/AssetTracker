@@ -21,7 +21,7 @@ interface Props {
  * Форма перемещения двигателя.
  * Позволяет указать новое местоположение и опционально новый статус.
  */
-export default function MoveMotorForm({ motorId, currentStatus, onMoved, onCancel, isModal }: Props) {
+export default function MoveMotorForm({ motorId, currentStatus, onMoved, onCancel }: Props) {
     const [location, setLocation] = useState('');
     const [status, setStatus] = useState<MotorStatus | ''>(currentStatus || '');
     const [loading, setLoading] = useState(false);

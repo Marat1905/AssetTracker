@@ -22,7 +22,7 @@ import MaintenanceForm from '../components/MaintenanceForm';
 import EditMaintenanceModal from '../components/EditMaintenanceModal';
 import EditLocationModal from '../components/EditLocationModal';
 import { motorApi } from '../services/api';
-import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto, MaintenanceType } from '../types';
+import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../types';
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';

@@ -43,7 +43,7 @@ const getStatusColorClasses = (status: MotorStatus): string => {
  * - блок подшипников с производителем, поставщиком и последней смазкой
  * - кнопки редактирования и удаления (передаются из родителя)
  */
-export default function MotorHistory({ motorData, onMotorUpdated, onEdit, onDelete }: Props) {
+export default function MotorHistory({ motorData, onEdit, onDelete }: Props) {
     const codes = mountingCodes[motorData.mountingType] || { numeric: '', alpha: '' };
 
     // Вычисляем текущее местоположение из истории перемещений

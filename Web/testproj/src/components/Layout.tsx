@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Factory, Home, PlusCircle, List } from 'lucide-react';
+import { Factory, Home, PlusCircle } from 'lucide-react';
 
 /**
  * Основной компонент обёртки приложения.
