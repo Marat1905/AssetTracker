@@ -2,32 +2,47 @@
 
 namespace AssetTracker.Domain.Entities;
 
+/// <summary>
+/// Электродвигатель – основная сущность системы.
+/// </summary>
 public class Motor
 {
-    public int InventoryNumber { get; set; } // PK
+    /// <summary>Инвентарный номер (первичный ключ).</summary>
+    public int InventoryNumber { get; set; }
 
+    /// <summary>Тип двигателя (марка, модель).</summary>
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>Диаметр вала, мм</summary>
-    public double ShaftDiameter { get; set; } // мм, > 0
+    /// <summary>Диаметр вала (мм).</summary>
+    public double ShaftDiameter { get; set; }
 
-    public double Power { get; set; } // кВт, >0
-    public int Speed { get; set; } // об/мин
+    /// <summary>Мощность (кВт).</summary>
+    public double Power { get; set; }
 
-    // Внешние ключи на текущие подшипники
+    /// <summary>Обороты (об/мин).</summary>
+    public int Speed { get; set; }
+
+    /// <summary>Идентификатор переднего подшипника (внешний ключ).</summary>
     public int FrontBearingId { get; set; }
+
+    /// <summary>Идентификатор заднего подшипника (внешний ключ).</summary>
     public int RearBearingId { get; set; }
 
-    // Навигационные свойства для текущих подшипников
+    /// <summary>Навигационное свойство: передний подшипник.</summary>
     public virtual Bearing FrontBearing { get; set; } = null!;
+
+    /// <summary>Навигационное свойство: задний подшипник.</summary>
     public virtual Bearing RearBearing { get; set; } = null!;
 
+    /// <summary>Текущий статус двигателя.</summary>
     public MotorStatus Status { get; set; }
 
-    /// <summary>Тип монтажа (лапы, лапы+фланец, фланец)</summary>
+    /// <summary>Тип монтажа (лапы, лапы+фланец, фланец и т.д.).</summary>
     public MountingType MountingType { get; set; }
 
-    // Navigation properties
+    /// <summary>Коллекция записей истории перемещений.</summary>
     public virtual ICollection<LocationHistory> LocationHistories { get; set; } = new List<LocationHistory>();
+
+    /// <summary>Коллекция записей журнала обслуживания.</summary>
     public virtual ICollection<MaintenanceLog> MaintenanceLogs { get; set; } = new List<MaintenanceLog>();
 }
