@@ -3,14 +3,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AssetTracker.Infrastructure.Data;
 
+/// <summary>
+/// Контекст базы данных для AssetTracker.
+/// </summary>
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+    /// <summary>Электродвигатели.</summary>
     public DbSet<Motor> Motors { get; set; }
+
+    /// <summary>История перемещений.</summary>
     public DbSet<LocationHistory> LocationHistories { get; set; }
+
+    /// <summary>Журнал обслуживания.</summary>
     public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
+
+    /// <summary>Типы смазки.</summary>
     public DbSet<LubricantType> LubricantTypes { get; set; }
+
+    /// <summary>Подшипники.</summary>
     public DbSet<Bearing> Bearings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -43,7 +55,6 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Location).IsRequired().HasMaxLength(200);
-
             entity.Property(e => e.Status).HasConversion<string>();
 
             entity.HasOne(e => e.Motor)

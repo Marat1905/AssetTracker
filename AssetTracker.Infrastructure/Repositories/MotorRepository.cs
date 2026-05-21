@@ -5,10 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AssetTracker.Infrastructure.Repositories;
 
+/// <summary>
+/// Репозиторий для сущности <see cref="Motor"/>.
+/// </summary>
 public class MotorRepository : Repository<Motor>, IMotorRepository
 {
     public MotorRepository(AppDbContext context) : base(context) { }
 
+    /// <inheritdoc />
     public async Task<Motor?> GetWithFullHistoryAsync(int inventoryNumber, CancellationToken cancellationToken = default)
     {
         return await _context.Motors
@@ -17,5 +21,6 @@ public class MotorRepository : Repository<Motor>, IMotorRepository
             .FirstOrDefaultAsync(m => m.InventoryNumber == inventoryNumber, cancellationToken);
     }
 
+    /// <inheritdoc />
     public IQueryable<Motor> GetQueryable() => _dbSet;
 }
