@@ -1,16 +1,26 @@
-// components/MotorHistory.tsx
 import type { MotorFullHistoryDto, MotorStatus } from '../types';
 import { motorStatusLabels, mountingTypeLabels, mountingCodes } from '../utils/locales';
 import MotorDiagram from './MotorDiagram';
 
+/**
+ * Свойства компонента отображения паспортных данных двигателя.
+ */
 interface Props {
+    /** Полные данные двигателя (история, подшипники, последняя смазка) */
     motorData: MotorFullHistoryDto;
+    /** Коллбэк, вызываемый после обновления данных (опционально) */
     onMotorUpdated?: () => void;
-    onEdit?: () => void;      // callback для открытия модального окна редактирования
-    onDelete?: () => void;    // callback для удаления двигателя
+    /** Коллбэк для открытия модального окна редактирования */
+    onEdit?: () => void;
+    /** Коллбэк для удаления двигателя */
+    onDelete?: () => void;
 }
 
-// Функция для получения цветовых классов статуса (Tailwind)
+/**
+ * Возвращает CSS-классы для цветового оформления бейджа статуса.
+ * @param status - Статус двигателя.
+ * @returns Строка с классами Tailwind.
+ */
 const getStatusColorClasses = (status: MotorStatus): string => {
     switch (status) {
         case 'InOperation':
@@ -26,6 +36,13 @@ const getStatusColorClasses = (status: MotorStatus): string => {
     }
 };
 
+/**
+ * Компонент, отображающий паспортные данные двигателя:
+ * - схема с подшипниками и смазкой
+ * - основные характеристики
+ * - блок подшипников с производителем, поставщиком и последней смазкой
+ * - кнопки редактирования и удаления (передаются из родителя)
+ */
 export default function MotorHistory({ motorData, onMotorUpdated, onEdit, onDelete }: Props) {
     const codes = mountingCodes[motorData.mountingType] || { numeric: '', alpha: '' };
 

@@ -1,14 +1,29 @@
 import { MountingType } from '../types';
 
+/**
+ * Свойства компонента схематичного изображения двигателя.
+ */
 interface MotorDiagramProps {
+    /** Диаметр вала (мм) – отображается на размерной линии */
     shaftDiameter: number;
+    /** Тип переднего подшипника */
     frontBearingType: string;
+    /** Тип заднего подшипника */
     rearBearingType: string;
+    /** Тип монтажа (влияет на отображение лап и фланцев) */
     mountingType: MountingType;
-    frontBearingLastLubricant?: string;   // Тип смазки переднего подшипника
-    rearBearingLastLubricant?: string;    // Тип смазки заднего подшипника
+    /** Тип смазки переднего подшипника (опционально) */
+    frontBearingLastLubricant?: string;
+    /** Тип смазки заднего подшипника (опционально) */
+    rearBearingLastLubricant?: string;
 }
 
+/**
+ * Компонент, рисующий SVG‑схему электродвигателя.
+ * Отображает корпус, вал, подшипники (с выносками и типами), 
+ * размерную линию диаметра вала, а также опционально – тип смазки.
+ * Внешний вид (лапы, фланец) зависит от типа монтажа.
+ */
 export default function MotorDiagram({
     shaftDiameter,
     frontBearingType,
@@ -40,7 +55,7 @@ export default function MotorDiagram({
                 viewBox="-30 -30 460 340"
                 className="w-full"
                 preserveAspectRatio="xMidYMid meet"
-                style={{}}  // убрано устаревшее enableBackground
+                style={{}}
             >
                 <defs>
                     <style>{`
