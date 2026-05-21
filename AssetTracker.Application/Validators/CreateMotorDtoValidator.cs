@@ -3,6 +3,9 @@ using FluentValidation;
 
 namespace AssetTracker.Application.Validators;
 
+/// <summary>
+/// Валидатор для DTO создания двигателя.
+/// </summary>
 public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 {
     public CreateMotorDtoValidator()
@@ -23,7 +26,6 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
         RuleFor(x => x.Speed)
             .GreaterThan(0).WithMessage("Обороты должны быть больше 0");
 
-        // Валидация переднего подшипника
         RuleFor(x => x.FrontBearing)
             .NotNull().WithMessage("Необходимо указать данные переднего подшипника")
             .ChildRules(bearing =>
@@ -39,7 +41,6 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
                     .MaximumLength(200);
             });
 
-        // Валидация заднего подшипника
         RuleFor(x => x.RearBearing)
             .NotNull().WithMessage("Необходимо указать данные заднего подшипника")
             .ChildRules(bearing =>

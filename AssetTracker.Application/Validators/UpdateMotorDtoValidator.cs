@@ -3,6 +3,9 @@ using FluentValidation;
 
 namespace AssetTracker.Application.Validators;
 
+/// <summary>
+/// Валидатор для DTO обновления характеристик двигателя.
+/// </summary>
 public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
 {
     public UpdateMotorDtoValidator()
