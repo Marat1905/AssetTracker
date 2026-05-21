@@ -1,13 +1,15 @@
 ﻿using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Entities;
-using AssetTracker.Domain.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace AssetTracker.Application.Services;
 
+/// <summary>
+/// Сервис для работы с типами смазки.
+/// </summary>
 public class LubricantTypeService : ILubricantTypeService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -21,6 +23,7 @@ public class LubricantTypeService : ILubricantTypeService
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<LubricantTypeDto>> GetAllAsync()
     {
         _logger.LogInformation("Fetching all lubricant types");
@@ -28,6 +31,7 @@ public class LubricantTypeService : ILubricantTypeService
         return _mapper.Map<IEnumerable<LubricantTypeDto>>(types);
     }
 
+    /// <inheritdoc />
     public async Task<LubricantTypeDto?> GetByIdAsync(int id)
     {
         _logger.LogInformation("Fetching lubricant type with id {Id}", id);
@@ -35,6 +39,7 @@ public class LubricantTypeService : ILubricantTypeService
         return type == null ? null : _mapper.Map<LubricantTypeDto>(type);
     }
 
+    /// <inheritdoc />
     public async Task<LubricantTypeDto> CreateAsync(CreateLubricantTypeDto dto)
     {
         _logger.LogInformation("Creating new lubricant type: {Name}", dto.Name);
@@ -45,6 +50,7 @@ public class LubricantTypeService : ILubricantTypeService
         return _mapper.Map<LubricantTypeDto>(entity);
     }
 
+    /// <inheritdoc />
     public async Task<LubricantTypeDto> UpdateAsync(int id, UpdateLubricantTypeDto dto)
     {
         _logger.LogInformation("Updating lubricant type {Id}", id);
@@ -59,6 +65,7 @@ public class LubricantTypeService : ILubricantTypeService
         return _mapper.Map<LubricantTypeDto>(existing);
     }
 
+    /// <inheritdoc />
     public async Task DeleteAsync(int id)
     {
         _logger.LogInformation("Deleting lubricant type {Id}", id);
@@ -66,7 +73,6 @@ public class LubricantTypeService : ILubricantTypeService
         if (existing == null)
             throw new KeyNotFoundException($"Тип смазки с id {id} не найден");
 
-        // Проверка, используется ли тип смазки в записях обслуживания
         var isUsed = await _unitOfWork.MaintenanceLogs.GetQueryable()
             .AnyAsync(m => m.LubricantTypeId == id);
         if (isUsed)

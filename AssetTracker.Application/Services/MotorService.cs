@@ -2,13 +2,15 @@
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Entities;
 using AssetTracker.Domain.Enums;
-using AssetTracker.Domain.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace AssetTracker.Application.Services;
 
+/// <summary>
+/// Сервис для управления электродвигателями, их историей и обслуживанием.
+/// </summary>
 public class MotorService : IMotorService
 {
     private readonly IUnitOfWork _unitOfWork;
@@ -22,6 +24,7 @@ public class MotorService : IMotorService
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<IEnumerable<MotorListItemDto>> GetAllMotorsAsync()
     {
         _logger.LogInformation("Fetching all motors");
@@ -48,6 +51,7 @@ public class MotorService : IMotorService
         return motorList;
     }
 
+    /// <inheritdoc />
     public async Task<MotorFullHistoryDto> CreateMotorAsync(CreateMotorDto dto)
     {
         _logger.LogInformation("Creating new motor with inventory number {InventoryNumber}", dto.InventoryNumber);
@@ -87,6 +91,7 @@ public class MotorService : IMotorService
         return await GetFullHistoryAsync(motor.InventoryNumber);
     }
 
+    /// <inheritdoc />
     public async Task MoveMotorAsync(int motorId, MoveMotorDto dto)
     {
         _logger.LogInformation("Moving motor {MotorId} to {NewLocation}", motorId, dto.NewLocation);
@@ -126,6 +131,7 @@ public class MotorService : IMotorService
         _logger.LogInformation("Motor {MotorId} moved to {NewLocation}", motorId, dto.NewLocation);
     }
 
+    /// <inheritdoc />
     public async Task AddMaintenanceAsync(int motorId, MaintenanceDto dto)
     {
         _logger.LogInformation("Adding maintenance for motor {MotorId}, type {WorkType}", motorId, dto.WorkType);
@@ -199,7 +205,7 @@ public class MotorService : IMotorService
             WorkType = dto.WorkType,
             Date = DateTime.UtcNow,
             Comment = dto.Comment,
-            PerformedBy = dto.PerformedBy,   // добавлено
+            PerformedBy = dto.PerformedBy,
             BearingPosition = dto.BearingPosition,
             LubricantTypeId = dto.LubricantTypeId,
             OldBearingId = oldBearingId,
@@ -212,6 +218,7 @@ public class MotorService : IMotorService
         _logger.LogInformation("Maintenance recorded for motor {MotorId}", motorId);
     }
 
+    /// <inheritdoc />
     public async Task<MotorFullHistoryDto> GetFullHistoryAsync(int motorId)
     {
         _logger.LogInformation("Fetching full history for motor {MotorId}", motorId);
@@ -251,7 +258,7 @@ public class MotorService : IMotorService
                 WorkType = m.WorkType.ToString(),
                 Date = m.Date,
                 Comment = m.Comment,
-                PerformedBy = m.PerformedBy,   // добавлено
+                PerformedBy = m.PerformedBy,
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
                 LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
@@ -298,6 +305,7 @@ public class MotorService : IMotorService
         return dto;
     }
 
+    /// <inheritdoc />
     public async Task UpdateMotorAsync(int motorId, UpdateMotorDto dto)
     {
         _logger.LogInformation("Updating motor {MotorId}", motorId);
@@ -313,6 +321,7 @@ public class MotorService : IMotorService
         _logger.LogInformation("Motor {MotorId} updated successfully", motorId);
     }
 
+    /// <inheritdoc />
     public async Task DeleteMotorAsync(int motorId)
     {
         _logger.LogInformation("Deleting motor {MotorId}", motorId);
@@ -327,6 +336,7 @@ public class MotorService : IMotorService
         _logger.LogInformation("Motor {MotorId} deleted successfully", motorId);
     }
 
+    /// <inheritdoc />
     public async Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(
         int page,
         int pageSize,
@@ -379,6 +389,7 @@ public class MotorService : IMotorService
         };
     }
 
+    /// <inheritdoc />
     public async Task<PagedResult<LocationHistoryDto>> GetMotorLocationHistoryPagedAsync(int motorId, int page, int pageSize)
     {
         _logger.LogInformation("Fetching location history for motor {MotorId}, page={Page}, pageSize={PageSize}", motorId, page, pageSize);
@@ -416,6 +427,7 @@ public class MotorService : IMotorService
         };
     }
 
+    /// <inheritdoc />
     public async Task<PagedResult<MaintenanceLogDto>> GetMotorMaintenanceLogsPagedAsync(
         int motorId,
         int page,
@@ -465,7 +477,7 @@ public class MotorService : IMotorService
                 WorkType = m.WorkType.ToString(),
                 Date = m.Date,
                 Comment = m.Comment,
-                PerformedBy = m.PerformedBy,   // добавлено
+                PerformedBy = m.PerformedBy,
                 BearingPosition = m.BearingPosition != null ? m.BearingPosition.ToString() : null,
                 LubricantTypeId = m.LubricantTypeId,
                 LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
@@ -513,6 +525,7 @@ public class MotorService : IMotorService
         return lastLog != null && lastLog.Id == logId;
     }
 
+    /// <inheritdoc />
     public async Task UpdateMaintenanceLogAsync(int motorId, int logId, UpdateMaintenanceLogDto dto)
     {
         _logger.LogInformation("Updating maintenance log {LogId} for motor {MotorId}", logId, motorId);
@@ -601,6 +614,7 @@ public class MotorService : IMotorService
         _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} updated", logId, motorId);
     }
 
+    /// <inheritdoc />
     public async Task DeleteMaintenanceLogAsync(int motorId, int logId)
     {
         _logger.LogInformation("Deleting maintenance log {LogId} for motor {MotorId}", logId, motorId);
@@ -637,6 +651,7 @@ public class MotorService : IMotorService
         _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} deleted", logId, motorId);
     }
 
+    /// <inheritdoc />
     public async Task UpdateLocationHistoryAsync(int motorId, int locationHistoryId, UpdateLocationHistoryDto dto)
     {
         _logger.LogInformation("Updating location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
@@ -666,6 +681,7 @@ public class MotorService : IMotorService
         _logger.LogInformation("Location history {LocationHistoryId} for motor {MotorId} updated", locationHistoryId, motorId);
     }
 
+    /// <inheritdoc />
     public async Task DeleteLocationHistoryAsync(int motorId, int locationHistoryId)
     {
         _logger.LogInformation("Deleting location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
