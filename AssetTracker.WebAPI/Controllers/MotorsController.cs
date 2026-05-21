@@ -5,6 +5,9 @@ using AssetTracker.Domain.Enums;
 
 namespace AssetTracker.WebAPI.Controllers;
 
+/// <summary>
+/// Контроллер для управления электродвигателями.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
@@ -18,8 +21,10 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Первичная регистрация нового двигателя
+    /// Первичная регистрация нового двигателя.
     /// </summary>
+    /// <param name="dto">Данные для создания двигателя.</param>
+    /// <returns>Полная карточка созданного двигателя.</returns>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -38,8 +43,10 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Перемещение двигателя (автоматически закрывает старую запись в истории перемещений)
+    /// Перемещение двигателя (автоматически закрывает старую запись в истории перемещений).
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="dto">Новое местоположение и опционально новый статус.</param>
     [HttpPatch("{id}/move")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -51,8 +58,10 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Фиксация факта ремонта или смазки
+    /// Фиксация факта ремонта или смазки.
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="dto">Данные о выполненной работе.</param>
     [HttpPost("{id}/maintenance")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -63,8 +72,10 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение "карточки жизни" ЭД: где стоял и что с ним делали (без пагинации – для мобильных устройств)
+    /// Получение "карточки жизни" ЭД: где стоял и что с ним делали (без пагинации – для мобильных устройств).
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <returns>Полная история двигателя.</returns>
     [HttpGet("{id}/full-history")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -75,8 +86,9 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение списка всех электродвигателей (без пагинации – для мобильных устройств)
+    /// Получение списка всех электродвигателей (без пагинации – для мобильных устройств).
     /// </summary>
+    /// <returns>Краткий список двигателей.</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<MotorListItemDto>>> GetAllMotors()
@@ -86,8 +98,14 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение списка электродвигателей с пагинацией и фильтрацией (для UI)
+    /// Получение списка электродвигателей с пагинацией и фильтрацией (для UI).
     /// </summary>
+    /// <param name="page">Номер страницы (начиная с 1).</param>
+    /// <param name="pageSize">Размер страницы.</param>
+    /// <param name="inventoryNumber">Фильтр по инвентарному номеру (частичное совпадение).</param>
+    /// <param name="location">Фильтр по текущему местоположению (частичное совпадение).</param>
+    /// <param name="status">Фильтр по статусу.</param>
+    /// <returns>Страница с результатами.</returns>
     [HttpGet("paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<MotorListItemDto>>> GetMotorsPaged(
@@ -104,8 +122,12 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение пагинированной истории перемещений двигателя (для UI)
+    /// Получение пагинированной истории перемещений двигателя (для UI).
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="page">Номер страницы.</param>
+    /// <param name="pageSize">Размер страницы.</param>
+    /// <returns>Страница истории перемещений.</returns>
     [HttpGet("{id}/location-history/paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -121,8 +143,15 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Получение пагинированного журнала обслуживания двигателя с возможностью фильтрации по типу работ и периоду времени (для UI)
+    /// Получение пагинированного журнала обслуживания двигателя с возможностью фильтрации по типу работ и периоду времени (для UI).
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="page">Номер страницы.</param>
+    /// <param name="pageSize">Размер страницы.</param>
+    /// <param name="workType">Фильтр по типу работ.</param>
+    /// <param name="fromDate">Фильтр по дате – записи не ранее указанной даты.</param>
+    /// <param name="toDate">Фильтр по дате – записи не позднее указанной даты.</param>
+    /// <returns>Страница записей обслуживания.</returns>
     [HttpGet("{id}/maintenance-logs/paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -154,8 +183,10 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Редактирование основных характеристик двигателя
+    /// Редактирование основных характеристик двигателя.
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="dto">Обновлённые характеристики.</param>
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -167,8 +198,9 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Удаление двигателя (вместе со всей историей перемещений и обслуживания)
+    /// Удаление двигателя (вместе со всей историей перемещений и обслуживания).
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -179,8 +211,11 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Редактирование записи обслуживания (комментарий и, для смазки, тип смазки)
+    /// Редактирование записи обслуживания (комментарий и, для смазки, тип смазки).
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="logId">Идентификатор записи обслуживания.</param>
+    /// <param name="dto">Новые данные.</param>
     [HttpPut("{id}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -207,8 +242,10 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Удаление записи обслуживания
+    /// Удаление записи обслуживания.
     /// </summary>
+    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="logId">Идентификатор записи обслуживания.</param>
     [HttpDelete("{id}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -226,8 +263,11 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Редактирование записи истории перемещений (только изменение места, даты не редактируются)
+    /// Редактирование записи истории перемещений (только изменение места, даты не редактируются).
     /// </summary>
+    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
+    /// <param name="dto">Новое расположение.</param>
     [HttpPut("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -250,8 +290,10 @@ public class MotorsController : ControllerBase
     }
 
     /// <summary>
-    /// Удаление записи истории перемещений (с проверкой целостности временной линии)
+    /// Удаление записи истории перемещений (с проверкой целостности временной линии).
     /// </summary>
+    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
     [HttpDelete("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

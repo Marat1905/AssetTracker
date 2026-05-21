@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AssetTracker.WebAPI.Controllers;
 
+/// <summary>
+/// Контроллер для управления типами смазки.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Produces("application/json")]
@@ -17,8 +20,9 @@ public class LubricantTypesController : ControllerBase
     }
 
     /// <summary>
-    /// Получить список всех типов смазки
+    /// Получить список всех типов смазки.
     /// </summary>
+    /// <returns>Список типов смазки.</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<LubricantTypeDto>>> GetAll()
@@ -28,8 +32,10 @@ public class LubricantTypesController : ControllerBase
     }
 
     /// <summary>
-    /// Получить тип смазки по Id
+    /// Получить тип смазки по идентификатору.
     /// </summary>
+    /// <param name="id">Идентификатор типа смазки.</param>
+    /// <returns>Тип смазки.</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -42,8 +48,10 @@ public class LubricantTypesController : ControllerBase
     }
 
     /// <summary>
-    /// Создать новый тип смазки
+    /// Создать новый тип смазки.
     /// </summary>
+    /// <param name="dto">Данные для создания.</param>
+    /// <returns>Созданный тип смазки.</returns>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -61,8 +69,11 @@ public class LubricantTypesController : ControllerBase
     }
 
     /// <summary>
-    /// Обновить тип смазки
+    /// Обновить тип смазки.
     /// </summary>
+    /// <param name="id">Идентификатор типа смазки.</param>
+    /// <param name="dto">Новые данные.</param>
+    /// <returns>Обновлённый тип смазки.</returns>
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -85,8 +96,9 @@ public class LubricantTypesController : ControllerBase
     }
 
     /// <summary>
-    /// Удалить тип смазки
+    /// Удалить тип смазки.
     /// </summary>
+    /// <param name="id">Идентификатор типа смазки.</param>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
