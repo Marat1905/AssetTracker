@@ -4,13 +4,16 @@ using AutoMapper;
 
 namespace AssetTracker.Application.Mappings;
 
+/// <summary>
+/// Профиль маппинга AutoMapper для преобразования между DTO и сущностями.
+/// </summary>
 public class MappingProfile : Profile
 {
     public MappingProfile()
     {
         // Маппинг для создания мотора (CreateMotorDto -> Motor)
         CreateMap<CreateMotorDto, Motor>()
-            .ForMember(dest => dest.FrontBearing, opt => opt.Ignore())   // подшипники обрабатываются отдельно
+            .ForMember(dest => dest.FrontBearing, opt => opt.Ignore())
             .ForMember(dest => dest.RearBearing, opt => opt.Ignore())
             .ForMember(dest => dest.FrontBearingId, opt => opt.Ignore())
             .ForMember(dest => dest.RearBearingId, opt => opt.Ignore());
