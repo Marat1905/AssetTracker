@@ -11,17 +11,27 @@ const workTypes = [
 ];
 
 interface Props {
+    /** Инвентарный номер двигателя */
     motorId: number;
+    /** Данные двигателя (для предзаполнения последней смазки или текущего подшипника) */
     motorData?: MotorFullHistoryDto | null;
+    /** Коллбэк после успешного добавления */
     onAdded?: () => void;
+    /** Коллбэк отмены (для модального окна) */
     onCancel?: () => void;
+    /** Флаг, используется ли форма внутри модального окна (стилизация) */
     isModal?: boolean;
 }
 
+/**
+ * Форма добавления записи обслуживания (смазка, замена подшипника, перемотка статора, ремонт вала).
+ * Поддерживает выбор типа работ, позиции подшипника, типа смазки (из справочника),
+ * а для замены подшипника – создание нового подшипника с типом, производителем и поставщиком.
+ */
 export default function MaintenanceForm({ motorId, motorData, onAdded, onCancel }: Props) {
     const [workType, setWorkType] = useState<MaintenanceType>(MaintenanceType.Lubrication);
     const [comment, setComment] = useState('');
-    const [performedBy, setPerformedBy] = useState('');      // новое поле
+    const [performedBy, setPerformedBy] = useState('');
     const [loading, setLoading] = useState(false);
     const [lubricants, setLubricants] = useState<LubricantType[]>([]);
     const [bearingPosition, setBearingPosition] = useState<BearingPosition>(BearingPosition.Front);

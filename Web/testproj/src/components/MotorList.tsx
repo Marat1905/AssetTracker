@@ -7,6 +7,10 @@ import { motorStatusLabels } from '../utils/locales';
 import EditMotorModal from './EditMotorModal';
 import Pagination from './Pagination';
 
+/**
+ * Компонент списка электродвигателей с пагинацией, фильтрацией,
+ * возможностью перехода к карточке двигателя, редактирования и удаления.
+ */
 export default function MotorList() {
     const navigate = useNavigate();
     const [motors, setMotors] = useState<MotorListItem[]>([]);

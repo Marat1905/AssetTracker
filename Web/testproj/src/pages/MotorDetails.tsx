@@ -1,4 +1,3 @@
-// pages/MotorDetails.tsx
 /**
  * Страница детальной информации о двигателе.
  * Отображает паспортные данные, историю перемещений и журнал обслуживания в трёх вкладках.
@@ -13,6 +12,7 @@
  * В режиме карточки комментарий переносится на новую строку с помощью break-words.
  * Кнопки редактирования и удаления двигателя перенесены в блок паспортных данных (компонент MotorHistory).
  */
+
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
@@ -28,6 +28,11 @@ import Pagination from '../components/Pagination';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../utils/locales';
 import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2, Info, Filter, X, Settings, LayoutGrid, Table } from 'lucide-react';
 
+/**
+ * Страница детальной информации о двигателе.
+ * Получает идентификатор из URL, загружает данные, управляет вкладками,
+ * модальными окнами, пагинацией, фильтрацией и режимами отображения.
+ */
 export default function MotorDetails() {
     // Получаем идентификатор двигателя из URL
     const { id } = useParams<{ id: string }>();
@@ -264,6 +269,7 @@ export default function MotorDetails() {
     /**
      * Открывает модальное окно редактирования записи обслуживания.
      * Для замены подшипника предварительно проверяет, что запись последняя.
+     * @param log - запись обслуживания
      */
     const handleEditLog = (log: MaintenanceLogDto) => {
         if (log.workType === 'BearingReplacement' && !canEditOrDeleteBearingLog(log)) {
@@ -276,6 +282,7 @@ export default function MotorDetails() {
     /**
      * Удаляет запись обслуживания.
      * Для замены подшипника проверяет, что запись последняя, иначе отклоняет.
+     * @param log - запись обслуживания
      */
     const handleDeleteLog = async (log: MaintenanceLogDto) => {
         if (log.workType === 'BearingReplacement' && !canEditOrDeleteBearingLog(log)) {

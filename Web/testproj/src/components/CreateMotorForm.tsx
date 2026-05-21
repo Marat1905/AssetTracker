@@ -6,7 +6,7 @@ import { motorApi } from '../services/api';
 import { MotorStatus, MountingType, type CreateMotorDto } from '../types';
 import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
 
-// Расширенная схема валидации с учётом manufacturer и supplier
+// Схема валидации формы создания двигателя с учётом производителя и поставщика подшипников
 const schema = z.object({
     inventoryNumber: z.number({ invalid_type_error: 'Обязательное поле' }).positive('Инвентарный номер > 0'),
     type: z.string().min(1, 'Тип обязателен'),
@@ -29,11 +29,19 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 interface Props {
+    /** Флаг видимости модального окна */
     isOpen: boolean;
+    /** Функция закрытия окна */
     onClose: () => void;
+    /** Функция, вызываемая после успешного создания двигателя */
     onSuccess: () => void;
 }
 
+/**
+ * Модальная форма для регистрации нового электродвигателя.
+ * Содержит поля инвентарного номера, характеристик, данных переднего и заднего подшипников.
+ * Валидация через zod + react-hook-form.
+ */
 export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FormData>({
         resolver: zodResolver(schema),
@@ -45,7 +53,6 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
 
     const onSubmit = async (data: FormData) => {
         try {
-            // Формируем DTO для отправки на сервер
             const payload: CreateMotorDto = {
                 inventoryNumber: data.inventoryNumber,
                 type: data.type,

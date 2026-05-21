@@ -4,11 +4,17 @@ import type { LubricantType, CreateLubricantTypeDto, UpdateLubricantTypeDto } fr
 import toast from 'react-hot-toast';
 
 interface Props {
+    /** Данные редактируемого типа смазки (null – создание нового) */
     initialData?: LubricantType | null;
+    /** Функция закрытия модального окна */
     onClose: () => void;
+    /** Коллбэк после успешного сохранения */
     onSuccess: () => void;
 }
 
+/**
+ * Модальная форма для создания или редактирования типа смазки.
+ */
 export default function LubricantTypeForm({ initialData, onClose, onSuccess }: Props) {
     const [name, setName] = useState(initialData?.name || '');
     const [description, setDescription] = useState(initialData?.description || '');

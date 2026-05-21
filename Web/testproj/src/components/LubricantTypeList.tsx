@@ -4,6 +4,10 @@ import type { LubricantType } from '../types';
 import toast from 'react-hot-toast';
 import LubricantTypeForm from './LubricantTypeForm';
 
+/**
+ * Компонент для отображения и управления справочником типов смазки.
+ * Позволяет создавать, редактировать и удалять записи.
+ */
 export default function LubricantTypeList() {
     const [types, setTypes] = useState<LubricantType[]>([]);
     const [loading, setLoading] = useState(true);

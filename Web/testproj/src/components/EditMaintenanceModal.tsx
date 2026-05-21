@@ -4,16 +4,26 @@ import type { MaintenanceLogDto, LubricantType, UpdateMaintenanceLogDto, CreateB
 import toast from 'react-hot-toast';
 
 interface Props {
+    /** Флаг видимости окна */
     isOpen: boolean;
+    /** Инвентарный номер двигателя */
     motorId: number;
+    /** Редактируемая запись обслуживания */
     log: MaintenanceLogDto;
+    /** Функция закрытия */
     onClose: () => void;
+    /** Коллбэк после успешного обновления */
     onSuccess: () => void;
 }
 
+/**
+ * Модальное окно редактирования записи обслуживания.
+ * Позволяет изменить комментарий, исполнителя, тип смазки (для смазки)
+ * или данные нового подшипника (для замены подшипника).
+ */
 export default function EditMaintenanceModal({ isOpen, motorId, log, onClose, onSuccess }: Props) {
     const [comment, setComment] = useState(log.comment || '');
-    const [performedBy, setPerformedBy] = useState(log.performedBy || '');   // новое поле
+    const [performedBy, setPerformedBy] = useState(log.performedBy || '');
     const [lubricantTypeId, setLubricantTypeId] = useState<number | ''>(log.lubricantTypeId ?? '');
     // Поля для замены подшипника (если тип работ - замена)
     const [newBearingType, setNewBearingType] = useState(log.newBearing?.type || '');

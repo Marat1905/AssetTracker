@@ -4,13 +4,22 @@ import type { LocationHistoryDto } from '../types';
 import toast from 'react-hot-toast';
 
 interface Props {
+    /** Флаг видимости окна */
     isOpen: boolean;
+    /** Инвентарный номер двигателя */
     motorId: number;
+    /** Редактируемая запись истории перемещений */
     location: LocationHistoryDto;
+    /** Функция закрытия */
     onClose: () => void;
+    /** Коллбэк после успешного обновления */
     onSuccess: () => void;
 }
 
+/**
+ * Модальное окно редактирования записи истории перемещений.
+ * Разрешено редактировать только последнюю запись (активную или последнюю закрытую).
+ */
 export default function EditLocationModal({ isOpen, motorId, location, onClose, onSuccess }: Props) {
     const [newLocation, setNewLocation] = useState(location.location);
     const [loading, setLoading] = useState(false);

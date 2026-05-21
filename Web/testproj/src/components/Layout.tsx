@@ -1,6 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Factory, Home, PlusCircle, List } from 'lucide-react';
 
+/**
+ * Основной компонент обёртки приложения.
+ * Содержит хедер с навигацией и контейнер для дочерних страниц.
+ */
 export default function Layout({ children }: { children: React.ReactNode }) {
     const location = useLocation();
 

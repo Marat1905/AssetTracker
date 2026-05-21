@@ -18,12 +18,20 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 interface Props {
+    /** Полные данные двигателя (для предзаполнения) */
     motor: MotorFullHistoryDto;
+    /** Флаг видимости окна */
     isOpen: boolean;
+    /** Функция закрытия */
     onClose: () => void;
+    /** Коллбэк после успешного обновления */
     onSuccess: () => void;
 }
 
+/**
+ * Модальное окно редактирования основных характеристик двигателя.
+ * Подшипники не редактируются – для этого используется замена подшипника в журнале обслуживания.
+ */
 export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Props) {
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(schema),
