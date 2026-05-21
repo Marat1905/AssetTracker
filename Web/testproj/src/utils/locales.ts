@@ -1,3 +1,6 @@
+/**
+ * Локализованные подписи для типов работ по обслуживанию.
+ */
 export const maintenanceTypeLabels: Record<string, string> = {
     Lubrication: 'Смазка',
     BearingReplacement: 'Замена подшипника',
@@ -6,6 +9,9 @@ export const maintenanceTypeLabels: Record<string, string> = {
     StatusChange: 'Изменение статуса',
 };
 
+/**
+ * Локализованные подписи для статусов двигателя.
+ */
 export const motorStatusLabels: Record<string, string> = {
     InOperation: 'В эксплуатации',
     Reserve: 'Резерв',
@@ -13,6 +19,9 @@ export const motorStatusLabels: Record<string, string> = {
     Scrapped: 'Списание',
 };
 
+/**
+ * Локализованные подписи для типов монтажа.
+ */
 export const mountingTypeLabels: Record<string, string> = {
     Feet: 'Лапы',
     FeetAndFlange: 'Лапы и фланец',
@@ -21,7 +30,9 @@ export const mountingTypeLabels: Record<string, string> = {
     FeetAndSmallFlange: 'Лапы и малый фланец',
 };
 
-// Коды монтажа по стандарту IM
+/**
+ * Коды монтажа по стандарту IM (числовой и буквенный варианты).
+ */
 export const mountingCodes: Record<string, { numeric: string; alpha: string }> = {
     Feet: { numeric: 'IM 1001 / IM 1081', alpha: 'IM B3' },
     Flange: { numeric: 'IM 3001 / IM 3081', alpha: 'IM B5' },
@@ -29,6 +40,10 @@ export const mountingCodes: Record<string, { numeric: string; alpha: string }> =
     SmallFlange: { numeric: 'IM 3601 / IM 3681', alpha: 'IM B14' },
     FeetAndSmallFlange: { numeric: 'IM 2101 / IM 2181', alpha: 'IM B34' },
 };
+
+/**
+ * Локализованные подписи для позиций подшипника.
+ */
 export const bearingPositionLabels: Record<string, string> = {
     Front: 'Передний',
     Rear: 'Задний'
