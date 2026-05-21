@@ -16,11 +16,18 @@ import type {
     UpdateLocationHistoryDto,
 } from '../types';
 
+/**
+ * Настроенный экземпляр axios для взаимодействия с бекендом.
+ * Базовый URL – '/api' (прокси на дев-сервере).
+ */
 const api = axios.create({
     baseURL: '/api',
     headers: { 'Content-Type': 'application/json' }
 });
 
+/**
+ * Глобальный перехватчик ответов для логирования ошибок в консоль.
+ */
 api.interceptors.response.use(
     response => response,
     error => {
@@ -34,46 +41,83 @@ api.interceptors.response.use(
     }
 );
 
+/**
+ * API-функции для работы с электродвигателями.
+ */
 export const motorApi = {
-    // Создать двигатель
+    /**
+     * Создать новый электродвигатель (первичная регистрация).
+     * @param data - DTO с данными двигателя и подшипников.
+     * @returns Полная карточка созданного двигателя.
+     */
     createMotor: async (data: CreateMotorDto): Promise<MotorFullHistoryDto> => {
         const response = await api.post<MotorFullHistoryDto>('/motors', data);
         return response.data;
     },
 
-    // Редактировать двигатель
+    /**
+     * Обновить основные характеристики двигателя (без подшипников).
+     * @param id - Инвентарный номер двигателя.
+     * @param data - DTO с обновлёнными полями.
+     */
     updateMotor: async (id: number, data: UpdateMotorRequest): Promise<void> => {
         await api.put(`/motors/${id}`, data);
     },
 
-    // Удалить двигатель
+    /**
+     * Удалить двигатель вместе со всей историей.
+     * @param id - Инвентарный номер двигателя.
+     */
     deleteMotor: async (id: number): Promise<void> => {
         await api.delete(`/motors/${id}`);
     },
 
-    // Переместить двигатель
+    /**
+     * Переместить двигатель (автоматически закрывает текущую запись истории).
+     * @param id - Инвентарный номер двигателя.
+     * @param data - Новое местоположение и опционально новый статус.
+     */
     moveMotor: async (id: number, data: MoveMotorDto): Promise<void> => {
         await api.patch(`/motors/${id}/move`, data);
     },
 
-    // Добавить обслуживание
+    /**
+     * Добавить запись обслуживания (смазка, замена подшипника, ремонт).
+     * @param id - Инвентарный номер двигателя.
+     * @param data - DTO с деталями обслуживания.
+     */
     addMaintenance: async (id: number, data: MaintenanceDto): Promise<void> => {
         await api.post(`/motors/${id}/maintenance`, data);
     },
 
-    // Получить полную историю
+    /**
+     * Получить полную историю двигателя (паспортные данные, подшипники, история перемещений, обслуживание).
+     * @param id - Инвентарный номер двигателя.
+     * @returns Полная карточка "жизни" двигателя.
+     */
     getFullHistory: async (id: number): Promise<MotorFullHistoryDto> => {
         const response = await api.get<MotorFullHistoryDto>(`/motors/${id}/full-history`);
         return response.data;
     },
 
-    // Получить список всех двигателей (устаревший)
+    /**
+     * Получить список всех двигателей (без пагинации – устаревший метод, рекомендуется использовать paged).
+     * @returns Массив кратких DTO двигателей.
+     */
     getAllMotors: async (): Promise<MotorListItem[]> => {
         const response = await api.get<MotorListItem[]>('/motors');
         return response.data;
     },
 
-    // Пагинированный список с фильтрацией
+    /**
+     * Получить пагинированный список двигателей с фильтрацией.
+     * @param page - Номер страницы (начиная с 1).
+     * @param pageSize - Размер страницы.
+     * @param inventoryNumber - Фильтр по инвентарному номеру (частичное совпадение).
+     * @param location - Фильтр по текущему местоположению (частичное совпадение).
+     * @param status - Фильтр по статусу.
+     * @returns Пагинированный результат со списком двигателей.
+     */
     getMotorsPaged: async (
         page: number = 1,
         pageSize: number = 10,
@@ -92,7 +136,13 @@ export const motorApi = {
         return response.data;
     },
 
-    // Пагинированная история перемещений
+    /**
+     * Получить пагинированную историю перемещений двигателя.
+     * @param id - Инвентарный номер двигателя.
+     * @param page - Номер страницы.
+     * @param pageSize - Размер страницы.
+     * @returns Пагинированный список записей перемещений.
+     */
     getLocationHistoryPaged: async (
         id: number,
         page: number = 1,
@@ -105,13 +155,14 @@ export const motorApi = {
     },
 
     /**
-     * Пагинированный журнал обслуживания с поддержкой фильтрации
-     * @param id - идентификатор двигателя
-     * @param page - номер страницы
-     * @param pageSize - размер страницы
-     * @param workType - тип работ (Lubrication, BearingReplacement, StatorRewinding, ShaftRepair) или null
-     * @param fromDate - дата начала периода (YYYY-MM-DD)
-     * @param toDate - дата окончания периода (YYYY-MM-DD)
+     * Получить пагинированный журнал обслуживания с поддержкой фильтрации по типу работ и периоду.
+     * @param id - Инвентарный номер двигателя.
+     * @param page - Номер страницы.
+     * @param pageSize - Размер страницы.
+     * @param workType - Тип работ (Lubrication, BearingReplacement, StatorRewinding, ShaftRepair) или null.
+     * @param fromDate - Дата начала периода (YYYY-MM-DD).
+     * @param toDate - Дата окончания периода (YYYY-MM-DD).
+     * @returns Пагинированный список записей обслуживания.
      */
     getMaintenanceLogsPaged: async (
         id: number,
@@ -131,56 +182,93 @@ export const motorApi = {
         return response.data;
     },
 
-    // === МЕТОДЫ ДЛЯ РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ ЗАПИСЕЙ ОБСЛУЖИВАНИЯ ===
+    /**
+     * Редактировать запись обслуживания (комментарий, исполнитель, для смазки – тип смазки, для замены – подшипник).
+     * @param motorId - Инвентарный номер двигателя.
+     * @param logId - Идентификатор записи обслуживания.
+     * @param data - DTO с обновляемыми полями.
+     */
     updateMaintenanceLog: async (motorId: number, logId: number, data: UpdateMaintenanceLogDto): Promise<void> => {
         await api.put(`/motors/${motorId}/maintenance/${logId}`, data);
     },
 
+    /**
+     * Удалить запись обслуживания.
+     * @param motorId - Инвентарный номер двигателя.
+     * @param logId - Идентификатор записи обслуживания.
+     */
     deleteMaintenanceLog: async (motorId: number, logId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/maintenance/${logId}`);
     },
 
     /**
-    * Редактирование записи истории перемещений (только location)
-    * @param motorId - инвентарный номер двигателя
-    * @param locationHistoryId - идентификатор записи истории
-    * @param data - объект с новым местоположением
-    */
+     * Редактировать запись истории перемещений (только location).
+     * @param motorId - Инвентарный номер двигателя.
+     * @param locationHistoryId - Идентификатор записи истории.
+     * @param data - Объект с новым местоположением.
+     */
     updateLocationHistory: async (motorId: number, locationHistoryId: number, data: UpdateLocationHistoryDto): Promise<void> => {
         await api.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
     },
 
     /**
-    * Удаление записи истории перемещений
-    * @param motorId - инвентарный номер двигателя
-    * @param locationHistoryId - идентификатор записи истории
-    */
+     * Удалить запись истории перемещений (только последнюю, с проверкой целостности).
+     * @param motorId - Инвентарный номер двигателя.
+     * @param locationHistoryId - Идентификатор записи истории.
+     */
     deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
     }
 };
 
+/**
+ * API-функции для работы со справочником типов смазки.
+ */
 export const lubricantApi = {
+    /**
+     * Получить список всех типов смазки.
+     * @returns Массив типов смазки.
+     */
     getAll: async (): Promise<LubricantType[]> => {
         const response = await api.get<LubricantType[]>('/lubricanttypes');
         return response.data;
     },
 
+    /**
+     * Получить тип смазки по идентификатору.
+     * @param id - Идентификатор типа смазки.
+     * @returns Тип смазки.
+     */
     getById: async (id: number): Promise<LubricantType> => {
         const response = await api.get<LubricantType>(`/lubricanttypes/${id}`);
         return response.data;
     },
 
+    /**
+     * Создать новый тип смазки.
+     * @param data - DTO с названием и описанием.
+     * @returns Созданный тип смазки.
+     */
     create: async (data: CreateLubricantTypeDto): Promise<LubricantType> => {
         const response = await api.post<LubricantType>('/lubricanttypes', data);
         return response.data;
     },
 
+    /**
+     * Обновить существующий тип смазки.
+     * @param id - Идентификатор типа смазки.
+     * @param data - DTO с новыми данными.
+     * @returns Обновлённый тип смазки.
+     */
     update: async (id: number, data: UpdateLubricantTypeDto): Promise<LubricantType> => {
         const response = await api.put<LubricantType>(`/lubricanttypes/${id}`, data);
         return response.data;
     },
 
+    /**
+     * Удалить тип смазки.
+     * @param id - Идентификатор типа смазки.
+     */
     delete: async (id: number): Promise<void> => {
         await api.delete(`/lubricanttypes/${id}`);
     }
