@@ -6,9 +6,6 @@ using Testcontainers.PostgreSql;
 
 namespace AssetTracker.Tests.Fixtures;
 
-/// <summary>
-/// Фикстура для запуска PostgreSQL контейнера и применения миграций.
-/// </summary>
 public class TestContainersFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgresContainer;
@@ -30,13 +27,13 @@ public class TestContainersFixture : IAsyncLifetime
         await _postgresContainer.StartAsync();
         ConnectionString = _postgresContainer.GetConnectionString();
 
-        // Применяем миграции (если нужны, иначе создаём схему вручную через EnsureCreated)
+        // Применяем миграции или создаём схему
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(ConnectionString)
             .Options;
 
         using var context = new AppDbContext(options);
-        await context.Database.EnsureCreatedAsync(); // Создаёт схему без миграций
+        await context.Database.EnsureCreatedAsync();
     }
 
     public async Task DisposeAsync()
