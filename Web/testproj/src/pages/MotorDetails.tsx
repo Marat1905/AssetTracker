@@ -11,12 +11,14 @@
  * Переключатель режимов (карточки/таблица) расположен в блоке фильтрации, рядом с кнопками "Применить/Сброс".
  * В режиме карточки комментарий переносится на новую строку с помощью break-words.
  * Кнопки редактирования и удаления двигателя перенесены в блок паспортных данных (компонент MotorHistory).
+ * Добавлено редактирование инвентарного номера через отдельное модальное окно.
  */
 
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import MotorHistory from '../components/MotorHistory';
 import EditMotorModal from '../components/EditMotorModal';
+import EditInventoryModal from '../components/EditInventoryModal';
 import MoveMotorForm from '../components/MoveMotorForm';
 import MaintenanceForm from '../components/MaintenanceForm';
 import EditMaintenanceModal from '../components/EditMaintenanceModal';
@@ -34,7 +36,7 @@ import { Map, ClipboardList, PlusCircle, ArrowRight, Edit, Trash2, Info, Filter,
  * модальными окнами, пагинацией, фильтрацией и режимами отображения.
  */
 export default function MotorDetails() {
-    // Получаем идентификатор двигателя из URL
+    // Получаем суррогатный идентификатор двигателя из URL
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const motorId = parseInt(id || '0', 10);
@@ -42,6 +44,7 @@ export default function MotorDetails() {
     // Состояния данных
     const [motorData, setMotorData] = useState<MotorFullHistoryDto | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'passport' | 'location' | 'maintenance'>('passport');
     // Режим отображения журнала обслуживания: 'card' или 'table'
     const [maintenanceViewMode, setMaintenanceViewMode] = useState<'card' | 'table'>('card');
@@ -377,6 +380,7 @@ export default function MotorDetails() {
                             onMotorUpdated={refreshAll}
                             onEdit={() => setIsEditModalOpen(true)}
                             onDelete={handleDelete}
+                            onEditInventory={() => setIsInventoryModalOpen(true)}
                         />
                     )}
 
@@ -920,6 +924,19 @@ export default function MotorDetails() {
                     motor={motorData}
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
+                    onSuccess={() => {
+                        loadMotorData();
+                    }}
+                />
+            )}
+
+            {/* Модальное окно редактирования инвентарного номера */}
+            {motorData && (
+                <EditInventoryModal
+                    isOpen={isInventoryModalOpen}
+                    motorId={motorId}
+                    currentInventoryNumber={motorData.inventoryNumber}
+                    onClose={() => setIsInventoryModalOpen(false)}
                     onSuccess={() => {
                         loadMotorData();
                     }}

@@ -34,6 +34,7 @@ interface Props {
  * статуса и типа монтажа. Подшипники отображаются информационно, так как
  * их замена выполняется через журнал обслуживания.
  * Для предотвращения излишней высоты добавлена прокрутка содержимого.
+ * Инвентарный номер редактируется в отдельном модальном окне.
  */
 export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Props) {
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
@@ -60,7 +61,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                 status: data.status,
                 mountingType: data.mountingType,
             };
-            await motorApi.updateMotor(motor.inventoryNumber, updateData);
+            await motorApi.updateMotor(motor.id, updateData);
             toast.success('Данные двигателя обновлены');
             onSuccess();
             onClose();
@@ -84,10 +85,11 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                 <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
                     <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
                         <h3 className="text-lg font-semibold text-text-h">
-                            Редактирование двигателя №{motor.inventoryNumber}
+                            Редактирование двигателя (ID: {motor.id})
                         </h3>
                         <p className="text-sm text-gray-500 mt-0.5">
-                            Изменение подшипников выполняется через «Замену подшипника» в журнале обслуживания.
+                            Инвентарный номер можно изменить через кнопку рядом с номером. <br />
+                            Замена подшипников выполняется через «Замену подшипника» в журнале обслуживания.
                         </p>
                     </div>
                     {/* Добавлен overflow-y-auto и max-h-[80vh] для прокрутки содержимого */}

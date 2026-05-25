@@ -90,6 +90,8 @@ export interface LocationHistoryDto {
     startDate: string;
     /** Дата окончания (null – активная запись) */
     endDate: string | null;
+    /** Статус двигателя в этот период */
+    status?: string;
 }
 
 /**
@@ -123,8 +125,10 @@ export interface MaintenanceLogDto {
  * историю перемещений и последние записи обслуживания.
  */
 export interface MotorFullHistoryDto {
-    /** Инвентарный номер */
-    inventoryNumber: number;
+    /** Суррогатный идентификатор */
+    id: number;
+    /** Инвентарный номер (может отсутствовать) */
+    inventoryNumber: string | null;
     /** Тип двигателя */
     type: string;
     /** Диаметр вала (мм) */
@@ -155,8 +159,8 @@ export interface MotorFullHistoryDto {
  * DTO для первичной регистрации нового электродвигателя.
  */
 export interface CreateMotorDto {
-    /** Инвентарный номер (уникальный) */
-    inventoryNumber: number;
+    /** Инвентарный номер (опциональный, уникальный) */
+    inventoryNumber: string | null;
     /** Тип двигателя (марка, модель) */
     type: string;
     /** Диаметр вала (мм) */
@@ -232,11 +236,21 @@ export interface UpdateLocationHistoryDto {
 }
 
 /**
+ * DTO для установки/изменения инвентарного номера двигателя.
+ */
+export interface SetInventoryNumberDto {
+    /** Новый инвентарный номер (null – удалить номер) */
+    inventoryNumber: string | null;
+}
+
+/**
  * Краткое DTO для отображения двигателя в списке.
  */
 export interface MotorListItem {
+    /** Суррогатный идентификатор */
+    id: number;
     /** Инвентарный номер */
-    inventoryNumber: number;
+    inventoryNumber: string | null;
     /** Тип двигателя */
     type: string;
     /** Мощность (кВт) */

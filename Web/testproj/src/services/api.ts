@@ -14,6 +14,7 @@ import type {
     UpdateLubricantTypeDto,
     UpdateMaintenanceLogDto,
     UpdateLocationHistoryDto,
+    SetInventoryNumberDto,
 } from '../types';
 
 /**
@@ -48,7 +49,7 @@ export const motorApi = {
     /**
      * Создать новый электродвигатель (первичная регистрация).
      * @param data - DTO с данными двигателя и подшипников.
-     * @returns Полная карточка созданного двигателя.
+     * @returns Полная карточка созданного двигателя (с суррогатным Id).
      */
     createMotor: async (data: CreateMotorDto): Promise<MotorFullHistoryDto> => {
         const response = await api.post<MotorFullHistoryDto>('/motors', data);
@@ -57,7 +58,7 @@ export const motorApi = {
 
     /**
      * Обновить основные характеристики двигателя (без подшипников).
-     * @param id - Инвентарный номер двигателя.
+     * @param id - Суррогатный идентификатор двигателя.
      * @param data - DTO с обновлёнными полями.
      */
     updateMotor: async (id: number, data: UpdateMotorRequest): Promise<void> => {
@@ -66,7 +67,7 @@ export const motorApi = {
 
     /**
      * Удалить двигатель вместе со всей историей.
-     * @param id - Инвентарный номер двигателя.
+     * @param id - Суррогатный идентификатор двигателя.
      */
     deleteMotor: async (id: number): Promise<void> => {
         await api.delete(`/motors/${id}`);
@@ -74,7 +75,7 @@ export const motorApi = {
 
     /**
      * Переместить двигатель (автоматически закрывает текущую запись истории).
-     * @param id - Инвентарный номер двигателя.
+     * @param id - Суррогатный идентификатор двигателя.
      * @param data - Новое местоположение и опционально новый статус.
      */
     moveMotor: async (id: number, data: MoveMotorDto): Promise<void> => {
@@ -83,7 +84,7 @@ export const motorApi = {
 
     /**
      * Добавить запись обслуживания (смазка, замена подшипника, ремонт).
-     * @param id - Инвентарный номер двигателя.
+     * @param id - Суррогатный идентификатор двигателя.
      * @param data - DTO с деталями обслуживания.
      */
     addMaintenance: async (id: number, data: MaintenanceDto): Promise<void> => {
@@ -92,7 +93,7 @@ export const motorApi = {
 
     /**
      * Получить полную историю двигателя (паспортные данные, подшипники, история перемещений, обслуживание).
-     * @param id - Инвентарный номер двигателя.
+     * @param id - Суррогатный идентификатор двигателя.
      * @returns Полная карточка "жизни" двигателя.
      */
     getFullHistory: async (id: number): Promise<MotorFullHistoryDto> => {
@@ -138,7 +139,7 @@ export const motorApi = {
 
     /**
      * Получить пагинированную историю перемещений двигателя.
-     * @param id - Инвентарный номер двигателя.
+     * @param id - Суррогатный идентификатор двигателя.
      * @param page - Номер страницы.
      * @param pageSize - Размер страницы.
      * @returns Пагинированный список записей перемещений.
@@ -156,7 +157,7 @@ export const motorApi = {
 
     /**
      * Получить пагинированный журнал обслуживания с поддержкой фильтрации по типу работ и периоду.
-     * @param id - Инвентарный номер двигателя.
+     * @param id - Суррогатный идентификатор двигателя.
      * @param page - Номер страницы.
      * @param pageSize - Размер страницы.
      * @param workType - Тип работ (Lubrication, BearingReplacement, StatorRewinding, ShaftRepair) или null.
@@ -184,7 +185,7 @@ export const motorApi = {
 
     /**
      * Редактировать запись обслуживания (комментарий, исполнитель, для смазки – тип смазки, для замены – подшипник).
-     * @param motorId - Инвентарный номер двигателя.
+     * @param motorId - Суррогатный идентификатор двигателя.
      * @param logId - Идентификатор записи обслуживания.
      * @param data - DTO с обновляемыми полями.
      */
@@ -194,7 +195,7 @@ export const motorApi = {
 
     /**
      * Удалить запись обслуживания.
-     * @param motorId - Инвентарный номер двигателя.
+     * @param motorId - Суррогатный идентификатор двигателя.
      * @param logId - Идентификатор записи обслуживания.
      */
     deleteMaintenanceLog: async (motorId: number, logId: number): Promise<void> => {
@@ -203,7 +204,7 @@ export const motorApi = {
 
     /**
      * Редактировать запись истории перемещений (только location).
-     * @param motorId - Инвентарный номер двигателя.
+     * @param motorId - Суррогатный идентификатор двигателя.
      * @param locationHistoryId - Идентификатор записи истории.
      * @param data - Объект с новым местоположением.
      */
@@ -213,11 +214,20 @@ export const motorApi = {
 
     /**
      * Удалить запись истории перемещений (только последнюю, с проверкой целостности).
-     * @param motorId - Инвентарный номер двигателя.
+     * @param motorId - Суррогатный идентификатор двигателя.
      * @param locationHistoryId - Идентификатор записи истории.
      */
     deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
         await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
+    },
+
+    /**
+     * Установить или изменить инвентарный номер двигателя.
+     * @param motorId - Суррогатный идентификатор двигателя.
+     * @param data - DTO с новым инвентарным номером (null – удалить номер).
+     */
+    setInventoryNumber: async (motorId: number, data: SetInventoryNumberDto): Promise<void> => {
+        await api.patch(`/motors/${motorId}/inventory-number`, data);
     }
 };
 

@@ -14,6 +14,8 @@ interface Props {
     onEdit?: () => void;
     /** Коллбэк для удаления двигателя */
     onDelete?: () => void;
+    /** Коллбэк для открытия модального окна редактирования инвентарного номера */
+    onEditInventory?: () => void;
 }
 
 /**
@@ -42,8 +44,9 @@ const getStatusColorClasses = (status: MotorStatus): string => {
  * - основные характеристики
  * - блок подшипников с производителем, поставщиком и последней смазкой
  * - кнопки редактирования и удаления (передаются из родителя)
+ * - кнопка редактирования инвентарного номера
  */
-export default function MotorHistory({ motorData, onEdit, onDelete }: Props) {
+export default function MotorHistory({ motorData, onEdit, onDelete, onEditInventory }: Props) {
     const codes = mountingCodes[motorData.mountingType] || { numeric: '', alpha: '' };
 
     // Вычисляем текущее местоположение из истории перемещений
@@ -56,8 +59,20 @@ export default function MotorHistory({ motorData, onEdit, onDelete }: Props) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-wrap">
                         <h2 className="text-2xl font-bold text-text-h">
-                            Двигатель №{motorData.inventoryNumber}
+                            Двигатель №{motorData.inventoryNumber ?? '—'}
                         </h2>
+                        {/* Кнопка редактирования инвентарного номера */}
+                        {onEditInventory && (
+                            <button
+                                onClick={onEditInventory}
+                                className="text-gray-500 hover:text-accent transition-colors"
+                                title="Изменить инвентарный номер"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                        )}
                         {/* Цветной бейдж статуса */}
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColorClasses(motorData.status)}`}>
                             {motorStatusLabels[motorData.status] || motorData.status}
@@ -127,6 +142,10 @@ export default function MotorHistory({ motorData, onEdit, onDelete }: Props) {
                             Паспортные данные
                         </h3>
                         <div className="space-y-2">
+                            <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
+                                <span className="text-sm text-gray-500">Инвентарный номер:</span>
+                                <span className="text-sm font-medium text-text-h">{motorData.inventoryNumber ?? '—'}</span>
+                            </div>
                             <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-slate-700">
                                 <span className="text-sm text-gray-500">Тип двигателя:</span>
                                 <span className="text-sm font-medium text-text-h">{motorData.type}</span>

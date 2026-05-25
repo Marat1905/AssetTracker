@@ -8,7 +8,7 @@ import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
 
 // Схема валидации формы создания двигателя
 const schema = z.object({
-    inventoryNumber: z.number({ invalid_type_error: 'Обязательное поле' }).positive('Инвентарный номер > 0'),
+    inventoryNumber: z.string().optional().nullable(),
     type: z.string().min(1, 'Тип обязателен'),
     shaftDiameter: z.number().positive('Диаметр вала > 0'),
     power: z.number().positive('Мощность > 0'),
@@ -49,13 +49,15 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
         defaultValues: {
             status: MotorStatus.InOperation,
             mountingType: MountingType.Feet,
+            inventoryNumber: '',
         }
     });
 
     const onSubmit = async (data: FormData) => {
         try {
             const payload: CreateMotorDto = {
-                inventoryNumber: data.inventoryNumber,
+                // Пустую строку преобразуем в null
+                inventoryNumber: data.inventoryNumber && data.inventoryNumber.trim() !== '' ? data.inventoryNumber.trim() : null,
                 type: data.type,
                 shaftDiameter: data.shaftDiameter,
                 power: data.power,
@@ -95,8 +97,8 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Основные поля */}
                 <div>
-                    <label className="form-label">Инвентарный номер</label>
-                    <input type="number" {...register('inventoryNumber', { valueAsNumber: true })} className="form-input" placeholder="Например: 12345" />
+                    <label className="form-label">Инвентарный номер (опционально)</label>
+                    <input type="text" {...register('inventoryNumber')} className="form-input" placeholder="Например: 12345" />
                     {errors.inventoryNumber && <p className="text-danger text-xs mt-1">{errors.inventoryNumber.message}</p>}
                 </div>
                 <div>

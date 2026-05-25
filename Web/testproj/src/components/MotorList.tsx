@@ -78,15 +78,15 @@ export default function MotorList() {
     const handleEditClick = async (motor: MotorListItem, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
-            const fullData = await motorApi.getFullHistory(motor.inventoryNumber);
+            const fullData = await motorApi.getFullHistory(motor.id);
             setEditingMotor(fullData);
         } catch {
             toast.error('Не удалось загрузить данные для редактирования');
         }
     };
 
-    const handleRowClick = (inventoryNumber: number) => {
-        navigate(`/motors/${inventoryNumber}`);
+    const handleRowClick = (id: number) => {
+        navigate(`/motors/${id}`);
     };
 
     return (
@@ -187,11 +187,11 @@ export default function MotorList() {
                                 )}
                                 {!loading && motors.map(motor => (
                                     <tr
-                                        key={motor.inventoryNumber}
-                                        onClick={() => handleRowClick(motor.inventoryNumber)}
+                                        key={motor.id}
+                                        onClick={() => handleRowClick(motor.id)}
                                         className="cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                                     >
-                                        <td className="font-medium text-text-h">{motor.inventoryNumber}</td>
+                                        <td className="font-medium text-text-h">{motor.inventoryNumber ?? '—'}</td>
                                         <td>{motor.type}</td>
                                         <td>{motor.power} кВт</td>
                                         <td>
@@ -212,7 +212,7 @@ export default function MotorList() {
                                                     </svg>
                                                 </button>
                                                 <button
-                                                    onClick={(e) => handleDelete(motor.inventoryNumber, e)}
+                                                    onClick={(e) => handleDelete(motor.id, e)}
                                                     className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                                                     title="Удалить"
                                                 >
