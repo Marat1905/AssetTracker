@@ -26,7 +26,7 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="dto">Данные для создания двигателя.</param>
     /// <returns>Полная карточка созданного двигателя.</returns>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -49,7 +49,7 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="id">Инвентарный номер двигателя.</param>
     /// <param name="dto">Новое местоположение и опционально новый статус.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPatch("{id}/move")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -65,7 +65,7 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="id">Инвентарный номер двигателя.</param>
     /// <param name="dto">Данные о выполненной работе.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPost("{id}/maintenance")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -191,7 +191,7 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="id">Инвентарный номер двигателя.</param>
     /// <param name="dto">Обновлённые характеристики.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -206,7 +206,7 @@ public class MotorsController : ControllerBase
     /// Удаление двигателя (вместе со всей историей перемещений и обслуживания).
     /// </summary>
     /// <param name="id">Инвентарный номер двигателя.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -222,7 +222,7 @@ public class MotorsController : ControllerBase
     /// <param name="id">Инвентарный номер двигателя.</param>
     /// <param name="logId">Идентификатор записи обслуживания.</param>
     /// <param name="dto">Новые данные.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPut("{id}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -253,7 +253,7 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="id">Инвентарный номер двигателя.</param>
     /// <param name="logId">Идентификатор записи обслуживания.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpDelete("{id}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -276,7 +276,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Инвентарный номер двигателя.</param>
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
     /// <param name="dto">Новое расположение.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPut("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -303,7 +303,7 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Инвентарный номер двигателя.</param>
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

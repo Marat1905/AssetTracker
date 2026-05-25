@@ -53,7 +53,7 @@ public class LubricantTypesController : ControllerBase
     /// </summary>
     /// <param name="dto">Данные для создания.</param>
     /// <returns>Созданный тип смазки.</returns>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -76,7 +76,7 @@ public class LubricantTypesController : ControllerBase
     /// <param name="id">Идентификатор типа смазки.</param>
     /// <param name="dto">Новые данные.</param>
     /// <returns>Обновлённый тип смазки.</returns>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpPut("{id}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -102,7 +102,7 @@ public class LubricantTypesController : ControllerBase
     /// Удалить тип смазки.
     /// </summary>
     /// <param name="id">Идентификатор типа смазки.</param>
-    [Authorize(Policy = "Electro")]
+    //[Authorize(Policy = "Electro")]
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
