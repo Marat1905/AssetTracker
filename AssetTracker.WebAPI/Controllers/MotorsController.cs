@@ -36,7 +36,7 @@ public class MotorsController : ControllerBase
         try
         {
             var result = await _motorService.CreateMotorAsync(dto);
-            return CreatedAtAction(nameof(GetFullHistory), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetFullHistory), new { motorId = result.Id }, result);
         }
         catch (InvalidOperationException ex)
         {
