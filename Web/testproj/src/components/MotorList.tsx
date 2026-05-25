@@ -1,3 +1,4 @@
+// MotorList.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { MotorListItem, MotorFullHistoryDto } from '../types';
@@ -27,6 +28,8 @@ export default function MotorList() {
     const [filterInventory, setFilterInventory] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    // Фильтр по наличию инвентарного номера: null – все, true – только с номером, false – только без номера
+    const [filterHasInventoryNumber, setFilterHasInventoryNumber] = useState<boolean | null>(null);
 
     const fetchMotors = async () => {
         setLoading(true);
@@ -36,7 +39,8 @@ export default function MotorList() {
                 pageSize,
                 filterInventory || undefined,
                 filterLocation || undefined,
-                filterStatus || undefined
+                filterStatus || undefined,
+                filterHasInventoryNumber
             );
             setMotors(data.items);
             setTotalPages(data.totalPages);
@@ -50,12 +54,13 @@ export default function MotorList() {
 
     useEffect(() => {
         fetchMotors();
-    }, [currentPage, pageSize, filterInventory, filterLocation, filterStatus]);
+    }, [currentPage, pageSize, filterInventory, filterLocation, filterStatus, filterHasInventoryNumber]);
 
     const handleResetFilters = () => {
         setFilterInventory('');
         setFilterLocation('');
         setFilterStatus('');
+        setFilterHasInventoryNumber(null);
         setCurrentPage(1);
     };
 
@@ -136,6 +141,23 @@ export default function MotorList() {
                                 {Object.entries(motorStatusLabels).map(([value, label]) => (
                                     <option key={value} value={value}>{label}</option>
                                 ))}
+                            </select>
+                        </div>
+                        <div className="flex-1 min-w-[150px]">
+                            <label className="form-label text-xs">Инвентарный номер</label>
+                            <select
+                                value={filterHasInventoryNumber === null ? '' : (filterHasInventoryNumber ? 'yes' : 'no')}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '') setFilterHasInventoryNumber(null);
+                                    else if (val === 'yes') setFilterHasInventoryNumber(true);
+                                    else setFilterHasInventoryNumber(false);
+                                }}
+                                className="form-input py-1.5"
+                            >
+                                <option value="">Все</option>
+                                <option value="yes">Только с инв. номером</option>
+                                <option value="no">Только без инв. номера</option>
                             </select>
                         </div>
                         <div className="flex gap-2">

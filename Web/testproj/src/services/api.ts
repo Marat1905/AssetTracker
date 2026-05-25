@@ -117,6 +117,7 @@ export const motorApi = {
      * @param inventoryNumber - Фильтр по инвентарному номеру (частичное совпадение).
      * @param location - Фильтр по текущему местоположению (частичное совпадение).
      * @param status - Фильтр по статусу.
+     * @param hasInventoryNumber - Фильтр по наличию инвентарного номера: true – только с номером, false – только без номера, null – все.
      * @returns Пагинированный результат со списком двигателей.
      */
     getMotorsPaged: async (
@@ -124,7 +125,8 @@ export const motorApi = {
         pageSize: number = 10,
         inventoryNumber?: string,
         location?: string,
-        status?: string
+        status?: string,
+        hasInventoryNumber?: boolean | null
     ): Promise<PagedResult<MotorListItem>> => {
         const params = new URLSearchParams();
         params.append('page', page.toString());
@@ -132,6 +134,9 @@ export const motorApi = {
         if (inventoryNumber) params.append('inventoryNumber', inventoryNumber);
         if (location) params.append('location', location);
         if (status) params.append('status', status);
+        if (hasInventoryNumber !== undefined && hasInventoryNumber !== null) {
+            params.append('hasInventoryNumber', hasInventoryNumber.toString());
+        }
 
         const response = await api.get<PagedResult<MotorListItem>>(`/motors/paged?${params.toString()}`);
         return response.data;

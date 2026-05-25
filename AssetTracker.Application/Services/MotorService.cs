@@ -372,9 +372,11 @@ public class MotorService : IMotorService
         int pageSize,
         string? inventoryNumberFilter,
         string? locationFilter,
-        MotorStatus? statusFilter)
+        MotorStatus? statusFilter,
+        bool? hasInventoryNumber = null)
     {
-        _logger.LogInformation("Получение списка двигателей с пагинацией: page={Page}, pageSize={PageSize}", page, pageSize);
+        _logger.LogInformation("Получение списка двигателей с пагинацией: page={Page}, pageSize={PageSize}, hasInventoryNumber={HasInventoryNumber}",
+            page, pageSize, hasInventoryNumber);
 
         var query = _unitOfWork.Motors.GetQueryable();
 
@@ -389,6 +391,15 @@ public class MotorService : IMotorService
         {
             query = query.Where(m => m.LocationHistories.Any(l =>
                 l.EndDate == null && EF.Functions.ILike(l.Location, $"%{locationFilter}%")));
+        }
+
+        // НОВОЕ: фильтрация по наличию инвентарного номера
+        if (hasInventoryNumber.HasValue)
+        {
+            if (hasInventoryNumber.Value)
+                query = query.Where(m => m.InventoryNumber != null);
+            else
+                query = query.Where(m => m.InventoryNumber == null);
         }
 
         var totalCount = await query.CountAsync();

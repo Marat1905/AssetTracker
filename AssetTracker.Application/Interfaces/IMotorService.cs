@@ -79,8 +79,15 @@ public interface IMotorService
     /// <param name="inventoryNumberFilter">Фильтр по инвентарному номеру (частичное совпадение).</param>
     /// <param name="locationFilter">Фильтр по текущему местоположению (частичное совпадение).</param>
     /// <param name="statusFilter">Фильтр по статусу.</param>
+    /// <param name="hasInventoryNumber">//Фильтр по наличию инвентарного номера: true – только с номером, false – только без номера, null – все.</param>
     /// <returns>Страница с результатами и метаинформацией.</returns>
-    Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(int page, int pageSize, string? inventoryNumberFilter, string? locationFilter, MotorStatus? statusFilter);
+    Task<PagedResult<MotorListItemDto>> GetMotorsPagedAsync(
+        int page,
+        int pageSize,
+        string? inventoryNumberFilter,
+        string? locationFilter,
+        MotorStatus? statusFilter,
+        bool? hasInventoryNumber = null);
 
     /// <summary>
     /// Получение пагинированной истории перемещений двигателя (для UI).

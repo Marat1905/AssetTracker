@@ -137,6 +137,7 @@ public class MotorsController : ControllerBase
     /// <param name="inventoryNumber">Фильтр по инвентарному номеру (частичное совпадение).</param>
     /// <param name="location">Фильтр по текущему местоположению (частичное совпадение).</param>
     /// <param name="status">Фильтр по статусу.</param>
+    /// <param name="hasInventoryNumber">//Фильтр по наличию инвентарного номера: true – только с номером, false – только без номера, null – все.</param>
     /// <returns>Страница с результатами.</returns>
     [HttpGet("paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -145,11 +146,12 @@ public class MotorsController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] string? inventoryNumber = null,
         [FromQuery] string? location = null,
-        [FromQuery] MotorStatus? status = null)
+        [FromQuery] MotorStatus? status = null,
+        [FromQuery] bool? hasInventoryNumber = null) //параметр фильтрации
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
-        var result = await _motorService.GetMotorsPagedAsync(page, pageSize, inventoryNumber, location, status);
+        var result = await _motorService.GetMotorsPagedAsync(page, pageSize, inventoryNumber, location, status, hasInventoryNumber);
         return Ok(result);
     }
 
