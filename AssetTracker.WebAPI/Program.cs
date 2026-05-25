@@ -3,9 +3,11 @@ using AssetTracker.Application.Services;
 using AssetTracker.Application.Validators;
 using AssetTracker.Infrastructure.Data;
 using AssetTracker.Infrastructure.Extensions;
+using AssetTracker.WebAPI.Auth;
 using AssetTracker.WebAPI.Middleware;
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -21,6 +23,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // Infrastructure (DB, repositories)
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, DynamicAuthorizationPolicyProvider>();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -46,6 +49,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateMotorDtoValidator>();
 
 // Logging
 builder.Services.AddLogging();
+
+builder.Services.AddCustomJWTAuthentification();
 
 var app = builder.Build();
 
