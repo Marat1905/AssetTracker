@@ -13,6 +13,7 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
     private readonly TestContainersFixture _fixture;
     private AppDbContext _context = null!;
     private LocationHistoryRepository _repository = null!;
+    private int _motorId;
 
     public LocationHistoryRepositoryTests(TestContainersFixture fixture)
     {
@@ -27,7 +28,7 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
         _context = new AppDbContext(options);
         await DatabaseCleaner.CleanDatabaseAsync(_context);
         _repository = new LocationHistoryRepository(_context);
-        await SeedMotor();
+        _motorId = await SeedMotor();
     }
 
     public async Task DisposeAsync()
@@ -35,9 +36,8 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
         await _context.DisposeAsync();
     }
 
-    private async Task SeedMotor()
+    private async Task<int> SeedMotor()
     {
-        // Создаём новые подшипники
         var front = new Bearing { Type = "6204", Manufacturer = "X", Supplier = "Y" };
         var rear = new Bearing { Type = "6204", Manufacturer = "X", Supplier = "Y" };
         await _context.Bearings.AddRangeAsync(front, rear);
@@ -45,7 +45,7 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
 
         var motor = new Motor
         {
-            InventoryNumber = 8001,
+            InventoryNumber = "8001", // строка
             Type = "MotorForLocTest",
             ShaftDiameter = 25,
             Power = 5,
@@ -57,16 +57,16 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
         };
         await _context.Motors.AddAsync(motor);
         await _context.SaveChangesAsync();
+        return motor.Id;
     }
 
     [Fact]
     public async Task GetActiveLocationAsync_ShouldReturnCurrentLocation()
     {
         // Arrange
-        var motorId = 8001;
         var active = new LocationHistory
         {
-            MotorId = motorId,
+            MotorId = _motorId,
             Location = "ActivePlace",
             StartDate = DateTime.UtcNow,
             EndDate = null,
@@ -74,7 +74,7 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
         };
         var closed = new LocationHistory
         {
-            MotorId = motorId,
+            MotorId = _motorId,
             Location = "OldPlace",
             StartDate = DateTime.UtcNow.AddDays(-5),
             EndDate = DateTime.UtcNow.AddDays(-1),
@@ -84,7 +84,7 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _repository.GetActiveLocationAsync(motorId);
+        var result = await _repository.GetActiveLocationAsync(_motorId);
 
         // Assert
         Assert.NotNull(result);
@@ -96,10 +96,9 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
     public async Task GetActiveLocationAsync_NoActive_ShouldReturnNull()
     {
         // Arrange
-        var motorId = 8001;
         var closed = new LocationHistory
         {
-            MotorId = motorId,
+            MotorId = _motorId,
             Location = "OldPlace",
             StartDate = DateTime.UtcNow.AddDays(-5),
             EndDate = DateTime.UtcNow,
@@ -109,7 +108,7 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
         await _context.SaveChangesAsync();
 
         // Act
-        var result = await _repository.GetActiveLocationAsync(motorId);
+        var result = await _repository.GetActiveLocationAsync(_motorId);
 
         // Assert
         Assert.Null(result);

@@ -6,7 +6,7 @@ namespace AssetTracker.Tests.Helpers;
 
 public static class TestDataFactory
 {
-    public static CreateMotorDto CreateValidCreateMotorDto(int inventoryNumber = 1001)
+    public static CreateMotorDto CreateValidCreateMotorDto(string? inventoryNumber = "1001")
     {
         return new CreateMotorDto
         {
@@ -31,6 +31,11 @@ public static class TestDataFactory
                 Supplier = "ООО ТехКомплект"
             }
         };
+    }
+
+    public static SetInventoryNumberDto CreateSetInventoryNumberDto(string? inventoryNumber)
+    {
+        return new SetInventoryNumberDto { InventoryNumber = inventoryNumber };
     }
 
     public static UpdateMotorDto CreateValidUpdateMotorDto()

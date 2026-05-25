@@ -67,13 +67,13 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
     [Fact]
     public async Task CreateMotorAsync_ShouldPersistMotorAndLocation()
     {
-        var dto = TestDataFactory.CreateValidCreateMotorDto(7777);
+        var dto = TestDataFactory.CreateValidCreateMotorDto("7777");
         var result = await _service.CreateMotorAsync(dto);
 
         var motorInDb = await _context.Motors
             .Include(m => m.FrontBearing)
             .Include(m => m.RearBearing)
-            .FirstOrDefaultAsync(m => m.InventoryNumber == 7777);
+            .FirstOrDefaultAsync(m => m.InventoryNumber == "7777");
         Assert.NotNull(motorInDb);
         Assert.Equal("АИР100L4", motorInDb.Type);
         Assert.Equal(28, motorInDb.ShaftDiameter);
@@ -82,7 +82,7 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
         Assert.Equal(MotorStatus.InOperation, motorInDb.Status);
 
         var locationInDb = await _context.LocationHistories
-            .FirstOrDefaultAsync(l => l.MotorId == 7777 && l.EndDate == null);
+            .FirstOrDefaultAsync(l => l.MotorId == motorInDb.Id && l.EndDate == null);
         Assert.NotNull(locationInDb);
         Assert.Equal("Цех №1", locationInDb.Location);
         Assert.Equal(MotorStatus.InOperation, locationInDb.Status);
@@ -91,8 +91,9 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
     [Fact]
     public async Task MoveMotorAsync_ShouldCloseActiveLocationAndCreateNew()
     {
-        var createDto = TestDataFactory.CreateValidCreateMotorDto(8888);
-        await _service.CreateMotorAsync(createDto);
+        var createDto = TestDataFactory.CreateValidCreateMotorDto("8888");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
 
         var moveDto = new MoveMotorDto
         {
@@ -100,13 +101,13 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
             NewStatus = MotorStatus.Repair
         };
 
-        await _service.MoveMotorAsync(8888, moveDto);
+        await _service.MoveMotorAsync(motorId, moveDto);
 
-        var motor = await _context.Motors.FirstAsync(m => m.InventoryNumber == 8888);
+        var motor = await _context.Motors.FirstAsync(m => m.Id == motorId);
         Assert.Equal(MotorStatus.Repair, motor.Status);
 
         var histories = await _context.LocationHistories
-            .Where(l => l.MotorId == 8888)
+            .Where(l => l.MotorId == motorId)
             .OrderBy(l => l.StartDate)
             .ToListAsync();
         Assert.Equal(2, histories.Count);
@@ -118,17 +119,18 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
     [Fact]
     public async Task AddMaintenanceAsync_Lubrication_ShouldCreateLog()
     {
-        var createDto = TestDataFactory.CreateValidCreateMotorDto(9999);
-        await _service.CreateMotorAsync(createDto);
+        var createDto = TestDataFactory.CreateValidCreateMotorDto("9999");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
 
         var lubricantType = await _context.LubricantTypes.FirstAsync();
         var maintenanceDto = TestDataFactory.CreateLubricationDto(lubricantType.Id, BearingPosition.Front);
 
-        await _service.AddMaintenanceAsync(9999, maintenanceDto);
+        await _service.AddMaintenanceAsync(motorId, maintenanceDto);
 
         var log = await _context.MaintenanceLogs
             .Include(l => l.LubricantType)
-            .FirstOrDefaultAsync(l => l.MotorId == 9999);
+            .FirstOrDefaultAsync(l => l.MotorId == motorId);
         Assert.NotNull(log);
         Assert.Equal(MaintenanceType.Lubrication, log.WorkType);
         Assert.Equal(lubricantType.Name, log.LubricantType?.Name);
@@ -138,20 +140,21 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
     [Fact]
     public async Task AddMaintenanceAsync_BearingReplacement_ShouldUpdateMotorBearing()
     {
-        var createDto = TestDataFactory.CreateValidCreateMotorDto(1111);
-        await _service.CreateMotorAsync(createDto);
+        var createDto = TestDataFactory.CreateValidCreateMotorDto("1111");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
 
         var newBearingDto = TestDataFactory.CreateBearingReplacementWithNewBearingDto(BearingPosition.Rear);
 
-        await _service.AddMaintenanceAsync(1111, newBearingDto);
+        await _service.AddMaintenanceAsync(motorId, newBearingDto);
 
         var motor = await _context.Motors
             .Include(m => m.RearBearing)
-            .FirstAsync(m => m.InventoryNumber == 1111);
+            .FirstAsync(m => m.Id == motorId);
         Assert.Equal("6306", motor.RearBearing.Type);
 
         var log = await _context.MaintenanceLogs
-            .FirstOrDefaultAsync(l => l.MotorId == 1111 && l.WorkType == MaintenanceType.BearingReplacement);
+            .FirstOrDefaultAsync(l => l.MotorId == motorId && l.WorkType == MaintenanceType.BearingReplacement);
         Assert.NotNull(log);
         Assert.Equal(BearingPosition.Rear, log.BearingPosition);
         Assert.NotNull(log.NewBearing);
@@ -160,16 +163,18 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
     [Fact]
     public async Task GetFullHistoryAsync_ShouldReturnCompleteHistory()
     {
-        var createDto = TestDataFactory.CreateValidCreateMotorDto(2222);
-        await _service.CreateMotorAsync(createDto);
+        var createDto = TestDataFactory.CreateValidCreateMotorDto("2222");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
 
-        await _service.MoveMotorAsync(2222, new MoveMotorDto { NewLocation = "Цех 10" });
+        await _service.MoveMotorAsync(motorId, new MoveMotorDto { NewLocation = "Цех 10" });
         var lubricantType = await _context.LubricantTypes.FirstAsync();
-        await _service.AddMaintenanceAsync(2222, TestDataFactory.CreateLubricationDto(lubricantType.Id, BearingPosition.Rear));
+        await _service.AddMaintenanceAsync(motorId, TestDataFactory.CreateLubricationDto(lubricantType.Id, BearingPosition.Rear));
 
-        var history = await _service.GetFullHistoryAsync(2222);
+        var history = await _service.GetFullHistoryAsync(motorId);
 
-        Assert.Equal(2222, history.InventoryNumber);
+        Assert.Equal(motorId, history.Id);
+        Assert.Equal("2222", history.InventoryNumber);
         Assert.Equal(2, history.LocationHistory.Count);
         Assert.Single(history.MaintenanceLogs);
         Assert.Equal(MaintenanceType.Lubrication.ToString(), history.MaintenanceLogs.First().WorkType);
@@ -178,13 +183,15 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
     [Fact]
     public async Task UpdateMotorAsync_ShouldModifyCharacteristics()
     {
-        var createDto = TestDataFactory.CreateValidCreateMotorDto(3333);
-        await _service.CreateMotorAsync(createDto);
+        var createDto = TestDataFactory.CreateValidCreateMotorDto("3333");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
+
         var updateDto = TestDataFactory.CreateValidUpdateMotorDto();
 
-        await _service.UpdateMotorAsync(3333, updateDto);
+        await _service.UpdateMotorAsync(motorId, updateDto);
 
-        var motor = await _context.Motors.FirstAsync(m => m.InventoryNumber == 3333);
+        var motor = await _context.Motors.FirstAsync(m => m.Id == motorId);
         Assert.Equal(updateDto.Type, motor.Type);
         Assert.Equal(updateDto.ShaftDiameter, motor.ShaftDiameter);
         Assert.Equal(updateDto.Power, motor.Power);
@@ -196,35 +203,36 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
     [Fact]
     public async Task DeleteMotorAsync_ShouldRemoveMotorAndRelatedData()
     {
-        var createDto = TestDataFactory.CreateValidCreateMotorDto(4444);
-        await _service.CreateMotorAsync(createDto);
+        var createDto = TestDataFactory.CreateValidCreateMotorDto("4444");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
+
         var lubricantType = await _context.LubricantTypes.FirstAsync();
-        await _service.AddMaintenanceAsync(4444, TestDataFactory.CreateLubricationDto(lubricantType.Id, BearingPosition.Front));
+        await _service.AddMaintenanceAsync(motorId, TestDataFactory.CreateLubricationDto(lubricantType.Id, BearingPosition.Front));
 
-        await _service.DeleteMotorAsync(4444);
+        await _service.DeleteMotorAsync(motorId);
 
-        var motor = await _context.Motors.FirstOrDefaultAsync(m => m.InventoryNumber == 4444);
+        var motor = await _context.Motors.FirstOrDefaultAsync(m => m.Id == motorId);
         Assert.Null(motor);
-        var locations = await _context.LocationHistories.AnyAsync(l => l.MotorId == 4444);
+        var locations = await _context.LocationHistories.AnyAsync(l => l.MotorId == motorId);
         Assert.False(locations);
-        var logs = await _context.MaintenanceLogs.AnyAsync(l => l.MotorId == 4444);
+        var logs = await _context.MaintenanceLogs.AnyAsync(l => l.MotorId == motorId);
         Assert.False(logs);
     }
 
     [Fact]
     public async Task GetMotorsPagedAsync_ShouldReturnFilteredAndPagedResults()
     {
-        // Arrange: создаём 20 двигателей: 10 с номерами, содержащими "10" (100-109), 
-        // и 10 с номерами, не содержащими "10" (200-209)
+        // Создаём двигатели с инвентарными номерами как строки
         for (int i = 100; i < 110; i++)
         {
-            var dto = TestDataFactory.CreateValidCreateMotorDto(i);
+            var dto = TestDataFactory.CreateValidCreateMotorDto(i.ToString());
             dto.InitialLocation = "LocationX";
             await _service.CreateMotorAsync(dto);
         }
         for (int i = 200; i < 210; i++)
         {
-            var dto = TestDataFactory.CreateValidCreateMotorDto(i);
+            var dto = TestDataFactory.CreateValidCreateMotorDto(i.ToString());
             dto.InitialLocation = "LocationY";
             await _service.CreateMotorAsync(dto);
         }

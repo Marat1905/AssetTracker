@@ -161,11 +161,18 @@ namespace AssetTracker.Infrastructure.Migrations
 
             modelBuilder.Entity("AssetTracker.Domain.Entities.Motor", b =>
                 {
-                    b.Property<int>("InventoryNumber")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("FrontBearingId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("InventoryNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("MountingType")
                         .IsRequired()
@@ -195,9 +202,13 @@ namespace AssetTracker.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.HasKey("InventoryNumber");
+                    b.HasKey("Id");
 
                     b.HasIndex("FrontBearingId");
+
+                    b.HasIndex("InventoryNumber")
+                        .IsUnique()
+                        .HasFilter("\"InventoryNumber\" IS NOT NULL");
 
                     b.HasIndex("RearBearingId");
 

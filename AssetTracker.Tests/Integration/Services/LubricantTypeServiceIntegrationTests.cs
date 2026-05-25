@@ -29,14 +29,12 @@ public class LubricantTypeServiceIntegrationTests : IClassFixture<TestContainers
 
     public async Task InitializeAsync()
     {
-        // Создаём новый контекст для каждого теста
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(_fixture.ConnectionString)
             .Options;
         _context = new AppDbContext(options);
         await DatabaseCleaner.CleanDatabaseAsync(_context);
 
-        // Настраиваем DI для UnitOfWork и репозиториев
         var services = new ServiceCollection();
         services.AddScoped(_ => _context);
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -114,16 +112,22 @@ public class LubricantTypeServiceIntegrationTests : IClassFixture<TestContainers
     [Fact]
     public async Task Delete_UsedInMaintenance_ShouldThrow()
     {
+        // 1. Создаём тип смазки
         var createDto = new CreateLubricantTypeDto { Name = "UsedLube" };
         var lube = await _service.CreateAsync(createDto);
 
-        // Создаём мотор и добавляем смазку
+        // 2. Создаём двигатель через MotorService (инвентарный номер – строка)
         var motorService = new MotorService(_unitOfWork, _mapper, NullLogger<MotorService>.Instance);
-        var motorDto = TestDataFactory.CreateValidCreateMotorDto(5000);
-        await motorService.CreateMotorAsync(motorDto);
-        var maintenanceDto = TestDataFactory.CreateLubricationDto(lube.Id, BearingPosition.Front);
-        await motorService.AddMaintenanceAsync(5000, maintenanceDto);
+        var motorDto = TestDataFactory.CreateValidCreateMotorDto("5000");
+        var createdMotor = await motorService.CreateMotorAsync(motorDto);
+        int motorId = createdMotor.Id;   // суррогатный идентификатор
 
+        // 3. Добавляем запись обслуживания (смазку) для этого двигателя
+        var maintenanceDto = TestDataFactory.CreateLubricationDto(lube.Id, BearingPosition.Front);
+        await motorService.AddMaintenanceAsync(motorId, maintenanceDto);
+
+        // 4. Пытаемся удалить тип смазки – должно выбросить InvalidOperationException,
+        //    так как он используется в MaintenanceLog
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.DeleteAsync(lube.Id));
     }
 }

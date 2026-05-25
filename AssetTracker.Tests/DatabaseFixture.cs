@@ -28,7 +28,6 @@ public class DatabaseFixture : IAsyncLifetime
             .Options;
         Context = new AppDbContext(options);
 
-        // Настраиваем DI провайдер для сервисов (если нужно)
         var services = new ServiceCollection();
         services.AddScoped(_ => Context);
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -50,10 +49,12 @@ public class DatabaseFixture : IAsyncLifetime
     }
 
     /// <summary>
-    /// Очищает все таблицы между тестами
+    /// Очищает все таблицы между тестами (с учётом новой схемы).
     /// </summary>
     public async Task CleanDatabaseAsync()
     {
         await Context.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"MaintenanceLogs\", \"LocationHistories\", \"Motors\", \"Bearings\", \"LubricantTypes\" RESTART IDENTITY CASCADE;");
+        // Сброс последовательности для Motor.Id
+        await Context.Database.ExecuteSqlRawAsync("ALTER SEQUENCE \"Motors_Id_seq\" RESTART WITH 1;");
     }
 }

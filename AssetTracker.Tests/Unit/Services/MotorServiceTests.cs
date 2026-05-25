@@ -61,19 +61,41 @@ public class MotorServiceTests
     public async Task CreateMotorAsync_ValidDto_ShouldCreateMotorAndLocation()
     {
         // Arrange
-        var dto = TestDataFactory.CreateValidCreateMotorDto(2001);
-        _motorRepoMock.Setup(r => r.GetByIdAsync(dto.InventoryNumber, It.IsAny<CancellationToken>()))
+        var dto = TestDataFactory.CreateValidCreateMotorDto("2001");
+        int motorId = 42;
+
+        var createdMotor = new Motor
+        {
+            Id = motorId,
+            InventoryNumber = dto.InventoryNumber,
+            Type = dto.Type,
+            ShaftDiameter = dto.ShaftDiameter,
+            Power = dto.Power,
+            Speed = dto.Speed,
+            Status = dto.Status,
+            MountingType = dto.MountingType,
+            FrontBearing = new Bearing { Id = 1, Type = "6205", Manufacturer = "SKF", Supplier = "OOO" },
+            RearBearing = new Bearing { Id = 2, Type = "6205", Manufacturer = "SKF", Supplier = "OOO" }
+        };
+
+        _motorRepoMock.Setup(r => r.GetByInventoryNumberAsync(dto.InventoryNumber!, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Motor?)null);
+
         _bearingRepoMock.Setup(r => r.AddAsync(It.IsAny<Bearing>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
         _motorRepoMock.Setup(r => r.AddAsync(It.IsAny<Motor>(), It.IsAny<CancellationToken>()))
+            .Callback<Motor, CancellationToken>((m, ct) => m.Id = motorId)
             .Returns(Task.CompletedTask);
+
         _locationHistoryRepoMock.Setup(r => r.AddAsync(It.IsAny<LocationHistory>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
-        var motorQuery = new List<Motor> { new Motor { InventoryNumber = 2001 } }.AsQueryable();
+        // Настройка мока для GetFullHistoryAsync (вызывается внутри CreateMotorAsync)
+        var motorQuery = new List<Motor> { createdMotor }.AsQueryable();
         var motorDbSetMock = CreateAsyncMockDbSet(motorQuery);
         _motorRepoMock.Setup(r => r.GetQueryable()).Returns(motorDbSetMock.Object);
 
@@ -90,6 +112,7 @@ public class MotorServiceTests
 
         // Assert
         Assert.NotNull(result);
+        Assert.Equal(motorId, result.Id);
         Assert.Equal(dto.InventoryNumber, result.InventoryNumber);
         _bearingRepoMock.Verify(r => r.AddAsync(It.IsAny<Bearing>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         _motorRepoMock.Verify(r => r.AddAsync(It.IsAny<Motor>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -101,9 +124,9 @@ public class MotorServiceTests
     public async Task CreateMotorAsync_DuplicateInventoryNumber_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var dto = TestDataFactory.CreateValidCreateMotorDto(2002);
-        var existingMotor = new Motor { InventoryNumber = 2002 };
-        _motorRepoMock.Setup(r => r.GetByIdAsync(dto.InventoryNumber, It.IsAny<CancellationToken>()))
+        var dto = TestDataFactory.CreateValidCreateMotorDto("2002");
+        var existingMotor = new Motor { Id = 1, InventoryNumber = "2002" };
+        _motorRepoMock.Setup(r => r.GetByInventoryNumberAsync(dto.InventoryNumber!, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingMotor);
 
         // Act & Assert
@@ -115,7 +138,7 @@ public class MotorServiceTests
     {
         // Arrange
         int motorId = 3001;
-        var motor = new Motor { InventoryNumber = motorId, Status = MotorStatus.InOperation };
+        var motor = new Motor { Id = motorId, InventoryNumber = "3001", Status = MotorStatus.InOperation };
         var activeLocation = new LocationHistory
         {
             MotorId = motorId,
@@ -160,7 +183,7 @@ public class MotorServiceTests
     {
         // Arrange
         int motorId = 4001;
-        var motor = new Motor { InventoryNumber = motorId };
+        var motor = new Motor { Id = motorId, InventoryNumber = "4001" };
         var dto = TestDataFactory.CreateLubricationDto(5, BearingPosition.Rear);
 
         _motorRepoMock.Setup(r => r.GetByIdAsync(motorId, It.IsAny<CancellationToken>()))
@@ -203,7 +226,8 @@ public class MotorServiceTests
         int motorId = 5001;
         var motor = new Motor
         {
-            InventoryNumber = motorId,
+            Id = motorId,
+            InventoryNumber = "5001",
             Type = "TestMotor",
             Status = MotorStatus.InOperation,
             FrontBearing = new Bearing { Id = 1, Type = "6204", Manufacturer = "SKF", Supplier = "A" },
@@ -214,7 +238,6 @@ public class MotorServiceTests
         var motorDbSetMock = CreateAsyncMockDbSet(motorQuery);
         _motorRepoMock.Setup(r => r.GetQueryable()).Returns(motorDbSetMock.Object);
 
-        // Важно: установить MotorId для каждой записи
         var locations = new List<LocationHistory>
         {
             new LocationHistory { Id = 1, MotorId = motorId, Location = "Place A", StartDate = DateTime.UtcNow, EndDate = null, Status = MotorStatus.InOperation }
@@ -234,7 +257,8 @@ public class MotorServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(motorId, result.InventoryNumber);
+        Assert.Equal(motorId, result.Id);
+        Assert.Equal("5001", result.InventoryNumber);
         Assert.Single(result.LocationHistory);
         Assert.Single(result.MaintenanceLogs);
     }
@@ -244,7 +268,7 @@ public class MotorServiceTests
     {
         // Arrange
         int motorId = 6001;
-        var motor = new Motor { InventoryNumber = motorId };
+        var motor = new Motor { Id = motorId, InventoryNumber = "6001" };
         _motorRepoMock.Setup(r => r.GetByIdAsync(motorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(motor);
         _motorRepoMock.Setup(r => r.Remove(motor)).Verifiable();

@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AssetTracker.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -45,7 +45,9 @@ namespace AssetTracker.Infrastructure.Migrations
                 name: "Motors",
                 columns: table => new
                 {
-                    InventoryNumber = table.Column<int>(type: "integer", nullable: false),
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    InventoryNumber = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     Type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     ShaftDiameter = table.Column<double>(type: "double precision", precision: 10, scale: 2, nullable: false),
                     Power = table.Column<double>(type: "double precision", precision: 10, scale: 2, nullable: false),
@@ -57,7 +59,7 @@ namespace AssetTracker.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Motors", x => x.InventoryNumber);
+                    table.PrimaryKey("PK_Motors", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Motors_Bearings_FrontBearingId",
                         column: x => x.FrontBearingId,
@@ -91,7 +93,7 @@ namespace AssetTracker.Infrastructure.Migrations
                         name: "FK_LocationHistories_Motors_MotorId",
                         column: x => x.MotorId,
                         principalTable: "Motors",
-                        principalColumn: "InventoryNumber",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -136,7 +138,7 @@ namespace AssetTracker.Infrastructure.Migrations
                         name: "FK_MaintenanceLogs_Motors_MotorId",
                         column: x => x.MotorId,
                         principalTable: "Motors",
-                        principalColumn: "InventoryNumber",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -169,6 +171,13 @@ namespace AssetTracker.Infrastructure.Migrations
                 name: "IX_Motors_FrontBearingId",
                 table: "Motors",
                 column: "FrontBearingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Motors_InventoryNumber",
+                table: "Motors",
+                column: "InventoryNumber",
+                unique: true,
+                filter: "\"InventoryNumber\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Motors_RearBearingId",

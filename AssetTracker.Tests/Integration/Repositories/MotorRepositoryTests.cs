@@ -13,6 +13,7 @@ public class MotorRepositoryTests : IClassFixture<TestContainersFixture>, IAsync
     private readonly TestContainersFixture _fixture;
     private AppDbContext _context = null!;
     private MotorRepository _repository = null!;
+    private int _motorId;
 
     public MotorRepositoryTests(TestContainersFixture fixture)
     {
@@ -27,7 +28,7 @@ public class MotorRepositoryTests : IClassFixture<TestContainersFixture>, IAsync
         _context = new AppDbContext(options);
         await DatabaseCleaner.CleanDatabaseAsync(_context);
         _repository = new MotorRepository(_context);
-        await SeedData();
+        _motorId = await SeedData();
     }
 
     public async Task DisposeAsync()
@@ -35,7 +36,7 @@ public class MotorRepositoryTests : IClassFixture<TestContainersFixture>, IAsync
         await _context.DisposeAsync();
     }
 
-    private async Task SeedData()
+    private async Task<int> SeedData()
     {
         var frontBearing = new Bearing { Type = "6204", Manufacturer = "SKF", Supplier = "A" };
         var rearBearing = new Bearing { Type = "6204", Manufacturer = "SKF", Supplier = "A" };
@@ -44,7 +45,7 @@ public class MotorRepositoryTests : IClassFixture<TestContainersFixture>, IAsync
 
         var motor = new Motor
         {
-            InventoryNumber = 9001,
+            InventoryNumber = "9001", // строка
             Type = "TestMotor",
             ShaftDiameter = 30,
             Power = 11,
@@ -56,22 +57,22 @@ public class MotorRepositoryTests : IClassFixture<TestContainersFixture>, IAsync
         };
         await _context.Motors.AddAsync(motor);
         await _context.SaveChangesAsync();
+        return motor.Id;
     }
 
     [Fact]
     public async Task GetWithFullHistoryAsync_ShouldIncludeLocationAndMaintenance()
     {
-        var motorId = 9001;
         var location = new LocationHistory
         {
-            MotorId = motorId,
+            MotorId = _motorId,
             Location = "TestLocation",
             StartDate = DateTime.UtcNow,
             Status = MotorStatus.InOperation
         };
         var log = new MaintenanceLog
         {
-            MotorId = motorId,
+            MotorId = _motorId,
             WorkType = MaintenanceType.Lubrication,
             Date = DateTime.UtcNow,
             PerformedBy = "Tester"
@@ -80,7 +81,7 @@ public class MotorRepositoryTests : IClassFixture<TestContainersFixture>, IAsync
         await _context.MaintenanceLogs.AddAsync(log);
         await _context.SaveChangesAsync();
 
-        var motor = await _repository.GetWithFullHistoryAsync(motorId);
+        var motor = await _repository.GetWithFullHistoryAsync(_motorId);
 
         Assert.NotNull(motor);
         Assert.Single(motor.LocationHistories);
