@@ -7,8 +7,8 @@ namespace AssetTracker.Application.DTOs;
 /// </summary>
 public class CreateMotorDto
 {
-    /// <summary>Инвентарный номер (уникальный).</summary>
-    public int InventoryNumber { get; set; }
+    /// <summary>Инвентарный номер (опциональный, уникальный).</summary>
+    public string? InventoryNumber { get; set; }
 
     /// <summary>Тип двигателя (марка, модель).</summary>
     public string Type { get; set; } = string.Empty;
@@ -72,4 +72,13 @@ public class MoveMotorDto
 
     /// <summary>Новый статус (опционально).</summary>
     public MotorStatus? NewStatus { get; set; }
+}
+
+/// <summary>
+/// DTO для установки/изменения инвентарного номера двигателя.
+/// </summary>
+public class SetInventoryNumberDto
+{
+    /// <summary>Новый инвентарный номер (должен быть уникальным, если не null).</summary>
+    public string? InventoryNumber { get; set; }
 }

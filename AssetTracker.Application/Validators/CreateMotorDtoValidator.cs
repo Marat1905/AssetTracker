@@ -11,7 +11,8 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
     public CreateMotorDtoValidator()
     {
         RuleFor(x => x.InventoryNumber)
-            .GreaterThan(0).WithMessage("Инвентарный номер должен быть положительным");
+            .MaximumLength(50).WithMessage("Инвентарный номер не должен превышать 50 символов")
+            .When(x => x.InventoryNumber != null);
 
         RuleFor(x => x.Type)
             .NotEmpty().WithMessage("Тип двигателя обязателен")
@@ -61,5 +62,25 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 
         RuleFor(x => x.MountingType)
             .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, Flange, FeetAndFlange, SmallFlange, FeetAndSmallFlange");
+    }
+}
+
+/// <summary>
+/// Валидатор для DTO установки инвентарного номера двигателя.
+/// </summary>
+public class SetInventoryNumberDtoValidator : AbstractValidator<SetInventoryNumberDto>
+{
+    public SetInventoryNumberDtoValidator()
+    {
+        RuleFor(x => x.InventoryNumber)
+            .MaximumLength(50).WithMessage("Инвентарный номер не должен превышать 50 символов")
+            .Matches("^[a-zA-Z0-9\\-\\_\\/\\.]*$").WithMessage("Инвентарный номер может содержать только буквы, цифры и символы - _ / .")
+            .When(x => !string.IsNullOrWhiteSpace(x.InventoryNumber));
+
+        // Дополнительно: можно запретить пустые строки, если null означает "удалить номер",
+        // а пустая строка недопустима. По желанию:
+        RuleFor(x => x.InventoryNumber)
+            .Must(inv => inv == null || !string.IsNullOrWhiteSpace(inv))
+            .WithMessage("Инвентарный номер не может быть пустой строкой. Используйте null для удаления номера.");
     }
 }

@@ -27,10 +27,23 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Конфигурация Motor
         modelBuilder.Entity<Motor>(entity =>
         {
-            entity.HasKey(e => e.InventoryNumber);
-            entity.Property(e => e.InventoryNumber).ValueGeneratedNever();
+            // Первичный ключ – суррогатный Id
+            entity.HasKey(e => e.Id);
+            // Автоинкремент для Id
+            entity.Property(e => e.Id).UseIdentityColumn();
+
+            // Инвентарный номер – необязательный, но уникальный, если задан
+            entity.Property(e => e.InventoryNumber)
+                .HasMaxLength(50)
+                .IsRequired(false);
+
+            entity.HasIndex(e => e.InventoryNumber)
+                .IsUnique()
+                .HasFilter($"\"{nameof(Motor.InventoryNumber)}\" IS NOT NULL");
+
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ShaftDiameter).HasPrecision(10, 2);
             entity.Property(e => e.Power).HasPrecision(10, 2);
@@ -51,6 +64,7 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // Конфигурация LocationHistory 
         modelBuilder.Entity<LocationHistory>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -63,6 +77,7 @@ public class AppDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Конфигурация MaintenanceLog
         modelBuilder.Entity<MaintenanceLog>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -100,6 +115,7 @@ public class AppDbContext : DbContext
                 .HasDatabaseName("IX_MaintenanceLogs_LastLubricant");
         });
 
+        // LubricantType и Bearing 
         modelBuilder.Entity<LubricantType>(entity =>
         {
             entity.HasKey(e => e.Id);

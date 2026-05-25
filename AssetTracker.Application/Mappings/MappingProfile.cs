@@ -13,6 +13,7 @@ public class MappingProfile : Profile
     {
         // Маппинг для создания мотора (CreateMotorDto -> Motor)
         CreateMap<CreateMotorDto, Motor>()
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
             .ForMember(dest => dest.FrontBearing, opt => opt.Ignore())
             .ForMember(dest => dest.RearBearing, opt => opt.Ignore())
             .ForMember(dest => dest.FrontBearingId, opt => opt.Ignore())

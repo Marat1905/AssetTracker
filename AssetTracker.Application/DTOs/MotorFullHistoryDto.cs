@@ -7,8 +7,11 @@ namespace AssetTracker.Application.DTOs;
 /// </summary>
 public class MotorFullHistoryDto
 {
-    /// <summary>Инвентарный номер.</summary>
-    public int InventoryNumber { get; set; }
+    /// <summary>Суррогатный идентификатор.</summary>
+    public int Id { get; set; }
+
+    /// <summary>Инвентарный номер (может отсутствовать).</summary>
+    public string? InventoryNumber { get; set; }
 
     /// <summary>Тип.</summary>
     public string Type { get; set; } = string.Empty;

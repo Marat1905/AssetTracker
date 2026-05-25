@@ -27,20 +27,20 @@ public class MotorService : IMotorService
     /// <inheritdoc />
     public async Task<IEnumerable<MotorListItemDto>> GetAllMotorsAsync()
     {
-        _logger.LogInformation("Fetching all motors");
+        _logger.LogInformation("Получение всех двигателей");
         var motors = await _unitOfWork.Motors.GetAllAsync();
 
-        // Для получения текущего местоположения нужно подгрузить LocationHistories
         var motorList = new List<MotorListItemDto>();
         foreach (var motor in motors)
         {
             var currentLocation = await _unitOfWork.LocationHistories.GetQueryable()
-                .Where(l => l.MotorId == motor.InventoryNumber && l.EndDate == null)
+                .Where(l => l.MotorId == motor.Id && l.EndDate == null)
                 .Select(l => l.Location)
                 .FirstOrDefaultAsync() ?? string.Empty;
 
             motorList.Add(new MotorListItemDto
             {
+                Id = motor.Id,
                 InventoryNumber = motor.InventoryNumber,
                 Type = motor.Type,
                 Power = motor.Power,
@@ -54,11 +54,15 @@ public class MotorService : IMotorService
     /// <inheritdoc />
     public async Task<MotorFullHistoryDto> CreateMotorAsync(CreateMotorDto dto)
     {
-        _logger.LogInformation("Creating new motor with inventory number {InventoryNumber}", dto.InventoryNumber);
+        _logger.LogInformation("Создание нового двигателя, инвентарный номер: {InventoryNumber}", dto.InventoryNumber ?? "отсутствует");
 
-        var existingMotor = await _unitOfWork.Motors.GetByIdAsync(dto.InventoryNumber);
-        if (existingMotor != null)
-            throw new InvalidOperationException($"Двигатель с инвентарным номером {dto.InventoryNumber} уже существует");
+        // Проверка уникальности инвентарного номера, если он задан
+        if (!string.IsNullOrWhiteSpace(dto.InventoryNumber))
+        {
+            var existingByInv = await _unitOfWork.Motors.GetByInventoryNumberAsync(dto.InventoryNumber);
+            if (existingByInv != null)
+                throw new InvalidOperationException($"Двигатель с инвентарным номером {dto.InventoryNumber} уже существует");
+        }
 
         // Создаём подшипники
         var frontBearing = _mapper.Map<Bearing>(dto.FrontBearing);
@@ -75,34 +79,58 @@ public class MotorService : IMotorService
         await _unitOfWork.Motors.AddAsync(motor);
         await _unitOfWork.SaveChangesAsync();
 
-        // Создаём первую запись о местоположении, фиксируя статус
+        // Создаём первую запись о местоположении
         var location = new LocationHistory
         {
-            MotorId = motor.InventoryNumber,
+            MotorId = motor.Id,
             Location = dto.InitialLocation,
             StartDate = DateTime.UtcNow,
             EndDate = null,
-            Status = motor.Status   // сохраняем начальный статус
+            Status = motor.Status
         };
         await _unitOfWork.LocationHistories.AddAsync(location);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Motor {InventoryNumber} created successfully", motor.InventoryNumber);
-        return await GetFullHistoryAsync(motor.InventoryNumber);
+        _logger.LogInformation("Двигатель создан с Id {MotorId}", motor.Id);
+        return await GetFullHistoryAsync(motor.Id);
+    }
+
+    /// <inheritdoc />
+    public async Task SetInventoryNumberAsync(int motorId, SetInventoryNumberDto dto)
+    {
+        _logger.LogInformation("Установка инвентарного номера для двигателя {MotorId}: {InventoryNumber}", motorId, dto.InventoryNumber ?? "null");
+
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        if (motor == null)
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
+
+        // Проверка уникальности нового номера (если не null)
+        if (!string.IsNullOrWhiteSpace(dto.InventoryNumber))
+        {
+            var existing = await _unitOfWork.Motors.GetByInventoryNumberAsync(dto.InventoryNumber);
+            if (existing != null && existing.Id != motorId)
+                throw new InvalidOperationException($"Инвентарный номер {dto.InventoryNumber} уже используется другим двигателем");
+        }
+
+        motor.InventoryNumber = dto.InventoryNumber;
+        _unitOfWork.Motors.Update(motor);
+        await _unitOfWork.SaveChangesAsync();
+
+        _logger.LogInformation("Инвентарный номер двигателя {MotorId} установлен в {InventoryNumber}", motorId, dto.InventoryNumber ?? "null");
     }
 
     /// <inheritdoc />
     public async Task MoveMotorAsync(int motorId, MoveMotorDto dto)
     {
-        _logger.LogInformation("Moving motor {MotorId} to {NewLocation}", motorId, dto.NewLocation);
+        _logger.LogInformation("Перемещение двигателя {MotorId} в {NewLocation}", motorId, dto.NewLocation);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         if (dto.NewStatus.HasValue && motor.Status != dto.NewStatus.Value)
         {
-            _logger.LogInformation("Changing motor {MotorId} status from {OldStatus} to {NewStatus}",
+            _logger.LogInformation("Изменение статуса двигателя {MotorId} с {OldStatus} на {NewStatus}",
                 motorId, motor.Status, dto.NewStatus.Value);
             motor.Status = dto.NewStatus.Value;
             _unitOfWork.Motors.Update(motor);
@@ -116,29 +144,29 @@ public class MotorService : IMotorService
             _unitOfWork.LocationHistories.Update(activeLocation);
         }
 
-        // Создать новую запись, сохраняя текущий статус двигателя (уже мог измениться)
+        // Создать новую запись
         var newLocation = new LocationHistory
         {
             MotorId = motorId,
             Location = dto.NewLocation,
             StartDate = DateTime.UtcNow,
             EndDate = null,
-            Status = motor.Status   // фиксируем статус на момент перемещения
+            Status = motor.Status
         };
         await _unitOfWork.LocationHistories.AddAsync(newLocation);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Motor {MotorId} moved to {NewLocation}", motorId, dto.NewLocation);
+        _logger.LogInformation("Двигатель {MotorId} перемещён в {NewLocation}", motorId, dto.NewLocation);
     }
 
     /// <inheritdoc />
     public async Task AddMaintenanceAsync(int motorId, MaintenanceDto dto)
     {
-        _logger.LogInformation("Adding maintenance for motor {MotorId}, type {WorkType}", motorId, dto.WorkType);
+        _logger.LogInformation("Добавление обслуживания для двигателя {MotorId}, тип {WorkType}", motorId, dto.WorkType);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         int? oldBearingId = null;
         int? newBearingId = null;
@@ -182,7 +210,7 @@ public class MotorService : IMotorService
                 // Создаём новый подшипник
                 var newBearing = _mapper.Map<Bearing>(dto.NewBearing);
                 await _unitOfWork.Bearings.AddAsync(newBearing);
-                await _unitOfWork.SaveChangesAsync(); // чтобы получить Id
+                await _unitOfWork.SaveChangesAsync();
                 newBearingId = newBearing.Id;
             }
             else
@@ -215,23 +243,25 @@ public class MotorService : IMotorService
         await _unitOfWork.MaintenanceLogs.AddAsync(maintenance);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Maintenance recorded for motor {MotorId}", motorId);
+        _logger.LogInformation("Обслуживание для двигателя {MotorId} записано", motorId);
     }
 
     /// <inheritdoc />
     public async Task<MotorFullHistoryDto> GetFullHistoryAsync(int motorId)
     {
-        _logger.LogInformation("Fetching full history for motor {MotorId}", motorId);
+        _logger.LogInformation("Получение полной истории для двигателя {MotorId}", motorId);
 
         var motor = await _unitOfWork.Motors.GetQueryable()
             .Include(m => m.FrontBearing)
             .Include(m => m.RearBearing)
-            .FirstOrDefaultAsync(m => m.InventoryNumber == motorId);
+            .FirstOrDefaultAsync(m => m.Id == motorId);
 
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         var dto = _mapper.Map<MotorFullHistoryDto>(motor);
+        dto.Id = motor.Id;
+        dto.InventoryNumber = motor.InventoryNumber;
 
         // История перемещений – сортировка по убыванию даты начала (сначала новые)
         dto.LocationHistory = await _unitOfWork.LocationHistories.GetQueryable()
@@ -308,32 +338,32 @@ public class MotorService : IMotorService
     /// <inheritdoc />
     public async Task UpdateMotorAsync(int motorId, UpdateMotorDto dto)
     {
-        _logger.LogInformation("Updating motor {MotorId}", motorId);
+        _logger.LogInformation("Обновление характеристик двигателя {MotorId}", motorId);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         _mapper.Map(dto, motor);
         _unitOfWork.Motors.Update(motor);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Motor {MotorId} updated successfully", motorId);
+        _logger.LogInformation("Двигатель {MotorId} обновлён", motorId);
     }
 
     /// <inheritdoc />
     public async Task DeleteMotorAsync(int motorId)
     {
-        _logger.LogInformation("Deleting motor {MotorId}", motorId);
+        _logger.LogInformation("Удаление двигателя {MotorId}", motorId);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         _unitOfWork.Motors.Remove(motor);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Motor {MotorId} deleted successfully", motorId);
+        _logger.LogInformation("Двигатель {MotorId} удалён", motorId);
     }
 
     /// <inheritdoc />
@@ -344,17 +374,17 @@ public class MotorService : IMotorService
         string? locationFilter,
         MotorStatus? statusFilter)
     {
-        _logger.LogInformation("Fetching motors paged: page={Page}, pageSize={PageSize}", page, pageSize);
+        _logger.LogInformation("Получение списка двигателей с пагинацией: page={Page}, pageSize={PageSize}", page, pageSize);
 
         var query = _unitOfWork.Motors.GetQueryable();
 
         if (!string.IsNullOrEmpty(inventoryNumberFilter))
-            query = query.Where(m => m.InventoryNumber.ToString().Contains(inventoryNumberFilter));
+            query = query.Where(m => m.InventoryNumber != null && EF.Functions.ILike(m.InventoryNumber, $"%{inventoryNumberFilter}%"));
 
         if (statusFilter.HasValue)
             query = query.Where(m => m.Status == statusFilter.Value);
 
-        // Фильтрация по текущему местоположению с регистронезависимым поиском (ILike)
+        // Фильтрация по текущему местоположению
         if (!string.IsNullOrEmpty(locationFilter))
         {
             query = query.Where(m => m.LocationHistories.Any(l =>
@@ -368,6 +398,7 @@ public class MotorService : IMotorService
             .Take(pageSize)
             .Select(m => new MotorListItemDto
             {
+                Id = m.Id,
                 InventoryNumber = m.InventoryNumber,
                 Type = m.Type,
                 Power = m.Power,
@@ -392,11 +423,11 @@ public class MotorService : IMotorService
     /// <inheritdoc />
     public async Task<PagedResult<LocationHistoryDto>> GetMotorLocationHistoryPagedAsync(int motorId, int page, int pageSize)
     {
-        _logger.LogInformation("Fetching location history for motor {MotorId}, page={Page}, pageSize={PageSize}", motorId, page, pageSize);
+        _logger.LogInformation("Получение истории перемещений для двигателя {MotorId}, page={Page}, pageSize={PageSize}", motorId, page, pageSize);
 
         var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motorExists == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         // Сортировка по убыванию даты начала (самые новые перемещения первыми)
         var query = _unitOfWork.LocationHistories.GetQueryable()
@@ -436,13 +467,13 @@ public class MotorService : IMotorService
         DateTime? fromDate,
         DateTime? toDate)
     {
-        _logger.LogInformation("Fetching maintenance logs for motor {MotorId}, page={Page}, pageSize={PageSize}, workType={WorkType}, from={From}, to={To}",
+        _logger.LogInformation("Получение журнала обслуживания для двигателя {MotorId}, page={Page}, pageSize={PageSize}, workType={WorkType}, from={From}, to={To}",
             motorId, page, pageSize, workType, fromDate, toDate);
 
         // Проверка существования мотора
         var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motorExists == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         // Валидация диапазона дат
         if (fromDate.HasValue && toDate.HasValue && fromDate > toDate)
@@ -528,11 +559,11 @@ public class MotorService : IMotorService
     /// <inheritdoc />
     public async Task UpdateMaintenanceLogAsync(int motorId, int logId, UpdateMaintenanceLogDto dto)
     {
-        _logger.LogInformation("Updating maintenance log {LogId} for motor {MotorId}", logId, motorId);
+        _logger.LogInformation("Обновление записи обслуживания {LogId} для двигателя {MotorId}", logId, motorId);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         var log = await _unitOfWork.MaintenanceLogs.GetQueryable()
             .Include(l => l.OldBearing)
@@ -611,17 +642,17 @@ public class MotorService : IMotorService
         _unitOfWork.MaintenanceLogs.Update(log);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} updated", logId, motorId);
+        _logger.LogInformation("Запись обслуживания {LogId} для двигателя {MotorId} обновлена", logId, motorId);
     }
 
     /// <inheritdoc />
     public async Task DeleteMaintenanceLogAsync(int motorId, int logId)
     {
-        _logger.LogInformation("Deleting maintenance log {LogId} for motor {MotorId}", logId, motorId);
+        _logger.LogInformation("Удаление записи обслуживания {LogId} для двигателя {MotorId}", logId, motorId);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         var log = await _unitOfWork.MaintenanceLogs.GetByIdAsync(logId);
         if (log == null || log.MotorId != motorId)
@@ -648,17 +679,17 @@ public class MotorService : IMotorService
         _unitOfWork.MaintenanceLogs.Remove(log);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Maintenance log {LogId} for motor {MotorId} deleted", logId, motorId);
+        _logger.LogInformation("Запись обслуживания {LogId} для двигателя {MotorId} удалена", logId, motorId);
     }
 
     /// <inheritdoc />
     public async Task UpdateLocationHistoryAsync(int motorId, int locationHistoryId, UpdateLocationHistoryDto dto)
     {
-        _logger.LogInformation("Updating location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
+        _logger.LogInformation("Обновление записи истории перемещений {LocationHistoryId} для двигателя {MotorId}", locationHistoryId, motorId);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
         if (locationHistory == null || locationHistory.MotorId != motorId)
@@ -678,17 +709,17 @@ public class MotorService : IMotorService
         _unitOfWork.LocationHistories.Update(locationHistory);
         await _unitOfWork.SaveChangesAsync();
 
-        _logger.LogInformation("Location history {LocationHistoryId} for motor {MotorId} updated", locationHistoryId, motorId);
+        _logger.LogInformation("Запись истории перемещений {LocationHistoryId} для двигателя {MotorId} обновлена", locationHistoryId, motorId);
     }
 
     /// <inheritdoc />
     public async Task DeleteLocationHistoryAsync(int motorId, int locationHistoryId)
     {
-        _logger.LogInformation("Deleting location history {LocationHistoryId} for motor {MotorId}", locationHistoryId, motorId);
+        _logger.LogInformation("Удаление записи истории перемещений {LocationHistoryId} для двигателя {MotorId}", locationHistoryId, motorId);
 
         var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
         if (motor == null)
-            throw new KeyNotFoundException($"Двигатель с инвентарным номером {motorId} не найден");
+            throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
         if (locationHistory == null || locationHistory.MotorId != motorId)
@@ -723,7 +754,7 @@ public class MotorService : IMotorService
             }
             _unitOfWork.LocationHistories.Remove(locationHistory);
             await _unitOfWork.SaveChangesAsync();
-            _logger.LogInformation("Active location history {LocationHistoryId} for motor {MotorId} deleted, previous record became active with status {Status}",
+            _logger.LogInformation("Активная запись истории перемещений {LocationHistoryId} для двигателя {MotorId} удалена, предыдущая запись стала активной со статусом {Status}",
                 locationHistoryId, motorId, motor.Status);
             return;
         }
@@ -733,7 +764,7 @@ public class MotorService : IMotorService
         {
             _unitOfWork.LocationHistories.Remove(locationHistory);
             await _unitOfWork.SaveChangesAsync();
-            _logger.LogInformation("Closed last location history {LocationHistoryId} for motor {MotorId} deleted", locationHistoryId, motorId);
+            _logger.LogInformation("Закрытая последняя запись истории перемещений {LocationHistoryId} для двигателя {MotorId} удалена", locationHistoryId, motorId);
         }
         else
         {

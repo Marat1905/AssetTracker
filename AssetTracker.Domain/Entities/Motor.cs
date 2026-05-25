@@ -7,8 +7,11 @@ namespace AssetTracker.Domain.Entities;
 /// </summary>
 public class Motor
 {
-    /// <summary>Инвентарный номер (первичный ключ).</summary>
-    public int InventoryNumber { get; set; }
+    /// <summary>Суррогатный первичный ключ (автоинкремент).</summary>
+    public int Id { get; set; }
+
+    /// <summary>Инвентарный номер (необязательный, но уникальный, если задан).</summary>
+    public string? InventoryNumber { get; set; }
 
     /// <summary>Тип двигателя (марка, модель).</summary>
     public string Type { get; set; } = string.Empty;

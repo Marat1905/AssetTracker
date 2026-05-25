@@ -36,7 +36,35 @@ public class MotorsController : ControllerBase
         try
         {
             var result = await _motorService.CreateMotorAsync(dto);
-            return CreatedAtAction(nameof(GetFullHistory), new { id = result.InventoryNumber }, result);
+            return CreatedAtAction(nameof(GetFullHistory), new { id = result.Id }, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Установить или изменить инвентарный номер двигателя.
+    /// </summary>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
+    /// <param name="dto">Новый инвентарный номер.</param>
+    //[Authorize(Policy = "Electro")]
+    [HttpPatch("{motorId}/inventory-number")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SetInventoryNumber(int motorId, [FromBody] SetInventoryNumberDto dto)
+    {
+        try
+        {
+            await _motorService.SetInventoryNumberAsync(motorId, dto);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
         }
         catch (InvalidOperationException ex)
         {
@@ -47,45 +75,45 @@ public class MotorsController : ControllerBase
     /// <summary>
     /// Перемещение двигателя (автоматически закрывает старую запись в истории перемещений).
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Новое местоположение и опционально новый статус.</param>
     //[Authorize(Policy = "Electro")]
-    [HttpPatch("{id}/move")]
+    [HttpPatch("{motorId}/move")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> MoveMotor(int id, [FromBody] MoveMotorDto dto)
+    public async Task<IActionResult> MoveMotor(int motorId, [FromBody] MoveMotorDto dto)
     {
-        await _motorService.MoveMotorAsync(id, dto);
+        await _motorService.MoveMotorAsync(motorId, dto);
         return NoContent();
     }
 
     /// <summary>
     /// Фиксация факта ремонта или смазки.
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Данные о выполненной работе.</param>
     //[Authorize(Policy = "Electro")]
-    [HttpPost("{id}/maintenance")]
+    [HttpPost("{motorId}/maintenance")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddMaintenance(int id, [FromBody] MaintenanceDto dto)
+    public async Task<IActionResult> AddMaintenance(int motorId, [FromBody] MaintenanceDto dto)
     {
-        await _motorService.AddMaintenanceAsync(id, dto);
+        await _motorService.AddMaintenanceAsync(motorId, dto);
         return NoContent();
     }
 
     /// <summary>
     /// Получение "карточки жизни" ЭД: где стоял и что с ним делали (без пагинации – для мобильных устройств).
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <returns>Полная история двигателя.</returns>
-    [HttpGet("{id}/full-history")]
+    [HttpGet("{motorId}/full-history")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MotorFullHistoryDto>> GetFullHistory(int id)
+    public async Task<ActionResult<MotorFullHistoryDto>> GetFullHistory(int motorId)
     {
-        var history = await _motorService.GetFullHistoryAsync(id);
+        var history = await _motorService.GetFullHistoryAsync(motorId);
         return Ok(history);
     }
 
@@ -128,40 +156,40 @@ public class MotorsController : ControllerBase
     /// <summary>
     /// Получение пагинированной истории перемещений двигателя (для UI).
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="page">Номер страницы.</param>
     /// <param name="pageSize">Размер страницы.</param>
     /// <returns>Страница истории перемещений.</returns>
-    [HttpGet("{id}/location-history/paged")]
+    [HttpGet("{motorId}/location-history/paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PagedResult<LocationHistoryDto>>> GetLocationHistoryPaged(
-        int id,
+        int motorId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
-        var result = await _motorService.GetMotorLocationHistoryPagedAsync(id, page, pageSize);
+        var result = await _motorService.GetMotorLocationHistoryPagedAsync(motorId, page, pageSize);
         return Ok(result);
     }
 
     /// <summary>
     /// Получение пагинированного журнала обслуживания двигателя с возможностью фильтрации по типу работ и периоду времени (для UI).
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="page">Номер страницы.</param>
     /// <param name="pageSize">Размер страницы.</param>
     /// <param name="workType">Фильтр по типу работ.</param>
     /// <param name="fromDate">Фильтр по дате – записи не ранее указанной даты.</param>
     /// <param name="toDate">Фильтр по дате – записи не позднее указанной даты.</param>
     /// <returns>Страница записей обслуживания.</returns>
-    [HttpGet("{id}/maintenance-logs/paged")]
+    [HttpGet("{motorId}/maintenance-logs/paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResult<MaintenanceLogDto>>> GetMaintenanceLogsPaged(
-        int id,
+        int motorId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
         [FromQuery] MaintenanceType? workType = null,
@@ -173,7 +201,7 @@ public class MotorsController : ControllerBase
 
         try
         {
-            var result = await _motorService.GetMotorMaintenanceLogsPagedAsync(id, page, pageSize, workType, fromDate, toDate);
+            var result = await _motorService.GetMotorMaintenanceLogsPagedAsync(motorId, page, pageSize, workType, fromDate, toDate);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -189,49 +217,49 @@ public class MotorsController : ControllerBase
     /// <summary>
     /// Редактирование основных характеристик двигателя.
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Обновлённые характеристики.</param>
     //[Authorize(Policy = "Electro")]
-    [HttpPut("{id}")]
+    [HttpPut("{motorId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateMotor(int id, [FromBody] UpdateMotorDto dto)
+    public async Task<IActionResult> UpdateMotor(int motorId, [FromBody] UpdateMotorDto dto)
     {
-        await _motorService.UpdateMotorAsync(id, dto);
+        await _motorService.UpdateMotorAsync(motorId, dto);
         return NoContent();
     }
 
     /// <summary>
     /// Удаление двигателя (вместе со всей историей перемещений и обслуживания).
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     //[Authorize(Policy = "Electro")]
-    [HttpDelete("{id}")]
+    [HttpDelete("{motorId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteMotor(int id)
+    public async Task<IActionResult> DeleteMotor(int motorId)
     {
-        await _motorService.DeleteMotorAsync(id);
+        await _motorService.DeleteMotorAsync(motorId);
         return NoContent();
     }
 
     /// <summary>
     /// Редактирование записи обслуживания (комментарий и, для смазки, тип смазки).
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="logId">Идентификатор записи обслуживания.</param>
     /// <param name="dto">Новые данные.</param>
     //[Authorize(Policy = "Electro")]
-    [HttpPut("{id}/maintenance/{logId}")]
+    [HttpPut("{motorId}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateMaintenanceLog(int id, int logId, [FromBody] UpdateMaintenanceLogDto dto)
+    public async Task<IActionResult> UpdateMaintenanceLog(int motorId, int logId, [FromBody] UpdateMaintenanceLogDto dto)
     {
         try
         {
-            await _motorService.UpdateMaintenanceLogAsync(id, logId, dto);
+            await _motorService.UpdateMaintenanceLogAsync(motorId, logId, dto);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -251,17 +279,17 @@ public class MotorsController : ControllerBase
     /// <summary>
     /// Удаление записи обслуживания.
     /// </summary>
-    /// <param name="id">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="logId">Идентификатор записи обслуживания.</param>
     //[Authorize(Policy = "Electro")]
-    [HttpDelete("{id}/maintenance/{logId}")]
+    [HttpDelete("{motorId}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteMaintenanceLog(int id, int logId)
+    public async Task<IActionResult> DeleteMaintenanceLog(int motorId, int logId)
     {
         try
         {
-            await _motorService.DeleteMaintenanceLogAsync(id, logId);
+            await _motorService.DeleteMaintenanceLogAsync(motorId, logId);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -273,7 +301,7 @@ public class MotorsController : ControllerBase
     /// <summary>
     /// Редактирование записи истории перемещений (только изменение места, даты не редактируются).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
     /// <param name="dto">Новое расположение.</param>
     //[Authorize(Policy = "Electro")]
@@ -301,7 +329,7 @@ public class MotorsController : ControllerBase
     /// <summary>
     /// Удаление записи истории перемещений (с проверкой целостности временной линии).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
     //[Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}/location-history/{locationHistoryId}")]

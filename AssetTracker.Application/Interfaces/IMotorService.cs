@@ -17,9 +17,18 @@ public interface IMotorService
     Task<MotorFullHistoryDto> CreateMotorAsync(CreateMotorDto dto);
 
     /// <summary>
+    /// Установить или изменить инвентарный номер двигателя.
+    /// </summary>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
+    /// <param name="dto">Новый инвентарный номер (может быть null).</param>
+    /// <exception cref="KeyNotFoundException">Двигатель не найден.</exception>
+    /// <exception cref="InvalidOperationException">Новый инвентарный номер уже используется другим двигателем.</exception>
+    Task SetInventoryNumberAsync(int motorId, SetInventoryNumberDto dto);
+
+    /// <summary>
     /// Перемещение двигателя (автоматически закрывает старую запись в истории перемещений).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Новое местоположение и опционально новый статус.</param>
     /// <exception cref="KeyNotFoundException">Двигатель не найден.</exception>
     Task MoveMotorAsync(int motorId, MoveMotorDto dto);
@@ -27,7 +36,7 @@ public interface IMotorService
     /// <summary>
     /// Фиксация факта ремонта или смазки.
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Данные о выполненной работе.</param>
     /// <exception cref="KeyNotFoundException">Двигатель не найден.</exception>
     /// <exception cref="ArgumentException">Некорректные данные для типа работы.</exception>
@@ -36,7 +45,7 @@ public interface IMotorService
     /// <summary>
     /// Получение "карточки жизни" ЭД: где стоял и что с ним делали (без пагинации – для мобильных устройств).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <returns>Полная история двигателя, включая последние 100 записей обслуживания.</returns>
     /// <exception cref="KeyNotFoundException">Двигатель не найден.</exception>
     Task<MotorFullHistoryDto> GetFullHistoryAsync(int motorId);
@@ -50,7 +59,7 @@ public interface IMotorService
     /// <summary>
     /// Редактирование основных характеристик двигателя.
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Обновлённые характеристики.</param>
     /// <exception cref="KeyNotFoundException">Двигатель не найден.</exception>
     Task UpdateMotorAsync(int motorId, UpdateMotorDto dto);
@@ -58,7 +67,7 @@ public interface IMotorService
     /// <summary>
     /// Удаление двигателя (вместе со всей историей перемещений и обслуживания).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <exception cref="KeyNotFoundException">Двигатель не найден.</exception>
     Task DeleteMotorAsync(int motorId);
 
@@ -76,7 +85,7 @@ public interface IMotorService
     /// <summary>
     /// Получение пагинированной истории перемещений двигателя (для UI).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="page">Номер страницы (начиная с 1).</param>
     /// <param name="pageSize">Размер страницы.</param>
     /// <returns>Страница истории перемещений.</returns>
@@ -86,7 +95,7 @@ public interface IMotorService
     /// <summary>
     /// Получение пагинированного журнала обслуживания двигателя с возможностью фильтрации по типу работ и периоду времени (для UI).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="page">Номер страницы (начиная с 1).</param>
     /// <param name="pageSize">Размер страницы.</param>
     /// <param name="workType">Фильтр по типу работ (опционально).</param>
@@ -106,7 +115,7 @@ public interface IMotorService
     /// <summary>
     /// Редактирование записи обслуживания (разрешены только Comment, PerformedBy и, для смазки, LubricantTypeId).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="logId">ID записи обслуживания.</param>
     /// <param name="dto">Новые данные (комментарий, тип смазки или новый тип подшипника).</param>
     /// <exception cref="KeyNotFoundException">Двигатель или запись не найдены.</exception>
@@ -117,7 +126,7 @@ public interface IMotorService
     /// <summary>
     /// Удаление записи обслуживания.
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="logId">ID записи обслуживания.</param>
     /// <exception cref="KeyNotFoundException">Двигатель или запись не найдены.</exception>
     Task DeleteMaintenanceLogAsync(int motorId, int logId);
@@ -125,7 +134,7 @@ public interface IMotorService
     /// <summary>
     /// Редактирование записи истории перемещений (разрешено только изменение Location, даты не редактируются).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="locationHistoryId">ID записи истории перемещений.</param>
     /// <param name="dto">Новое расположение.</param>
     /// <exception cref="KeyNotFoundException">Двигатель или запись не найдены.</exception>
@@ -136,7 +145,7 @@ public interface IMotorService
     /// Даты не редактируются, удаление возможно только для последней записи или активной записи
     /// (при этом предыдущая запись становится активной).
     /// </summary>
-    /// <param name="motorId">Инвентарный номер двигателя.</param>
+    /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="locationHistoryId">ID записи истории перемещений.</param>
     /// <exception cref="KeyNotFoundException">Двигатель или запись не найдены.</exception>
     /// <exception cref="InvalidOperationException">Невозможно удалить запись из-за нарушения целостности временной линии.</exception>

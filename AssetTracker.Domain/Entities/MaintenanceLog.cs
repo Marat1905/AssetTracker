@@ -10,7 +10,7 @@ public class MaintenanceLog
     /// <summary>Уникальный идентификатор записи.</summary>
     public int Id { get; set; }
 
-    /// <summary>Инвентарный номер двигателя (внешний ключ).</summary>
+    /// <summary>Идентификатор двигателя (внешний ключ на Motor.Id).</summary>
     public int MotorId { get; set; }
 
     /// <summary>Тип выполненной работы.</summary>
