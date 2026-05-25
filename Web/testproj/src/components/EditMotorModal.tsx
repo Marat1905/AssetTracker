@@ -1,3 +1,4 @@
+// EditMotorModal.tsx
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,6 +38,9 @@ interface Props {
  * Инвентарный номер редактируется в отдельном модальном окне.
  */
 export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Props) {
+    // Получаем текущее местоположение из истории перемещений
+    const currentLocation = motor.locationHistory.find(loc => loc.endDate === null)?.location;
+
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
@@ -74,6 +78,12 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
 
     if (!isOpen) return null;
 
+    // Формируем подзаголовок с инвентарным номером и местоположением
+    const inventoryText = motor.inventoryNumber
+        ? `№: ${motor.inventoryNumber}`
+        : 'без инв. номера';
+    const locationText = currentLocation ? ` (Место: ${currentLocation})` : '';
+
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -85,7 +95,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                 <div className="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
                     <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
                         <h3 className="text-lg font-semibold text-text-h">
-                            Редактирование двигателя (ID: {motor.id})
+                            Редактирование двигателя {inventoryText}{locationText}
                         </h3>
                         <p className="text-sm text-gray-500 mt-0.5">
                             Инвентарный номер можно изменить через кнопку рядом с номером. <br />
