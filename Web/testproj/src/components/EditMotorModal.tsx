@@ -2,17 +2,18 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { motorApi } from '../services/api';
 import { MotorStatus, MountingType, type MotorFullHistoryDto, type UpdateMotorRequest } from '../types';
 import { motorStatusLabels, mountingTypeLabels } from '../utils/locales';
 
+// Схема валидации – без статуса (статус меняется только через перемещение)
 const schema = z.object({
     type: z.string().min(1, 'Тип обязателен'),
     shaftDiameter: z.number().positive('Диаметр вала > 0'),
     power: z.number().positive('Мощность > 0'),
     speed: z.number().positive('Обороты > 0'),
-    status: z.nativeEnum(MotorStatus),
     mountingType: z.nativeEnum(MountingType),
 });
 
@@ -32,29 +33,47 @@ interface Props {
 /**
  * Модальное окно редактирования основных характеристик двигателя.
  * Содержит поля для изменения типа, диаметра вала, мощности, оборотов,
- * статуса и типа монтажа. Подшипники отображаются информационно, так как
+ * типа монтажа. Подшипники отображаются информационно, так как
  * их замена выполняется через журнал обслуживания.
  * Для предотвращения излишней высоты добавлена прокрутка содержимого.
  * Инвентарный номер редактируется в отдельном модальном окне.
+ * Статус отображается только для информации (изменить его можно через перемещение).
  */
 export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Props) {
     // Получаем текущее местоположение из истории перемещений
     const currentLocation = motor.locationHistory.find(loc => loc.endDate === null)?.location;
 
-    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+    // Формируем подзаголовок с инвентарным номером и местоположением
+    const inventoryText = motor.inventoryNumber
+        ? `Инв. номер: ${motor.inventoryNumber}`
+        : 'без инв. номера';
+    const locationText = currentLocation ? ` (Место: ${currentLocation})` : '';
+
+    const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FormData>({
         resolver: zodResolver(schema),
         defaultValues: {
             type: motor.type,
             shaftDiameter: motor.shaftDiameter,
             power: motor.power,
             speed: motor.speed,
-            status: motor.status,
             mountingType: motor.mountingType,
         }
     });
 
+    // Синхронизация формы с актуальными данными двигателя (после изменения через другие операции)
+    useEffect(() => {
+        reset({
+            type: motor.type,
+            shaftDiameter: motor.shaftDiameter,
+            power: motor.power,
+            speed: motor.speed,
+            mountingType: motor.mountingType,
+        });
+    }, [motor, reset]);
+
     const onSubmit = async (data: FormData) => {
         try {
+            // Отправляем все поля, включая статус (берём текущий из motor, так как он не редактируется в форме)
             const updateData: UpdateMotorRequest = {
                 type: data.type,
                 shaftDiameter: data.shaftDiameter,
@@ -62,7 +81,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                 speed: data.speed,
                 frontBearingType: motor.frontBearing.type,
                 rearBearingType: motor.rearBearing.type,
-                status: data.status,
+                status: motor.status, // статус не меняется, передаём текущий
                 mountingType: data.mountingType,
             };
             await motorApi.updateMotor(motor.id, updateData);
@@ -78,12 +97,6 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
 
     if (!isOpen) return null;
 
-    // Формируем подзаголовок с инвентарным номером и местоположением
-    const inventoryText = motor.inventoryNumber
-        ? `№: ${motor.inventoryNumber}`
-        : 'без инв. номера';
-    const locationText = currentLocation ? ` (Место: ${currentLocation})` : '';
-
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -97,10 +110,11 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                         <h3 className="text-lg font-semibold text-text-h">
                             Редактирование двигателя {inventoryText}{locationText}
                         </h3>
-                        <p className="text-sm text-gray-500 mt-0.5">
-                            Инвентарный номер можно изменить через кнопку рядом с номером. <br />
-                            Замена подшипников выполняется через «Замену подшипника» в журнале обслуживания.
-                        </p>
+                        <div className="text-sm text-gray-500 mt-1 space-y-0.5">
+                            <div>• Инвентарный номер можно изменить через кнопку рядом с номером.</div>
+                            <div>• Замена подшипников выполняется через «Замену подшипника» в журнале обслуживания.</div>
+                            <div>• Статус изменяется только при перемещении двигателя.</div>
+                        </div>
                     </div>
                     {/* Добавлен overflow-y-auto и max-h-[80vh] для прокрутки содержимого */}
                     <div className="overflow-y-auto max-h-[80vh]">
@@ -127,14 +141,6 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                     {errors.speed && <p className="text-danger text-xs mt-1">{errors.speed.message}</p>}
                                 </div>
                                 <div>
-                                    <label className="form-label">Статус</label>
-                                    <select {...register('status')} className="form-input">
-                                        {Object.entries(motorStatusLabels).map(([value, label]) => (
-                                            <option key={value} value={value}>{label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
                                     <label className="form-label">Тип монтажа</label>
                                     <select {...register('mountingType')} className="form-input">
                                         {Object.entries(mountingTypeLabels).map(([value, label]) => (
@@ -142,6 +148,15 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                         ))}
                                     </select>
                                     {errors.mountingType && <p className="text-danger text-xs mt-1">{errors.mountingType.message}</p>}
+                                </div>
+                                {/* Отображение статуса (только для информации) */}
+                                <div>
+                                    <label className="form-label">Статус (изменяется при перемещении)</label>
+                                    <div className="mt-1">
+                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300`}>
+                                            {motorStatusLabels[motor.status] || motor.status}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
