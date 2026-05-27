@@ -8,6 +8,7 @@ using AssetTracker.WebAPI.Middleware;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -49,6 +50,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateMotorDtoValidator>();
 
 // Logging
 builder.Services.AddLogging();
+builder.Services.AddHealthChecks();
 
 builder.Services.AddCustomJWTAuthentification();
 
@@ -75,5 +77,15 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = new { status = report.Status.ToString() };
+        await context.Response.WriteAsJsonAsync(result);
+    }
+}); 
 
 app.Run();
