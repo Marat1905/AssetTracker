@@ -3,16 +3,16 @@
 namespace AssetTracker.Domain.Entities;
 
 /// <summary>
-/// Тип смазки, используемый при обслуживании подшипников
+/// Тип смазки, используемый при обслуживании подшипников.
 /// </summary>
 public class LubricantType
 {
+    /// <summary>Уникальный идентификатор типа смазки.</summary>
     public int Id { get; set; }
 
-    [Required]
-    [MaxLength(100)]
+    /// <summary>Название типа смазки.</summary>
     public string Name { get; set; } = string.Empty;
 
-    [MaxLength(500)]
+    /// <summary>Описание/примечание.</summary>
     public string? Description { get; set; }
 }

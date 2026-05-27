@@ -1,15 +1,27 @@
-import React from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
+/**
+ * Свойства компонента пагинации.
+ */
 interface PaginationProps {
+    /** Текущий номер страницы */
     currentPage: number;
+    /** Общее количество страниц */
     totalPages: number;
+    /** Функция изменения страницы */
     onPageChange: (page: number) => void;
+    /** Размер страницы */
     pageSize: number;
+    /** Функция изменения размера страницы */
     onPageSizeChange: (size: number) => void;
+    /** Общее количество элементов */
     totalCount: number;
 }
 
+/**
+ * Компонент пагинации с выбором размера страницы и отображением диапазона записей.
+ * Используется в списках двигателей, истории перемещений и журнале обслуживания.
+ */
 export default function Pagination({
     currentPage,
     totalPages,

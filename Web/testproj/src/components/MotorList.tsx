@@ -1,3 +1,4 @@
+// MotorList.tsx
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { MotorListItem, MotorFullHistoryDto } from '../types';
@@ -7,6 +8,10 @@ import { motorStatusLabels } from '../utils/locales';
 import EditMotorModal from './EditMotorModal';
 import Pagination from './Pagination';
 
+/**
+ * Компонент списка электродвигателей с пагинацией, фильтрацией,
+ * возможностью перехода к карточке двигателя, редактирования и удаления.
+ */
 export default function MotorList() {
     const navigate = useNavigate();
     const [motors, setMotors] = useState<MotorListItem[]>([]);
@@ -23,6 +28,8 @@ export default function MotorList() {
     const [filterInventory, setFilterInventory] = useState('');
     const [filterLocation, setFilterLocation] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
+    // Фильтр по наличию инвентарного номера: null – все, true – только с номером, false – только без номера
+    const [filterHasInventoryNumber, setFilterHasInventoryNumber] = useState<boolean | null>(null);
 
     const fetchMotors = async () => {
         setLoading(true);
@@ -32,7 +39,8 @@ export default function MotorList() {
                 pageSize,
                 filterInventory || undefined,
                 filterLocation || undefined,
-                filterStatus || undefined
+                filterStatus || undefined,
+                filterHasInventoryNumber
             );
             setMotors(data.items);
             setTotalPages(data.totalPages);
@@ -46,17 +54,13 @@ export default function MotorList() {
 
     useEffect(() => {
         fetchMotors();
-    }, [currentPage, pageSize, filterInventory, filterLocation, filterStatus]);
-
-    const handleApplyFilters = () => {
-        setCurrentPage(1); // сброс на первую страницу при новом фильтре
-        // fetchMotors вызовется автоматически через useEffect
-    };
+    }, [currentPage, pageSize, filterInventory, filterLocation, filterStatus, filterHasInventoryNumber]);
 
     const handleResetFilters = () => {
         setFilterInventory('');
         setFilterLocation('');
         setFilterStatus('');
+        setFilterHasInventoryNumber(null);
         setCurrentPage(1);
     };
 
@@ -66,7 +70,6 @@ export default function MotorList() {
         try {
             await motorApi.deleteMotor(id);
             toast.success('Двигатель удалён');
-            // если удалён последний элемент на странице и страница > 1, переходим на предыдущую
             if (motors.length === 1 && currentPage > 1) {
                 setCurrentPage(currentPage - 1);
             } else {
@@ -80,25 +83,16 @@ export default function MotorList() {
     const handleEditClick = async (motor: MotorListItem, e: React.MouseEvent) => {
         e.stopPropagation();
         try {
-            const fullData = await motorApi.getFullHistory(motor.inventoryNumber);
+            const fullData = await motorApi.getFullHistory(motor.id);
             setEditingMotor(fullData);
         } catch {
             toast.error('Не удалось загрузить данные для редактирования');
         }
     };
 
-    const handleRowClick = (inventoryNumber: number) => {
-        navigate(`/motors/${inventoryNumber}`);
+    const handleRowClick = (id: number) => {
+        navigate(`/motors/${id}`);
     };
-
-    if (loading && motors.length === 0) {
-        return (
-            <div className="card p-12 text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accent border-t-transparent"></div>
-                <p className="mt-4 text-gray-500">Загрузка данных...</p>
-            </div>
-        );
-    }
 
     return (
         <>
@@ -149,10 +143,24 @@ export default function MotorList() {
                                 ))}
                             </select>
                         </div>
+                        <div className="flex-1 min-w-[150px]">
+                            <label className="form-label text-xs">Инвентарный номер</label>
+                            <select
+                                value={filterHasInventoryNumber === null ? '' : (filterHasInventoryNumber ? 'yes' : 'no')}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === '') setFilterHasInventoryNumber(null);
+                                    else if (val === 'yes') setFilterHasInventoryNumber(true);
+                                    else setFilterHasInventoryNumber(false);
+                                }}
+                                className="form-input py-1.5"
+                            >
+                                <option value="">Все</option>
+                                <option value="yes">Только с инв. номером</option>
+                                <option value="no">Только без инв. номера</option>
+                            </select>
+                        </div>
                         <div className="flex gap-2">
-                            <button onClick={handleApplyFilters} className="btn-primary py-1.5 px-4">
-                                Применить
-                            </button>
                             <button onClick={handleResetFilters} className="btn-secondary py-1.5 px-4">
                                 Сброс
                             </button>
@@ -160,17 +168,15 @@ export default function MotorList() {
                     </div>
                 </div>
 
-                <div className="table-container">
-                    {motors.length === 0 ? (
+                {/* Контейнер таблицы с возможностью горизонтальной прокрутки и шириной 100% */}
+                <div className="w-full overflow-x-auto">
+                    {loading && motors.length === 0 ? (
                         <div className="p-12 text-center">
-                            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                            <h3 className="text-lg font-semibold text-text-h mb-2">Нет двигателей</h3>
-                            <p className="text-gray-500">Измените условия поиска или зарегистрируйте новый двигатель</p>
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-accent border-t-transparent"></div>
+                            <p className="mt-4 text-gray-500">Загрузка данных...</p>
                         </div>
                     ) : (
-                        <table className="table">
+                        <table className="table w-full min-w-[640px]">
                             <thead>
                                 <tr>
                                     <th>Инв. номер</th>
@@ -182,13 +188,32 @@ export default function MotorList() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {motors.map(motor => (
+                                {loading && motors.length > 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="text-center py-8">
+                                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-accent border-t-transparent"></div>
+                                            <span className="ml-2 text-gray-500">Загрузка...</span>
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loading && motors.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="text-center py-12">
+                                            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                            <h3 className="text-lg font-semibold text-text-h mb-2">Нет двигателей</h3>
+                                            <p className="text-gray-500">Измените условия поиска или зарегистрируйте новый двигатель</p>
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loading && motors.map(motor => (
                                     <tr
-                                        key={motor.inventoryNumber}
-                                        onClick={() => handleRowClick(motor.inventoryNumber)}
+                                        key={motor.id}
+                                        onClick={() => handleRowClick(motor.id)}
                                         className="cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
                                     >
-                                        <td className="font-medium text-text-h">{motor.inventoryNumber}</td>
+                                        <td className="font-medium text-text-h">{motor.inventoryNumber ?? '—'}</td>
                                         <td>{motor.type}</td>
                                         <td>{motor.power} кВт</td>
                                         <td>
@@ -209,7 +234,7 @@ export default function MotorList() {
                                                     </svg>
                                                 </button>
                                                 <button
-                                                    onClick={(e) => handleDelete(motor.inventoryNumber, e)}
+                                                    onClick={(e) => handleDelete(motor.id, e)}
                                                     className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                                                     title="Удалить"
                                                 >
@@ -234,7 +259,7 @@ export default function MotorList() {
                         pageSize={pageSize}
                         onPageSizeChange={(newSize) => {
                             setPageSize(newSize);
-                            setCurrentPage(1); // сброс страницы при изменении размера
+                            setCurrentPage(1);
                         }}
                         totalCount={totalCount}
                     />
@@ -247,7 +272,7 @@ export default function MotorList() {
                     isOpen={!!editingMotor}
                     onClose={() => setEditingMotor(null)}
                     onSuccess={() => {
-                        fetchMotors();   // обновить список после редактирования
+                        fetchMotors();
                         setEditingMotor(null);
                     }}
                 />

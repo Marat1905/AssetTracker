@@ -1,5 +1,8 @@
 import LubricantTypeList from '../components/LubricantTypeList';
 
+/**
+ * Страница управления справочником типов смазки.
+ */
 export default function LubricantTypesPage() {
     return (
         <div className="max-w-4xl mx-auto">

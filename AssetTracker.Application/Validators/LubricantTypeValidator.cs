@@ -3,6 +3,9 @@ using FluentValidation;
 
 namespace AssetTracker.Application.Validators;
 
+/// <summary>
+/// Валидатор для DTO создания типа смазки.
+/// </summary>
 public class CreateLubricantTypeValidator : AbstractValidator<CreateLubricantTypeDto>
 {
     public CreateLubricantTypeValidator()
@@ -16,6 +19,9 @@ public class CreateLubricantTypeValidator : AbstractValidator<CreateLubricantTyp
     }
 }
 
+/// <summary>
+/// Валидатор для DTO обновления типа смазки.
+/// </summary>
 public class UpdateLubricantTypeValidator : AbstractValidator<UpdateLubricantTypeDto>
 {
     public UpdateLubricantTypeValidator()

@@ -3,43 +3,81 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AssetTracker.Infrastructure.Data;
 
+/// <summary>
+/// Контекст базы данных для AssetTracker.
+/// </summary>
 public class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
+    /// <summary>Электродвигатели.</summary>
     public DbSet<Motor> Motors { get; set; }
+
+    /// <summary>История перемещений.</summary>
     public DbSet<LocationHistory> LocationHistories { get; set; }
+
+    /// <summary>Журнал обслуживания.</summary>
     public DbSet<MaintenanceLog> MaintenanceLogs { get; set; }
+
+    /// <summary>Типы смазки.</summary>
     public DbSet<LubricantType> LubricantTypes { get; set; }
+
+    /// <summary>Подшипники.</summary>
+    public DbSet<Bearing> Bearings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Конфигурация Motor
         modelBuilder.Entity<Motor>(entity =>
         {
-            entity.HasKey(e => e.InventoryNumber);
-            entity.Property(e => e.InventoryNumber).ValueGeneratedNever();
+            // Первичный ключ – суррогатный Id
+            entity.HasKey(e => e.Id);
+            // Автоинкремент для Id
+            entity.Property(e => e.Id).UseIdentityColumn();
+
+            // Инвентарный номер – необязательный, но уникальный, если задан
+            entity.Property(e => e.InventoryNumber)
+                .HasMaxLength(50)
+                .IsRequired(false);
+
+            entity.HasIndex(e => e.InventoryNumber)
+                .IsUnique()
+                .HasFilter($"\"{nameof(Motor.InventoryNumber)}\" IS NOT NULL");
+
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
             entity.Property(e => e.ShaftDiameter).HasPrecision(10, 2);
             entity.Property(e => e.Power).HasPrecision(10, 2);
-            entity.Property(e => e.FrontBearingType).HasMaxLength(50);
-            entity.Property(e => e.RearBearingType).HasMaxLength(50);
             entity.Property(e => e.Status).HasConversion<string>();
             entity.Property(e => e.MountingType)
                 .HasConversion<string>()
                 .HasMaxLength(20)
                 .IsRequired();
+
+            entity.HasOne(e => e.FrontBearing)
+                .WithMany()
+                .HasForeignKey(e => e.FrontBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.RearBearing)
+                .WithMany()
+                .HasForeignKey(e => e.RearBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // Конфигурация LocationHistory 
         modelBuilder.Entity<LocationHistory>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Location).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Status).HasConversion<string>();
+
             entity.HasOne(e => e.Motor)
                   .WithMany(m => m.LocationHistories)
                   .HasForeignKey(e => e.MotorId)
                   .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Конфигурация MaintenanceLog
         modelBuilder.Entity<MaintenanceLog>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -49,6 +87,20 @@ public class AppDbContext : DbContext
                 .HasConversion<string>()
                 .IsRequired(false);
 
+            entity.Property(e => e.PerformedBy)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            entity.HasOne(e => e.OldBearing)
+                .WithMany()
+                .HasForeignKey(e => e.OldBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.NewBearing)
+                .WithMany()
+                .HasForeignKey(e => e.NewBearingId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasOne(e => e.Motor)
                   .WithMany(m => m.MaintenanceLogs)
                   .HasForeignKey(e => e.MotorId)
@@ -57,18 +109,26 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.LubricantType)
                   .WithMany()
                   .HasForeignKey(e => e.LubricantTypeId)
-                  .OnDelete(DeleteBehavior.Restrict); // не удалять тип смазки, если есть ссылки
+                  .OnDelete(DeleteBehavior.Restrict);
 
-            // Составной индекс для ускорения запросов последней смазки
             entity.HasIndex(m => new { m.MotorId, m.WorkType, m.BearingPosition, m.Date })
                 .HasDatabaseName("IX_MaintenanceLogs_LastLubricant");
         });
 
+        // LubricantType и Bearing 
         modelBuilder.Entity<LubricantType>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<Bearing>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Manufacturer).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Supplier).IsRequired().HasMaxLength(200);
         });
     }
 }

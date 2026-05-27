@@ -3,6 +3,9 @@ using FluentValidation;
 
 namespace AssetTracker.Application.Validators;
 
+/// <summary>
+/// Валидатор для DTO обновления характеристик двигателя.
+/// </summary>
 public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
 {
     public UpdateMotorDtoValidator()
@@ -19,12 +22,6 @@ public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
 
         RuleFor(x => x.Speed)
             .GreaterThan(0).WithMessage("Обороты должны быть больше 0");
-
-        RuleFor(x => x.FrontBearingType)
-            .NotEmpty().WithMessage("Тип переднего подшипника обязателен");
-
-        RuleFor(x => x.RearBearingType)
-            .NotEmpty().WithMessage("Тип заднего подшипника обязателен");
 
         RuleFor(x => x.MountingType)
             .IsInEnum().WithMessage("Укажите корректный тип монтажа: Feet, Flange, FeetAndFlange, SmallFlange, FeetAndSmallFlange");

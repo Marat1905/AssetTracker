@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Web", "Web", "{36D591C7-65C
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "testproj", "Web\testproj\testproj.esproj", "{5570440E-39C6-D48A-F0AD-47B57FDDCB23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetTracker.Tests", "AssetTracker.Tests\AssetTracker.Tests.csproj", "{1F1FA4EC-A44C-4226-8DC3-72F4D9269383}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5570440E-39C6-D48A-F0AD-47B57FDDCB23}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{1F1FA4EC-A44C-4226-8DC3-72F4D9269383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F1FA4EC-A44C-4226-8DC3-72F4D9269383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F1FA4EC-A44C-4226-8DC3-72F4D9269383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F1FA4EC-A44C-4226-8DC3-72F4D9269383}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

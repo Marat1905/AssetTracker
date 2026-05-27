@@ -2,6 +2,10 @@ import { useState } from 'react';
 import MotorList from '../components/MotorList';
 import CreateMotorForm from '../components/CreateMotorForm';
 
+/**
+ * Главная страница (дашборд).
+ * Содержит кнопку открытия формы создания двигателя и список двигателей с пагинацией.
+ */
 export default function Dashboard() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);

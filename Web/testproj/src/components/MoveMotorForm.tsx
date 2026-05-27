@@ -5,14 +5,23 @@ import { MotorStatus } from '../types';
 import { motorStatusLabels } from '../utils/locales';
 
 interface Props {
+    /** Инвентарный номер двигателя */
     motorId: number;
+    /** Текущий статус двигателя (для отображения опции «Не менять») */
     currentStatus?: MotorStatus;
+    /** Коллбэк после успешного перемещения */
     onMoved?: () => void;
+    /** Коллбэк отмены */
     onCancel?: () => void;
+    /** Флаг, используется ли форма внутри модального окна */
     isModal?: boolean;
 }
 
-export default function MoveMotorForm({ motorId, currentStatus, onMoved, onCancel, isModal }: Props) {
+/**
+ * Форма перемещения двигателя.
+ * Позволяет указать новое местоположение и опционально новый статус.
+ */
+export default function MoveMotorForm({ motorId, currentStatus, onMoved, onCancel }: Props) {
     const [location, setLocation] = useState('');
     const [status, setStatus] = useState<MotorStatus | ''>(currentStatus || '');
     const [loading, setLoading] = useState(false);

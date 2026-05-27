@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AssetTracker.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260514102319_initial")]
-    partial class initial
+    [Migration("20260525080710_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,34 @@ namespace AssetTracker.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("AssetTracker.Domain.Entities.Bearing", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Manufacturer")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Supplier")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Bearings");
+                });
 
             modelBuilder.Entity("AssetTracker.Domain.Entities.LocationHistory", b =>
                 {
@@ -46,6 +74,10 @@ namespace AssetTracker.Infrastructure.Migrations
 
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
@@ -101,6 +133,17 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.Property<int>("MotorId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("NewBearingId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("OldBearingId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PerformedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("WorkType")
                         .IsRequired()
                         .HasColumnType("text");
@@ -108,6 +151,10 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("LubricantTypeId");
+
+                    b.HasIndex("NewBearingId");
+
+                    b.HasIndex("OldBearingId");
 
                     b.HasIndex("MotorId", "WorkType", "BearingPosition", "Date")
                         .HasDatabaseName("IX_MaintenanceLogs_LastLubricant");
@@ -117,11 +164,16 @@ namespace AssetTracker.Infrastructure.Migrations
 
             modelBuilder.Entity("AssetTracker.Domain.Entities.Motor", b =>
                 {
-                    b.Property<int>("InventoryNumber")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    b.Property<string>("FrontBearingType")
-                        .IsRequired()
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("FrontBearingId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("InventoryNumber")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
@@ -134,10 +186,8 @@ namespace AssetTracker.Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("double precision");
 
-                    b.Property<string>("RearBearingType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                    b.Property<int>("RearBearingId")
+                        .HasColumnType("integer");
 
                     b.Property<double>("ShaftDiameter")
                         .HasPrecision(10, 2)
@@ -155,7 +205,15 @@ namespace AssetTracker.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.HasKey("InventoryNumber");
+                    b.HasKey("Id");
+
+                    b.HasIndex("FrontBearingId");
+
+                    b.HasIndex("InventoryNumber")
+                        .IsUnique()
+                        .HasFilter("\"InventoryNumber\" IS NOT NULL");
+
+                    b.HasIndex("RearBearingId");
 
                     b.ToTable("Motors");
                 });
@@ -184,9 +242,42 @@ namespace AssetTracker.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AssetTracker.Domain.Entities.Bearing", "NewBearing")
+                        .WithMany()
+                        .HasForeignKey("NewBearingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("AssetTracker.Domain.Entities.Bearing", "OldBearing")
+                        .WithMany()
+                        .HasForeignKey("OldBearingId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("LubricantType");
 
                     b.Navigation("Motor");
+
+                    b.Navigation("NewBearing");
+
+                    b.Navigation("OldBearing");
+                });
+
+            modelBuilder.Entity("AssetTracker.Domain.Entities.Motor", b =>
+                {
+                    b.HasOne("AssetTracker.Domain.Entities.Bearing", "FrontBearing")
+                        .WithMany()
+                        .HasForeignKey("FrontBearingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AssetTracker.Domain.Entities.Bearing", "RearBearing")
+                        .WithMany()
+                        .HasForeignKey("RearBearingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("FrontBearing");
+
+                    b.Navigation("RearBearing");
                 });
 
             modelBuilder.Entity("AssetTracker.Domain.Entities.Motor", b =>
