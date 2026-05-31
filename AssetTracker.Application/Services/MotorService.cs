@@ -45,7 +45,8 @@ public class MotorService : IMotorService
                 Type = motor.Type,
                 Power = motor.Power,
                 Status = motor.Status.ToString(),
-                CurrentLocation = currentLocation
+                CurrentLocation = currentLocation,
+                MountingType=motor.MountingType,
             });
         }
         return motorList;
@@ -414,6 +415,7 @@ public class MotorService : IMotorService
                 Type = m.Type,
                 Power = m.Power,
                 Status = m.Status.ToString(),
+                MountingType= m.MountingType,
                 CurrentLocation = m.LocationHistories
                     .Where(l => l.EndDate == null)
                     .Select(l => l.Location)
