@@ -1,4 +1,6 @@
-﻿namespace AssetTracker.Application.DTOs;
+﻿using AssetTracker.Domain.Enums;
+
+namespace AssetTracker.Application.DTOs;
 
 /// <summary>
 /// Краткое DTO для списка двигателей.
@@ -22,4 +24,7 @@ public class MotorListItemDto
 
     /// <summary>Текущее местоположение.</summary>
     public string CurrentLocation { get; set; } = string.Empty;
+
+    /// <summary>Тип монтажа.</summary>
+    public MountingType MountingType { get; set; }
 }
