@@ -15,6 +15,8 @@ import type {
     UpdateMaintenanceLogDto,
     UpdateLocationHistoryDto,
     SetInventoryNumberDto,
+    MaintenanceReportItemDto,
+    MaintenanceReportSummaryDto,
 } from '../types';
 
 /**
@@ -286,5 +288,53 @@ export const lubricantApi = {
      */
     delete: async (id: number): Promise<void> => {
         await api.delete(`/lubricanttypes/${id}`);
+    }
+};
+
+/**
+* API-функции для отчётов.
+*/
+export const reportsApi = {
+    /**
+     * Получить детальный отчёт по обслуживанию за период (с пагинацией).
+     * @param fromDate - Начало периода (YYYY-MM-DD)
+     * @param toDate - Окончание периода (YYYY-MM-DD)
+     * @param workType - Тип работ (опционально)
+     * @param page - Номер страницы (начиная с 1)
+     * @param pageSize - Размер страницы
+     * @returns Пагинированный результат с записями обслуживания
+     */
+    getMaintenanceReport: async (
+        fromDate?: string,
+        toDate?: string,
+        workType?: string,
+        page: number = 1,
+        pageSize: number = 20
+    ): Promise<PagedResult<MaintenanceReportItemDto>> => {
+        const params = new URLSearchParams();
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        if (workType) params.append('workType', workType);
+        params.append('page', page.toString());
+        params.append('pageSize', pageSize.toString());
+        const response = await api.get<PagedResult<MaintenanceReportItemDto>>(`/reports/maintenance?${params.toString()}`);
+        return response.data;
+    },
+
+    /**
+     * Получить сводку по обслуживанию за период (количество записей по каждому типу работ).
+     * @param fromDate - Начало периода (YYYY-MM-DD)
+     * @param toDate - Окончание периода (YYYY-MM-DD)
+     * @returns Список сводок по типам работ
+     */
+    getMaintenanceReportSummary: async (
+        fromDate?: string,
+        toDate?: string
+    ): Promise<MaintenanceReportSummaryDto[]> => {
+        const params = new URLSearchParams();
+        if (fromDate) params.append('fromDate', fromDate);
+        if (toDate) params.append('toDate', toDate);
+        const response = await api.get<MaintenanceReportSummaryDto[]>(`/reports/maintenance/summary?${params.toString()}`);
+        return response.data;
     }
 };

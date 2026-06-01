@@ -157,4 +157,30 @@ public interface IMotorService
     /// <exception cref="KeyNotFoundException">Двигатель или запись не найдены.</exception>
     /// <exception cref="InvalidOperationException">Невозможно удалить запись из-за нарушения целостности временной линии.</exception>
     Task DeleteLocationHistoryAsync(int motorId, int locationHistoryId);
+
+    /// <summary>
+    /// Получение пагинированного отчёта по обслуживанию за период.
+    /// </summary>
+    /// <param name="fromDate">Начало периода (включительно).</param>
+    /// <param name="toDate">Конец периода (включительно).</param>
+    /// <param name="workType">Фильтр по типу работ (опционально).</param>
+    /// <param name="page">Номер страницы.</param>
+    /// <param name="pageSize">Размер страницы.</param>
+    /// <returns>Страница с детальными записями обслуживания.</returns>
+    Task<PagedResult<MaintenanceReportItemDto>> GetMaintenanceReportPagedAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        MaintenanceType? workType,
+        int page,
+        int pageSize);
+
+    /// <summary>
+    /// Получение сводки по обслуживанию за период (количество по типам работ).
+    /// </summary>
+    /// <param name="fromDate">Начало периода (включительно).</param>
+    /// <param name="toDate">Конец периода (включительно).</param>
+    /// <returns>Список объектов с типом работы и количеством записей.</returns>
+    Task<IEnumerable<MaintenanceReportSummaryDto>> GetMaintenanceReportSummaryAsync(
+        DateTime? fromDate,
+        DateTime? toDate);
 }

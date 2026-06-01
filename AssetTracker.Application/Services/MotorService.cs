@@ -784,4 +784,142 @@ public class MotorService : IMotorService
             throw new InvalidOperationException("Удаление промежуточных записей истории перемещений запрещено, так как это нарушит непрерывность временной линии. Можно отредактировать Location или удалить только последнюю запись.");
         }
     }
+
+    /// <inheritdoc />
+    public async Task<PagedResult<MaintenanceReportItemDto>> GetMaintenanceReportPagedAsync(
+        DateTime? fromDate,
+        DateTime? toDate,
+        MaintenanceType? workType,
+        int page,
+        int pageSize)
+    {
+        _logger.LogInformation("Формирование отчёта по обслуживанию: период {From} - {To}, тип работ {WorkType}, страница {Page}, размер {PageSize}",
+            fromDate, toDate, workType, page, pageSize);
+
+        // Приводим все даты к UTC (требование PostgreSQL для timestamp with time zone)
+        if (fromDate.HasValue)
+            fromDate = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+        if (toDate.HasValue)
+            toDate = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc);
+
+        // Валидация диапазона дат
+        if (fromDate.HasValue && toDate.HasValue && fromDate > toDate)
+            throw new ArgumentException("Дата начала периода не может быть позже даты окончания");
+
+        // Базовый запрос с навигационными свойствами
+        var query = _unitOfWork.MaintenanceLogs.GetQueryable()
+            .Include(m => m.Motor)
+                .ThenInclude(motor => motor.LocationHistories)
+            .AsQueryable(); // явное приведение к IQueryable для дальнейших Include
+
+        // Добавляем остальные Include (LubricantType, OldBearing, NewBearing)
+        query = query.Include(m => m.LubricantType)
+                     .Include(m => m.OldBearing)
+                     .Include(m => m.NewBearing);
+
+        // Фильтр по датам
+        if (fromDate.HasValue)
+            query = query.Where(m => m.Date >= fromDate.Value);
+        if (toDate.HasValue)
+        {
+            // Добавляем один день, чтобы включить весь toDate (до 24:00)
+            var endDate = toDate.Value.AddDays(1);
+            query = query.Where(m => m.Date < endDate);
+        }
+
+        // Фильтр по типу работ
+        if (workType.HasValue)
+            query = query.Where(m => m.WorkType == workType.Value);
+
+        // Общее количество записей (до пагинации)
+        var totalCount = await query.CountAsync();
+
+        // Пагинация и проекция
+        var items = await query
+            .OrderByDescending(m => m.Date)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(m => new MaintenanceReportItemDto
+            {
+                Id = m.Id,
+                Date = m.Date,
+                WorkType = m.WorkType.ToString(),
+                Comment = m.Comment,
+                PerformedBy = m.PerformedBy,
+                BearingPosition = m.BearingPosition.HasValue ? m.BearingPosition.Value.ToString() : null,
+                LubricantTypeName = m.LubricantType != null ? m.LubricantType.Name : null,
+                OldBearing = m.OldBearing != null ? new BearingDto
+                {
+                    Id = m.OldBearing.Id,
+                    Type = m.OldBearing.Type,
+                    Manufacturer = m.OldBearing.Manufacturer,
+                    Supplier = m.OldBearing.Supplier
+                } : null,
+                NewBearing = m.NewBearing != null ? new BearingDto
+                {
+                    Id = m.NewBearing.Id,
+                    Type = m.NewBearing.Type,
+                    Manufacturer = m.NewBearing.Manufacturer,
+                    Supplier = m.NewBearing.Supplier
+                } : null,
+                MotorId = m.Motor.Id,
+                MotorInventoryNumber = m.Motor.InventoryNumber,
+                MotorType = m.Motor.Type,
+                MotorPower = m.Motor.Power,
+                MotorSpeed = m.Motor.Speed,
+                MotorMountingType = m.Motor.MountingType.ToString(),
+                MotorCurrentLocation = m.Motor.LocationHistories
+                    .Where(lh => lh.EndDate == null)
+                    .Select(lh => lh.Location)
+                    .FirstOrDefault() ?? string.Empty
+            })
+            .ToListAsync();
+
+        return new PagedResult<MaintenanceReportItemDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<MaintenanceReportSummaryDto>> GetMaintenanceReportSummaryAsync(
+        DateTime? fromDate,
+        DateTime? toDate)
+    {
+        _logger.LogInformation("Формирование сводки по обслуживанию: период {From} - {To}", fromDate, toDate);
+
+        if (fromDate.HasValue)
+            fromDate = DateTime.SpecifyKind(fromDate.Value, DateTimeKind.Utc);
+        if (toDate.HasValue)
+            toDate = DateTime.SpecifyKind(toDate.Value, DateTimeKind.Utc);
+
+        if (fromDate.HasValue && toDate.HasValue && fromDate > toDate)
+            throw new ArgumentException("Дата начала периода не может быть позже даты окончания");
+
+        var query = _unitOfWork.MaintenanceLogs.GetQueryable();
+
+        if (fromDate.HasValue)
+            query = query.Where(m => m.Date >= fromDate.Value);
+        if (toDate.HasValue)
+        {
+            var endDate = toDate.Value.AddDays(1);
+            query = query.Where(m => m.Date < endDate);
+        }
+
+        var summary = await query
+            .GroupBy(m => m.WorkType)
+            .Select(g => new MaintenanceReportSummaryDto
+            {
+                WorkType = g.Key.ToString(),
+                Count = g.Count()
+            })
+            .OrderBy(s => s.WorkType)
+            .ToListAsync();
+
+        return summary;
+    }
 }

@@ -331,3 +331,45 @@ export interface PagedResult<T> {
     /** Общее количество страниц */
     totalPages: number;
 }
+
+/**
+* DTO для записи в отчёте по обслуживанию (детальная информация).
+*/
+export interface MaintenanceReportItemDto {
+    /** Идентификатор записи обслуживания */
+    id: number;
+    /** Дата выполнения */
+    date: string;
+    /** Тип выполненной работы (строка) */
+    workType: string;
+    /** Комментарий */
+    comment: string;
+    /** Исполнитель */
+    performedBy: string;
+    /** Позиция подшипника (передний/задний), если применимо */
+    bearingPosition?: string | null;
+    /** Название типа смазки, если применимо */
+    lubricantTypeName?: string | null;
+    /** Старый подшипник (при замене) */
+    oldBearing?: BearingDto | null;
+    /** Новый подшипник (при замене) */
+    newBearing?: BearingDto | null;
+    // Информация о двигателе
+    motorId: number;
+    motorInventoryNumber?: string | null;
+    motorType: string;
+    motorPower: number;
+    motorSpeed: number;
+    motorMountingType: string;
+    motorCurrentLocation: string;
+}
+
+/**
+ * DTO для сводки по типам работ за период.
+ */
+export interface MaintenanceReportSummaryDto {
+    /** Тип работы (строковое представление) */
+    workType: string;
+    /** Количество записей обслуживания данного типа */
+    count: number;
+}
