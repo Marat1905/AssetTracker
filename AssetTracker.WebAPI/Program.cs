@@ -56,13 +56,20 @@ builder.Services.AddCustomJWTAuthentification();
 
 var app = builder.Build();
 
-// Apply migrations in Development mode
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await dbContext.Database.MigrateAsync();
-    //dbContext.Database.EnsureCreated();
+
+    if (app.Environment.IsDevelopment())
+    {
+        // dbContext.Database.EnsureDeleted();
+        dbContext.Database.EnsureCreated();
+    }
+    else
+    {
+        // Для production - применяем миграции
+        await dbContext.Database.MigrateAsync();
+    }
 }
 
 // Middleware
