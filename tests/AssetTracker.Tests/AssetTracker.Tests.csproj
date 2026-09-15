@@ -4,7 +4,6 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,14 +16,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AssetTracker.Application\AssetTracker.Application.csproj" />
-    <ProjectReference Include="..\AssetTracker.Domain\AssetTracker.Domain.csproj" />
-    <ProjectReference Include="..\AssetTracker.Infrastructure\AssetTracker.Infrastructure.csproj" />
-    <ProjectReference Include="..\AssetTracker.WebAPI\AssetTracker.WebAPI.csproj" />
+    <ProjectReference Include="..\..\src\AssetTracker.Application\AssetTracker.Application.csproj" />
+    <ProjectReference Include="..\..\src\AssetTracker.Domain\AssetTracker.Domain.csproj" />
+    <ProjectReference Include="..\..\src\AssetTracker.Infrastructure\AssetTracker.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\AssetTracker.WebAPI\AssetTracker.WebAPI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
-
+  
 </Project>

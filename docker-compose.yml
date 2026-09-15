@@ -22,7 +22,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: AssetTracker.WebAPI/Dockerfile
+      dockerfile:  src/AssetTracker.WebAPI/Dockerfile
     container_name: asset_tracker_api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development

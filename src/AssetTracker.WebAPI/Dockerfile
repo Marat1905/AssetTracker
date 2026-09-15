@@ -11,10 +11,13 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["AssetTracker.WebAPI/AssetTracker.WebAPI.csproj", "AssetTracker.WebAPI/"]
-RUN dotnet restore "./AssetTracker.WebAPI/AssetTracker.WebAPI.csproj"
+COPY ["src/AssetTracker.WebAPI/AssetTracker.WebAPI.csproj", "src/AssetTracker.WebAPI/"]
+COPY ["src/AssetTracker.Application/AssetTracker.Application.csproj", "src/AssetTracker.Application/"]
+COPY ["src/AssetTracker.Domain/AssetTracker.Domain.csproj", "src/AssetTracker.Domain/"]
+COPY ["src/AssetTracker.Infrastructure/AssetTracker.Infrastructure.csproj", "src/AssetTracker.Infrastructure/"]
+RUN dotnet restore "./src/AssetTracker.WebAPI/AssetTracker.WebAPI.csproj"
 COPY . .
-WORKDIR "/src/AssetTracker.WebAPI"
+WORKDIR "/src/src/AssetTracker.WebAPI"
 RUN dotnet build "./AssetTracker.WebAPI.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # Этот этап используется для публикации проекта службы, который будет скопирован на последний этап

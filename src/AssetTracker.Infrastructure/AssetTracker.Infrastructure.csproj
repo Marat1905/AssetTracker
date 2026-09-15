@@ -25,5 +25,5 @@
   <ItemGroup>
     <ProjectReference Include="..\AssetTracker.Domain\AssetTracker.Domain.csproj" />
   </ItemGroup>
-
+  
 </Project>
