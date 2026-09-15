@@ -8,17 +8,27 @@ namespace AssetTracker.Application.Interfaces;
 public interface ILubricantTypeService
 {
     /// <summary>Получить все типы смазки.</summary>
-    Task<IEnumerable<LubricantTypeDto>> GetAllAsync();
+    /// <param name="cancellationToken">Токен отмены.</param>
+    Task<IEnumerable<LubricantTypeDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Получить тип смазки по идентификатору.</summary>
-    Task<LubricantTypeDto?> GetByIdAsync(int id);
+    /// <param name="id">Идентификатор.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    Task<LubricantTypeDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>Создать новый тип смазки.</summary>
-    Task<LubricantTypeDto> CreateAsync(CreateLubricantTypeDto dto);
+    /// <param name="dto">Данные для создания.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    Task<LubricantTypeDto> CreateAsync(CreateLubricantTypeDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>Обновить тип смазки.</summary>
-    Task<LubricantTypeDto> UpdateAsync(int id, UpdateLubricantTypeDto dto);
+    /// <param name="id">Идентификатор.</param>
+    /// <param name="dto">Новые данные.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    Task<LubricantTypeDto> UpdateAsync(int id, UpdateLubricantTypeDto dto, CancellationToken cancellationToken = default);
 
     /// <summary>Удалить тип смазки.</summary>
-    Task DeleteAsync(int id);
+    /// <param name="id">Идентификатор.</param>
+    /// <param name="cancellationToken">Токен отмены.</param>
+    Task DeleteAsync(int id, CancellationToken cancellationToken = default);
 }

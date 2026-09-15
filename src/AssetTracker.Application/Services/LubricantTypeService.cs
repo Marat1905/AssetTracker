@@ -1,6 +1,7 @@
 ﻿using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Entities;
+using AssetTracker.Domain.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -24,62 +25,62 @@ public class LubricantTypeService : ILubricantTypeService
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<LubricantTypeDto>> GetAllAsync()
+    public async Task<IEnumerable<LubricantTypeDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Fetching all lubricant types");
-        var types = await _unitOfWork.LubricantTypes.GetAllAsync();
+        var types = await _unitOfWork.LubricantTypes.GetAllAsync(cancellationToken);
         return _mapper.Map<IEnumerable<LubricantTypeDto>>(types);
     }
 
     /// <inheritdoc />
-    public async Task<LubricantTypeDto?> GetByIdAsync(int id)
+    public async Task<LubricantTypeDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Fetching lubricant type with id {Id}", id);
-        var type = await _unitOfWork.LubricantTypes.GetByIdAsync(id);
+        var type = await _unitOfWork.LubricantTypes.GetByIdAsync(id, cancellationToken);
         return type == null ? null : _mapper.Map<LubricantTypeDto>(type);
     }
 
     /// <inheritdoc />
-    public async Task<LubricantTypeDto> CreateAsync(CreateLubricantTypeDto dto)
+    public async Task<LubricantTypeDto> CreateAsync(CreateLubricantTypeDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Creating new lubricant type: {Name}", dto.Name);
         var entity = _mapper.Map<LubricantType>(dto);
-        await _unitOfWork.LubricantTypes.AddAsync(entity);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.LubricantTypes.AddAsync(entity, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Lubricant type created with id {Id}", entity.Id);
         return _mapper.Map<LubricantTypeDto>(entity);
     }
 
     /// <inheritdoc />
-    public async Task<LubricantTypeDto> UpdateAsync(int id, UpdateLubricantTypeDto dto)
+    public async Task<LubricantTypeDto> UpdateAsync(int id, UpdateLubricantTypeDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Updating lubricant type {Id}", id);
-        var existing = await _unitOfWork.LubricantTypes.GetByIdAsync(id);
+        var existing = await _unitOfWork.LubricantTypes.GetByIdAsync(id, cancellationToken);
         if (existing == null)
             throw new KeyNotFoundException($"Тип смазки с id {id} не найден");
 
         _mapper.Map(dto, existing);
         _unitOfWork.LubricantTypes.Update(existing);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Lubricant type {Id} updated", id);
         return _mapper.Map<LubricantTypeDto>(existing);
     }
 
     /// <inheritdoc />
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Deleting lubricant type {Id}", id);
-        var existing = await _unitOfWork.LubricantTypes.GetByIdAsync(id);
+        var existing = await _unitOfWork.LubricantTypes.GetByIdAsync(id, cancellationToken);
         if (existing == null)
             throw new KeyNotFoundException($"Тип смазки с id {id} не найден");
 
         var isUsed = await _unitOfWork.MaintenanceLogs.GetQueryable()
-            .AnyAsync(m => m.LubricantTypeId == id);
+            .AnyAsync(m => m.LubricantTypeId == id, cancellationToken);
         if (isUsed)
             throw new InvalidOperationException("Невозможно удалить тип смазки, так как он используется в журнале обслуживания");
 
         _unitOfWork.LubricantTypes.Remove(existing);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Lubricant type {Id} deleted", id);
     }
 }

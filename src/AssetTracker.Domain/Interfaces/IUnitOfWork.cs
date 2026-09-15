@@ -1,4 +1,4 @@
-﻿using AssetTracker.Domain.Interfaces;
+﻿namespace AssetTracker.Domain.Interfaces;
 
 /// <summary>
 /// Unit of Work для управления репозиториями и сохранением изменений.

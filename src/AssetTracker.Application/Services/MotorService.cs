@@ -2,6 +2,7 @@
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Entities;
 using AssetTracker.Domain.Enums;
+using AssetTracker.Domain.Interfaces;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -25,10 +26,10 @@ public class MotorService : IMotorService
     }
 
     /// <inheritdoc />
-    public async Task<IEnumerable<MotorListItemDto>> GetAllMotorsAsync()
+    public async Task<IEnumerable<MotorListItemDto>> GetAllMotorsAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Получение всех двигателей");
-        var motors = await _unitOfWork.Motors.GetAllAsync();
+        var motors = await _unitOfWork.Motors.GetAllAsync(cancellationToken);
 
         var motorList = new List<MotorListItemDto>();
         foreach (var motor in motors)
@@ -36,7 +37,7 @@ public class MotorService : IMotorService
             var currentLocation = await _unitOfWork.LocationHistories.GetQueryable()
                 .Where(l => l.MotorId == motor.Id && l.EndDate == null)
                 .Select(l => l.Location)
-                .FirstOrDefaultAsync() ?? string.Empty;
+                .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
 
             motorList.Add(new MotorListItemDto
             {
@@ -46,21 +47,21 @@ public class MotorService : IMotorService
                 Power = motor.Power,
                 Status = motor.Status.ToString(),
                 CurrentLocation = currentLocation,
-                MountingType=motor.MountingType,
+                MountingType = motor.MountingType,
             });
         }
         return motorList;
     }
 
     /// <inheritdoc />
-    public async Task<MotorFullHistoryDto> CreateMotorAsync(CreateMotorDto dto)
+    public async Task<MotorFullHistoryDto> CreateMotorAsync(CreateMotorDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Создание нового двигателя, инвентарный номер: {InventoryNumber}", dto.InventoryNumber ?? "отсутствует");
 
         // Проверка уникальности инвентарного номера, если он задан
         if (!string.IsNullOrWhiteSpace(dto.InventoryNumber))
         {
-            var existingByInv = await _unitOfWork.Motors.GetByInventoryNumberAsync(dto.InventoryNumber);
+            var existingByInv = await _unitOfWork.Motors.GetByInventoryNumberAsync(dto.InventoryNumber, cancellationToken);
             if (existingByInv != null)
                 throw new InvalidOperationException($"Двигатель с инвентарным номером {dto.InventoryNumber} уже существует");
         }
@@ -68,17 +69,17 @@ public class MotorService : IMotorService
         // Создаём подшипники
         var frontBearing = _mapper.Map<Bearing>(dto.FrontBearing);
         var rearBearing = _mapper.Map<Bearing>(dto.RearBearing);
-        await _unitOfWork.Bearings.AddAsync(frontBearing);
-        await _unitOfWork.Bearings.AddAsync(rearBearing);
-        await _unitOfWork.SaveChangesAsync(); // чтобы получить Id
+        await _unitOfWork.Bearings.AddAsync(frontBearing, cancellationToken);
+        await _unitOfWork.Bearings.AddAsync(rearBearing, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken); // чтобы получить Id
 
         var motor = _mapper.Map<Motor>(dto);
         motor.FrontBearingId = frontBearing.Id;
         motor.RearBearingId = rearBearing.Id;
         motor.Status = dto.Status;
 
-        await _unitOfWork.Motors.AddAsync(motor);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.Motors.AddAsync(motor, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // Создаём первую запись о местоположении
         var location = new LocationHistory
@@ -89,43 +90,43 @@ public class MotorService : IMotorService
             EndDate = null,
             Status = motor.Status
         };
-        await _unitOfWork.LocationHistories.AddAsync(location);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.LocationHistories.AddAsync(location, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Двигатель создан с Id {MotorId}", motor.Id);
-        return await GetFullHistoryAsync(motor.Id);
+        return await GetFullHistoryAsync(motor.Id, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task SetInventoryNumberAsync(int motorId, SetInventoryNumberDto dto)
+    public async Task SetInventoryNumberAsync(int motorId, SetInventoryNumberDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Установка инвентарного номера для двигателя {MotorId}: {InventoryNumber}", motorId, dto.InventoryNumber ?? "null");
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         // Проверка уникальности нового номера (если не null)
         if (!string.IsNullOrWhiteSpace(dto.InventoryNumber))
         {
-            var existing = await _unitOfWork.Motors.GetByInventoryNumberAsync(dto.InventoryNumber);
+            var existing = await _unitOfWork.Motors.GetByInventoryNumberAsync(dto.InventoryNumber, cancellationToken);
             if (existing != null && existing.Id != motorId)
                 throw new InvalidOperationException($"Инвентарный номер {dto.InventoryNumber} уже используется другим двигателем");
         }
 
         motor.InventoryNumber = dto.InventoryNumber;
         _unitOfWork.Motors.Update(motor);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Инвентарный номер двигателя {MotorId} установлен в {InventoryNumber}", motorId, dto.InventoryNumber ?? "null");
     }
 
     /// <inheritdoc />
-    public async Task MoveMotorAsync(int motorId, MoveMotorDto dto)
+    public async Task MoveMotorAsync(int motorId, MoveMotorDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Перемещение двигателя {MotorId} в {NewLocation}", motorId, dto.NewLocation);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
@@ -138,7 +139,7 @@ public class MotorService : IMotorService
         }
 
         // Закрыть активную запись перемещения
-        var activeLocation = await _unitOfWork.LocationHistories.GetActiveLocationAsync(motorId);
+        var activeLocation = await _unitOfWork.LocationHistories.GetActiveLocationAsync(motorId, cancellationToken);
         if (activeLocation != null)
         {
             activeLocation.EndDate = DateTime.UtcNow;
@@ -154,18 +155,18 @@ public class MotorService : IMotorService
             EndDate = null,
             Status = motor.Status
         };
-        await _unitOfWork.LocationHistories.AddAsync(newLocation);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.LocationHistories.AddAsync(newLocation, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Двигатель {MotorId} перемещён в {NewLocation}", motorId, dto.NewLocation);
     }
 
     /// <inheritdoc />
-    public async Task AddMaintenanceAsync(int motorId, MaintenanceDto dto)
+    public async Task AddMaintenanceAsync(int motorId, MaintenanceDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Добавление обслуживания для двигателя {MotorId}, тип {WorkType}", motorId, dto.WorkType);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
@@ -180,7 +181,7 @@ public class MotorService : IMotorService
             if (!dto.LubricantTypeId.HasValue)
                 throw new ArgumentException("Для смазки необходимо указать тип смазки");
 
-            var lubricantExists = await _unitOfWork.LubricantTypes.ExistsAsync(dto.LubricantTypeId.Value);
+            var lubricantExists = await _unitOfWork.LubricantTypes.ExistsAsync(dto.LubricantTypeId.Value, cancellationToken);
             if (!lubricantExists)
                 throw new ArgumentException($"Тип смазки с id {dto.LubricantTypeId} не существует");
         }
@@ -201,7 +202,7 @@ public class MotorService : IMotorService
             if (dto.ExistingBearingId.HasValue)
             {
                 // Используем существующий подшипник
-                var existingBearing = await _unitOfWork.Bearings.GetByIdAsync(dto.ExistingBearingId.Value);
+                var existingBearing = await _unitOfWork.Bearings.GetByIdAsync(dto.ExistingBearingId.Value, cancellationToken);
                 if (existingBearing == null)
                     throw new ArgumentException($"Подшипник с id {dto.ExistingBearingId.Value} не существует");
                 newBearingId = existingBearing.Id;
@@ -210,8 +211,8 @@ public class MotorService : IMotorService
             {
                 // Создаём новый подшипник
                 var newBearing = _mapper.Map<Bearing>(dto.NewBearing);
-                await _unitOfWork.Bearings.AddAsync(newBearing);
-                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.Bearings.AddAsync(newBearing, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 newBearingId = newBearing.Id;
             }
             else
@@ -241,21 +242,21 @@ public class MotorService : IMotorService
             NewBearingId = newBearingId
         };
 
-        await _unitOfWork.MaintenanceLogs.AddAsync(maintenance);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.MaintenanceLogs.AddAsync(maintenance, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Обслуживание для двигателя {MotorId} записано", motorId);
     }
 
     /// <inheritdoc />
-    public async Task<MotorFullHistoryDto> GetFullHistoryAsync(int motorId)
+    public async Task<MotorFullHistoryDto> GetFullHistoryAsync(int motorId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Получение полной истории для двигателя {MotorId}", motorId);
 
         var motor = await _unitOfWork.Motors.GetQueryable()
             .Include(m => m.FrontBearing)
             .Include(m => m.RearBearing)
-            .FirstOrDefaultAsync(m => m.Id == motorId);
+            .FirstOrDefaultAsync(m => m.Id == motorId, cancellationToken);
 
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
@@ -276,7 +277,7 @@ public class MotorService : IMotorService
                 EndDate = l.EndDate,
                 Status = l.Status.ToString()
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         // История обслуживания (последние 100 записей)
         dto.MaintenanceLogs = await _unitOfWork.MaintenanceLogs.GetQueryable()
@@ -308,7 +309,7 @@ public class MotorService : IMotorService
                     Supplier = m.NewBearing.Supplier
                 } : null
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         // Последняя смазка переднего подшипника
         var frontLubricant = await _unitOfWork.MaintenanceLogs.GetQueryable()
@@ -318,7 +319,7 @@ public class MotorService : IMotorService
                         && m.LubricantType != null)
             .OrderByDescending(m => m.Date)
             .Select(m => m.LubricantType!.Name)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         // Последняя смазка заднего подшипника
         var rearLubricant = await _unitOfWork.MaintenanceLogs.GetQueryable()
@@ -328,7 +329,7 @@ public class MotorService : IMotorService
                         && m.LubricantType != null)
             .OrderByDescending(m => m.Date)
             .Select(m => m.LubricantType!.Name)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         dto.FrontBearingLastLubricant = frontLubricant;
         dto.RearBearingLastLubricant = rearLubricant;
@@ -337,32 +338,32 @@ public class MotorService : IMotorService
     }
 
     /// <inheritdoc />
-    public async Task UpdateMotorAsync(int motorId, UpdateMotorDto dto)
+    public async Task UpdateMotorAsync(int motorId, UpdateMotorDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Обновление характеристик двигателя {MotorId}", motorId);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         _mapper.Map(dto, motor);
         _unitOfWork.Motors.Update(motor);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Двигатель {MotorId} обновлён", motorId);
     }
 
     /// <inheritdoc />
-    public async Task DeleteMotorAsync(int motorId)
+    public async Task DeleteMotorAsync(int motorId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Удаление двигателя {MotorId}", motorId);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         _unitOfWork.Motors.Remove(motor);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Двигатель {MotorId} удалён", motorId);
     }
@@ -374,7 +375,8 @@ public class MotorService : IMotorService
         string? inventoryNumberFilter,
         string? locationFilter,
         MotorStatus? statusFilter,
-        bool? hasInventoryNumber = null)
+        bool? hasInventoryNumber = null,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Получение списка двигателей с пагинацией: page={Page}, pageSize={PageSize}, hasInventoryNumber={HasInventoryNumber}",
             page, pageSize, hasInventoryNumber);
@@ -403,7 +405,7 @@ public class MotorService : IMotorService
                 query = query.Where(m => m.InventoryNumber == null);
         }
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -415,13 +417,13 @@ public class MotorService : IMotorService
                 Type = m.Type,
                 Power = m.Power,
                 Status = m.Status.ToString(),
-                MountingType= m.MountingType,
+                MountingType = m.MountingType,
                 CurrentLocation = m.LocationHistories
                     .Where(l => l.EndDate == null)
                     .Select(l => l.Location)
                     .FirstOrDefault() ?? string.Empty
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<MotorListItemDto>
         {
@@ -434,11 +436,11 @@ public class MotorService : IMotorService
     }
 
     /// <inheritdoc />
-    public async Task<PagedResult<LocationHistoryDto>> GetMotorLocationHistoryPagedAsync(int motorId, int page, int pageSize)
+    public async Task<PagedResult<LocationHistoryDto>> GetMotorLocationHistoryPagedAsync(int motorId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Получение истории перемещений для двигателя {MotorId}, page={Page}, pageSize={PageSize}", motorId, page, pageSize);
 
-        var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motorExists == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
@@ -447,7 +449,7 @@ public class MotorService : IMotorService
             .Where(l => l.MotorId == motorId)
             .OrderByDescending(l => l.StartDate);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -459,7 +461,7 @@ public class MotorService : IMotorService
                 EndDate = l.EndDate,
                 Status = l.Status.ToString()
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<LocationHistoryDto>
         {
@@ -478,13 +480,14 @@ public class MotorService : IMotorService
         int pageSize,
         MaintenanceType? workType,
         DateTime? fromDate,
-        DateTime? toDate)
+        DateTime? toDate,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Получение журнала обслуживания для двигателя {MotorId}, page={Page}, pageSize={PageSize}, workType={WorkType}, from={From}, to={To}",
             motorId, page, pageSize, workType, fromDate, toDate);
 
         // Проверка существования мотора
-        var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motorExists = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motorExists == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
@@ -510,7 +513,7 @@ public class MotorService : IMotorService
         // Сортировка по убыванию даты (свежие сверху)
         query = query.OrderByDescending(m => m.Date);
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -540,7 +543,7 @@ public class MotorService : IMotorService
                     Supplier = m.NewBearing.Supplier
                 } : null
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<MaintenanceLogDto>
         {
@@ -556,7 +559,7 @@ public class MotorService : IMotorService
     /// Проверяет, является ли запись о замене подшипника последней для данной позиции (передней/задней).
     /// Возвращает true, если это последняя запись замены для указанной позиции.
     /// </summary>
-    private async Task<bool> IsLastBearingReplacementAsync(int motorId, BearingPosition position, int logId)
+    private async Task<bool> IsLastBearingReplacementAsync(int motorId, BearingPosition position, int logId, CancellationToken cancellationToken = default)
     {
         // Находим самую последнюю запись замены подшипника для указанной позиции
         var lastLog = await _unitOfWork.MaintenanceLogs.GetQueryable()
@@ -564,24 +567,24 @@ public class MotorService : IMotorService
                         && m.WorkType == MaintenanceType.BearingReplacement
                         && m.BearingPosition == position)
             .OrderByDescending(m => m.Date)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         return lastLog != null && lastLog.Id == logId;
     }
 
     /// <inheritdoc />
-    public async Task UpdateMaintenanceLogAsync(int motorId, int logId, UpdateMaintenanceLogDto dto)
+    public async Task UpdateMaintenanceLogAsync(int motorId, int logId, UpdateMaintenanceLogDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Обновление записи обслуживания {LogId} для двигателя {MotorId}", logId, motorId);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
         var log = await _unitOfWork.MaintenanceLogs.GetQueryable()
             .Include(l => l.OldBearing)
             .Include(l => l.NewBearing)
-            .FirstOrDefaultAsync(l => l.Id == logId && l.MotorId == motorId);
+            .FirstOrDefaultAsync(l => l.Id == logId && l.MotorId == motorId, cancellationToken);
 
         if (log == null)
             throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
@@ -598,7 +601,7 @@ public class MotorService : IMotorService
         {
             if (dto.LubricantTypeId.HasValue)
             {
-                var lubricantExists = await _unitOfWork.LubricantTypes.ExistsAsync(dto.LubricantTypeId.Value);
+                var lubricantExists = await _unitOfWork.LubricantTypes.ExistsAsync(dto.LubricantTypeId.Value, cancellationToken);
                 if (!lubricantExists)
                     throw new ArgumentException($"Тип смазки с id {dto.LubricantTypeId} не существует");
                 log.LubricantTypeId = dto.LubricantTypeId;
@@ -609,7 +612,7 @@ public class MotorService : IMotorService
         else if (log.WorkType == MaintenanceType.BearingReplacement)
         {
             // Разрешаем редактирование ТОЛЬКО если это последняя запись замены для данного подшипника
-            if (!await IsLastBearingReplacementAsync(motorId, log.BearingPosition!.Value, logId))
+            if (!await IsLastBearingReplacementAsync(motorId, log.BearingPosition!.Value, logId, cancellationToken))
                 throw new InvalidOperationException("Редактирование разрешено только для последней записи замены подшипника. " +
                                                     "Чтобы изменить более раннюю замену, удалите последующие записи.");
 
@@ -617,7 +620,7 @@ public class MotorService : IMotorService
             int? newBearingId = null;
             if (dto.ExistingBearingId.HasValue)
             {
-                var existingBearing = await _unitOfWork.Bearings.GetByIdAsync(dto.ExistingBearingId.Value);
+                var existingBearing = await _unitOfWork.Bearings.GetByIdAsync(dto.ExistingBearingId.Value, cancellationToken);
                 if (existingBearing == null)
                     throw new ArgumentException($"Подшипник с id {dto.ExistingBearingId.Value} не существует");
                 newBearingId = existingBearing.Id;
@@ -625,8 +628,8 @@ public class MotorService : IMotorService
             else if (dto.NewBearing != null)
             {
                 var newBearing = _mapper.Map<Bearing>(dto.NewBearing);
-                await _unitOfWork.Bearings.AddAsync(newBearing);
-                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.Bearings.AddAsync(newBearing, cancellationToken);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
                 newBearingId = newBearing.Id;
             }
 
@@ -653,28 +656,28 @@ public class MotorService : IMotorService
         }
 
         _unitOfWork.MaintenanceLogs.Update(log);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Запись обслуживания {LogId} для двигателя {MotorId} обновлена", logId, motorId);
     }
 
     /// <inheritdoc />
-    public async Task DeleteMaintenanceLogAsync(int motorId, int logId)
+    public async Task DeleteMaintenanceLogAsync(int motorId, int logId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Удаление записи обслуживания {LogId} для двигателя {MotorId}", logId, motorId);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
-        var log = await _unitOfWork.MaintenanceLogs.GetByIdAsync(logId);
+        var log = await _unitOfWork.MaintenanceLogs.GetByIdAsync(logId, cancellationToken);
         if (log == null || log.MotorId != motorId)
             throw new KeyNotFoundException($"Запись обслуживания с id {logId} не найдена для двигателя {motorId}");
 
         // Если это замена подшипника, разрешаем удаление ТОЛЬКО если это последняя запись замены для данной позиции
         if (log.WorkType == MaintenanceType.BearingReplacement)
         {
-            if (!await IsLastBearingReplacementAsync(motorId, log.BearingPosition!.Value, logId))
+            if (!await IsLastBearingReplacementAsync(motorId, log.BearingPosition!.Value, logId, cancellationToken))
                 throw new InvalidOperationException("Удаление разрешено только для последней записи замены подшипника. " +
                                                     "Чтобы удалить более раннюю замену, сначала удалите последующие записи.");
 
@@ -690,21 +693,21 @@ public class MotorService : IMotorService
         }
 
         _unitOfWork.MaintenanceLogs.Remove(log);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Запись обслуживания {LogId} для двигателя {MotorId} удалена", logId, motorId);
     }
 
     /// <inheritdoc />
-    public async Task UpdateLocationHistoryAsync(int motorId, int locationHistoryId, UpdateLocationHistoryDto dto)
+    public async Task UpdateLocationHistoryAsync(int motorId, int locationHistoryId, UpdateLocationHistoryDto dto, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Обновление записи истории перемещений {LocationHistoryId} для двигателя {MotorId}", locationHistoryId, motorId);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
-        var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
+        var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId, cancellationToken);
         if (locationHistory == null || locationHistory.MotorId != motorId)
             throw new KeyNotFoundException($"Запись истории перемещений с id {locationHistoryId} не найдена для двигателя {motorId}");
 
@@ -712,7 +715,7 @@ public class MotorService : IMotorService
         var lastRecord = await _unitOfWork.LocationHistories.GetQueryable()
             .Where(l => l.MotorId == motorId)
             .OrderByDescending(l => l.StartDate)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (lastRecord == null || lastRecord.Id != locationHistoryId)
             throw new InvalidOperationException("Редактирование разрешено только для последней записи истории перемещений. " +
@@ -720,28 +723,28 @@ public class MotorService : IMotorService
 
         locationHistory.Location = dto.Location;
         _unitOfWork.LocationHistories.Update(locationHistory);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Запись истории перемещений {LocationHistoryId} для двигателя {MotorId} обновлена", locationHistoryId, motorId);
     }
 
     /// <inheritdoc />
-    public async Task DeleteLocationHistoryAsync(int motorId, int locationHistoryId)
+    public async Task DeleteLocationHistoryAsync(int motorId, int locationHistoryId, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Удаление записи истории перемещений {LocationHistoryId} для двигателя {MotorId}", locationHistoryId, motorId);
 
-        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId);
+        var motor = await _unitOfWork.Motors.GetByIdAsync(motorId, cancellationToken);
         if (motor == null)
             throw new KeyNotFoundException($"Двигатель с Id {motorId} не найден");
 
-        var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId);
+        var locationHistory = await _unitOfWork.LocationHistories.GetByIdAsync(locationHistoryId, cancellationToken);
         if (locationHistory == null || locationHistory.MotorId != motorId)
             throw new KeyNotFoundException($"Запись истории перемещений с id {locationHistoryId} не найдена для двигателя {motorId}");
 
         var allHistories = await _unitOfWork.LocationHistories.GetQueryable()
             .Where(l => l.MotorId == motorId)
             .OrderBy(l => l.StartDate)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (allHistories.Count == 1)
             throw new InvalidOperationException("Нельзя удалить единственную запись истории перемещений – двигатель должен иметь текущее местоположение");
@@ -766,7 +769,7 @@ public class MotorService : IMotorService
                 throw new InvalidOperationException("Нельзя удалить единственную активную запись местоположения – двигатель останется без текущего места");
             }
             _unitOfWork.LocationHistories.Remove(locationHistory);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Активная запись истории перемещений {LocationHistoryId} для двигателя {MotorId} удалена, предыдущая запись стала активной со статусом {Status}",
                 locationHistoryId, motorId, motor.Status);
             return;
@@ -776,7 +779,7 @@ public class MotorService : IMotorService
         if (index == allHistories.Count - 1)
         {
             _unitOfWork.LocationHistories.Remove(locationHistory);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Закрытая последняя запись истории перемещений {LocationHistoryId} для двигателя {MotorId} удалена", locationHistoryId, motorId);
         }
         else
@@ -791,7 +794,8 @@ public class MotorService : IMotorService
         DateTime? toDate,
         MaintenanceType? workType,
         int page,
-        int pageSize)
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Формирование отчёта по обслуживанию: период {From} - {To}, тип работ {WorkType}, страница {Page}, размер {PageSize}",
             fromDate, toDate, workType, page, pageSize);
@@ -832,7 +836,7 @@ public class MotorService : IMotorService
             query = query.Where(m => m.WorkType == workType.Value);
 
         // Общее количество записей (до пагинации)
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
 
         // Пагинация и проекция
         var items = await query
@@ -873,7 +877,7 @@ public class MotorService : IMotorService
                     .Select(lh => lh.Location)
                     .FirstOrDefault() ?? string.Empty
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<MaintenanceReportItemDto>
         {
@@ -888,7 +892,8 @@ public class MotorService : IMotorService
     /// <inheritdoc />
     public async Task<IEnumerable<MaintenanceReportSummaryDto>> GetMaintenanceReportSummaryAsync(
         DateTime? fromDate,
-        DateTime? toDate)
+        DateTime? toDate,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Формирование сводки по обслуживанию: период {From} - {To}", fromDate, toDate);
 
@@ -918,7 +923,7 @@ public class MotorService : IMotorService
                 Count = g.Count()
             })
             .OrderBy(s => s.WorkType)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return summary;
     }

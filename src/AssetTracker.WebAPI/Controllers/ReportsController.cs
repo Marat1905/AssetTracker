@@ -30,6 +30,7 @@ public class ReportsController : ControllerBase
     /// <param name="workType">Тип работ (опционально).</param>
     /// <param name="page">Номер страницы (начиная с 1).</param>
     /// <param name="pageSize">Размер страницы (1-100).</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Страница записей обслуживания.</returns>
     [HttpGet("maintenance")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -39,7 +40,8 @@ public class ReportsController : ControllerBase
         [FromQuery] DateTime? toDate,
         [FromQuery] MaintenanceType? workType,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -48,7 +50,7 @@ public class ReportsController : ControllerBase
             if (pageSize > 100) pageSize = 100;
 
             var result = await _motorService.GetMaintenanceReportPagedAsync(
-                fromDate, toDate, workType, page, pageSize);
+                fromDate, toDate, workType, page, pageSize, cancellationToken);
 
             return Ok(result);
         }
@@ -63,17 +65,19 @@ public class ReportsController : ControllerBase
     /// </summary>
     /// <param name="fromDate">Начало периода (в формате yyyy-MM-dd).</param>
     /// <param name="toDate">Окончание периода (в формате yyyy-MM-dd).</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Список с количеством записей по каждому типу работ.</returns>
     [HttpGet("maintenance/summary")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<MaintenanceReportSummaryDto>>> GetMaintenanceReportSummary(
         [FromQuery] DateTime? fromDate,
-        [FromQuery] DateTime? toDate)
+        [FromQuery] DateTime? toDate,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            var summary = await _motorService.GetMaintenanceReportSummaryAsync(fromDate, toDate);
+            var summary = await _motorService.GetMaintenanceReportSummaryAsync(fromDate, toDate, cancellationToken);
             return Ok(summary);
         }
         catch (ArgumentException ex)

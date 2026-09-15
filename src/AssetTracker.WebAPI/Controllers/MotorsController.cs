@@ -27,17 +27,18 @@ public class MotorsController : ControllerBase
     /// Первичная регистрация нового двигателя.
     /// </summary>
     /// <param name="dto">Данные для создания двигателя.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Полная карточка созданного двигателя.</returns>
     //[Authorize(Policy = "Electro")]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<MotorFullHistoryDto>> CreateMotor([FromBody] CreateMotorDto dto)
+    public async Task<ActionResult<MotorFullHistoryDto>> CreateMotor([FromBody] CreateMotorDto dto, CancellationToken cancellationToken = default)
     {
         try
         {
-            var result = await _motorService.CreateMotorAsync(dto);
+            var result = await _motorService.CreateMotorAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetFullHistory), new { motorId = result.Id }, result);
         }
         catch (InvalidOperationException ex)
@@ -51,17 +52,18 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Новый инвентарный номер.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpPatch("{motorId}/inventory-number")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> SetInventoryNumber(int motorId, [FromBody] SetInventoryNumberDto dto)
+    public async Task<IActionResult> SetInventoryNumber(int motorId, [FromBody] SetInventoryNumberDto dto, CancellationToken cancellationToken = default)
     {
         try
         {
-            await _motorService.SetInventoryNumberAsync(motorId, dto);
+            await _motorService.SetInventoryNumberAsync(motorId, dto, cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -79,14 +81,15 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Новое местоположение и опционально новый статус.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpPatch("{motorId}/move")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> MoveMotor(int motorId, [FromBody] MoveMotorDto dto)
+    public async Task<IActionResult> MoveMotor(int motorId, [FromBody] MoveMotorDto dto, CancellationToken cancellationToken = default)
     {
-        await _motorService.MoveMotorAsync(motorId, dto);
+        await _motorService.MoveMotorAsync(motorId, dto, cancellationToken);
         return NoContent();
     }
 
@@ -95,13 +98,14 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Данные о выполненной работе.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpPost("{motorId}/maintenance")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddMaintenance(int motorId, [FromBody] MaintenanceDto dto)
+    public async Task<IActionResult> AddMaintenance(int motorId, [FromBody] MaintenanceDto dto, CancellationToken cancellationToken = default)
     {
-        await _motorService.AddMaintenanceAsync(motorId, dto);
+        await _motorService.AddMaintenanceAsync(motorId, dto, cancellationToken);
         return NoContent();
     }
 
@@ -109,25 +113,27 @@ public class MotorsController : ControllerBase
     /// Получение "карточки жизни" ЭД: где стоял и что с ним делали (без пагинации – для мобильных устройств).
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Полная история двигателя.</returns>
     [HttpGet("{motorId}/full-history")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MotorFullHistoryDto>> GetFullHistory(int motorId)
+    public async Task<ActionResult<MotorFullHistoryDto>> GetFullHistory(int motorId, CancellationToken cancellationToken = default)
     {
-        var history = await _motorService.GetFullHistoryAsync(motorId);
+        var history = await _motorService.GetFullHistoryAsync(motorId, cancellationToken);
         return Ok(history);
     }
 
     /// <summary>
     /// Получение списка всех электродвигателей (без пагинации – для мобильных устройств).
     /// </summary>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Краткий список двигателей.</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<MotorListItemDto>>> GetAllMotors()
+    public async Task<ActionResult<IEnumerable<MotorListItemDto>>> GetAllMotors(CancellationToken cancellationToken = default)
     {
-        var motors = await _motorService.GetAllMotorsAsync();
+        var motors = await _motorService.GetAllMotorsAsync(cancellationToken);
         return Ok(motors);
     }
 
@@ -140,6 +146,7 @@ public class MotorsController : ControllerBase
     /// <param name="location">Фильтр по текущему местоположению (частичное совпадение).</param>
     /// <param name="status">Фильтр по статусу.</param>
     /// <param name="hasInventoryNumber">Фильтр по наличию инвентарного номера: true – только с номером, false – только без номера, null – все.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Страница с результатами.</returns>
     [HttpGet("paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -149,12 +156,13 @@ public class MotorsController : ControllerBase
         [FromQuery] string? inventoryNumber = null,
         [FromQuery] string? location = null,
         [FromQuery] MotorStatus? status = null,
-        [FromQuery] bool? hasInventoryNumber = null) // параметр фильтрации
+        [FromQuery] bool? hasInventoryNumber = null,
+        CancellationToken cancellationToken = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
 
-        var result = await _motorService.GetMotorsPagedAsync(page, pageSize, inventoryNumber, location, status, hasInventoryNumber);
+        var result = await _motorService.GetMotorsPagedAsync(page, pageSize, inventoryNumber, location, status, hasInventoryNumber, cancellationToken);
         return Ok(result);
     }
 
@@ -164,6 +172,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="page">Номер страницы.</param>
     /// <param name="pageSize">Размер страницы.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Страница истории перемещений.</returns>
     [HttpGet("{motorId}/location-history/paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -171,12 +180,13 @@ public class MotorsController : ControllerBase
     public async Task<ActionResult<PagedResult<LocationHistoryDto>>> GetLocationHistoryPaged(
         int motorId,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
 
-        var result = await _motorService.GetMotorLocationHistoryPagedAsync(motorId, page, pageSize);
+        var result = await _motorService.GetMotorLocationHistoryPagedAsync(motorId, page, pageSize, cancellationToken);
         return Ok(result);
     }
 
@@ -189,6 +199,7 @@ public class MotorsController : ControllerBase
     /// <param name="workType">Фильтр по типу работ.</param>
     /// <param name="fromDate">Фильтр по дате – записи не ранее указанной даты.</param>
     /// <param name="toDate">Фильтр по дате – записи не позднее указанной даты.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Страница записей обслуживания.</returns>
     [HttpGet("{motorId}/maintenance-logs/paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -200,14 +211,15 @@ public class MotorsController : ControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] MaintenanceType? workType = null,
         [FromQuery] DateTime? fromDate = null,
-        [FromQuery] DateTime? toDate = null)
+        [FromQuery] DateTime? toDate = null,
+        CancellationToken cancellationToken = default)
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
 
         try
         {
-            var result = await _motorService.GetMotorMaintenanceLogsPagedAsync(motorId, page, pageSize, workType, fromDate, toDate);
+            var result = await _motorService.GetMotorMaintenanceLogsPagedAsync(motorId, page, pageSize, workType, fromDate, toDate, cancellationToken);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -225,14 +237,15 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Обновлённые характеристики.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpPut("{motorId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateMotor(int motorId, [FromBody] UpdateMotorDto dto)
+    public async Task<IActionResult> UpdateMotor(int motorId, [FromBody] UpdateMotorDto dto, CancellationToken cancellationToken = default)
     {
-        await _motorService.UpdateMotorAsync(motorId, dto);
+        await _motorService.UpdateMotorAsync(motorId, dto, cancellationToken);
         return NoContent();
     }
 
@@ -240,13 +253,14 @@ public class MotorsController : ControllerBase
     /// Удаление двигателя (вместе со всей историей перемещений и обслуживания).
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteMotor(int motorId)
+    public async Task<IActionResult> DeleteMotor(int motorId, CancellationToken cancellationToken = default)
     {
-        await _motorService.DeleteMotorAsync(motorId);
+        await _motorService.DeleteMotorAsync(motorId, cancellationToken);
         return NoContent();
     }
 
@@ -256,16 +270,17 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="logId">Идентификатор записи обслуживания.</param>
     /// <param name="dto">Новые данные.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpPut("{motorId}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateMaintenanceLog(int motorId, int logId, [FromBody] UpdateMaintenanceLogDto dto)
+    public async Task<IActionResult> UpdateMaintenanceLog(int motorId, int logId, [FromBody] UpdateMaintenanceLogDto dto, CancellationToken cancellationToken = default)
     {
         try
         {
-            await _motorService.UpdateMaintenanceLogAsync(motorId, logId, dto);
+            await _motorService.UpdateMaintenanceLogAsync(motorId, logId, dto, cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -287,15 +302,16 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="logId">Идентификатор записи обслуживания.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteMaintenanceLog(int motorId, int logId)
+    public async Task<IActionResult> DeleteMaintenanceLog(int motorId, int logId, CancellationToken cancellationToken = default)
     {
         try
         {
-            await _motorService.DeleteMaintenanceLogAsync(motorId, logId);
+            await _motorService.DeleteMaintenanceLogAsync(motorId, logId, cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -310,16 +326,17 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
     /// <param name="dto">Новое расположение.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpPut("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateLocationHistory(int motorId, int locationHistoryId, [FromBody] UpdateLocationHistoryDto dto)
+    public async Task<IActionResult> UpdateLocationHistory(int motorId, int locationHistoryId, [FromBody] UpdateLocationHistoryDto dto, CancellationToken cancellationToken = default)
     {
         try
         {
-            await _motorService.UpdateLocationHistoryAsync(motorId, locationHistoryId, dto);
+            await _motorService.UpdateLocationHistoryAsync(motorId, locationHistoryId, dto, cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException)
@@ -337,17 +354,18 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
     //[Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> DeleteLocationHistory(int motorId, int locationHistoryId)
+    public async Task<IActionResult> DeleteLocationHistory(int motorId, int locationHistoryId, CancellationToken cancellationToken = default)
     {
         try
         {
-            await _motorService.DeleteLocationHistoryAsync(motorId, locationHistoryId);
+            await _motorService.DeleteLocationHistoryAsync(motorId, locationHistoryId, cancellationToken);
             return NoContent();
         }
         catch (KeyNotFoundException)
