@@ -1,15 +1,15 @@
-import { MountingType } from '../types';
+import { MountingType } from '../../types/motor/motor';
 
 /**
  * Свойства компонента схематичного изображения двигателя.
  */
 interface MotorDiagramProps {
-    /** Диаметр вала (мм) – отображается на размерной линии */
-    shaftDiameter: number;
-    /** Тип переднего подшипника */
-    frontBearingType: string;
-    /** Тип заднего подшипника */
-    rearBearingType: string;
+    /** Диаметр вала (мм) – отображается на размерной линии (опционально) */
+    shaftDiameter?: number;
+    /** Тип переднего подшипника (опционально) */
+    frontBearingType?: string;
+    /** Тип заднего подшипника (опционально) */
+    rearBearingType?: string;
     /** Тип монтажа (влияет на отображение лап и фланцев) */
     mountingType: MountingType;
     /** Тип смазки переднего подшипника (опционально) */
@@ -20,9 +20,10 @@ interface MotorDiagramProps {
 
 /**
  * Компонент, рисующий SVG‑схему электродвигателя.
- * Отображает корпус, вал, подшипники (с выносками и типами), 
+ * Отображает корпус, вал, подшипники (с выносками и типами),
  * размерную линию диаметра вала, а также опционально – тип смазки.
  * Внешний вид (лапы, фланец) зависит от типа монтажа.
+ * Полностью поддерживает светлую и тёмную тему.
  */
 export default function MotorDiagram({
     shaftDiameter,
@@ -55,19 +56,36 @@ export default function MotorDiagram({
                 viewBox="-30 -30 460 340"
                 className="w-full"
                 preserveAspectRatio="xMidYMid meet"
-                style={{}}
+                style={{
+                    color: 'currentColor'
+                }}
             >
                 <defs>
                     <style>{`
-                        .st0 { fill: none; stroke: #000000; stroke-linecap: round; stroke-linejoin: round; }
-                        .st1 { fill-rule: evenodd; clip-rule: evenodd; fill: #5B5B5B; stroke: #000000; stroke-linecap: round; stroke-linejoin: round; }
-                        .st2 { fill-rule: evenodd; clip-rule: evenodd; fill: #4288E3; stroke: #000000; stroke-linecap: round; stroke-linejoin: round; }
+                        /* Базовые стили для светлой темы */
+                        .st0 { fill: none; stroke: #1f2937; stroke-linecap: round; stroke-linejoin: round; }
+                        .st1 { fill-rule: evenodd; clip-rule: evenodd; fill: #6b7280; stroke: #1f2937; stroke-linecap: round; stroke-linejoin: round; }
+                        .st2 { fill-rule: evenodd; clip-rule: evenodd; fill: #3b82f6; stroke: #1f2937; stroke-linecap: round; stroke-linejoin: round; }
                         .st3 { fill: none; }
                         .bearing-leader { stroke: #10b981; stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
                         .bearing-text { fill: #059669; font-size: 14px; font-weight: bold; font-family: monospace; }
                         .lubricant-text { fill: #f59e0b; font-size: 14px; font-weight: bold; font-family: monospace; }
                         .shaft-dim { stroke: #3b82f6; stroke-width: 1.5; fill: none; }
                         .shaft-text { fill: #2563eb; font-size: 13px; font-weight: bold; font-family: monospace; }
+                        
+                        /* Новый класс для лап и фланцев – не меняется от темы, как в исходном файле */
+                        .st-permanent { fill-rule: evenodd; clip-rule: evenodd; fill: #4288E3; stroke: #000000; stroke-linecap: round; stroke-linejoin: round; }
+
+                        /* Тёмная тема */
+                        .dark .st0 { stroke: #9ca3af; }
+                        .dark .st1 { fill: #4b5563; stroke: #9ca3af; }
+                        .dark .st2 { fill: #60a5fa; stroke: #9ca3af; }
+                        .dark .bearing-leader { stroke: #34d399; }
+                        .dark .bearing-text { fill: #34d399; }
+                        .dark .lubricant-text { fill: #fbbf24; }
+                        .dark .shaft-dim { stroke: #60a5fa; }
+                        .dark .shaft-text { fill: #93c5fd; }
+                        /* st-permanent не переопределяется в тёмной теме – остаётся чёрный контур и синяя заливка */
                     `}</style>
                 </defs>
 
@@ -183,8 +201,8 @@ export default function MotorDiagram({
                     <g id="big-flange">
                         <polyline className="st0" points="112,243 97,243 94,245 " />
                         <polyline className="st0" points="112,97 97,97 94,95 " />
-                        <path className="st2" d="M78 105zm0 0l4 0 0 130 -4 0 0 -130z" />
-                        <path className="st2" d="M94 74zm0 0l-12 0 0 192 12 0 0 -192z" />
+                        <path className="st-permanent" d="M78 105zm0 0l4 0 0 130 -4 0 0 -130z" />
+                        <path className="st-permanent" d="M94 74zm0 0l-12 0 0 192 12 0 0 -192z" />
                     </g>
                 )}
 
@@ -193,89 +211,94 @@ export default function MotorDiagram({
                     <g id="small-flange">
                         <polyline className="st0" points="112,243 97,243 94,245 " />
                         <polyline className="st0" points="112,97 97,97 94,95 " />
-                        <path className="st2" d="M94,95H82v150h12V95z" />
+                        <path className="st-permanent" d="M94,95H82v150h12V95z" />
                     </g>
                 )}
 
                 {/* ========== ЛАПЫ ========== */}
                 {hasFeet && (
                     <g id="feet">
-                        <path className="st2" d="M116 255zm0 0l168 0 0 14 -168 0 0 -14z" />
-                        <path className="st2" d="M145 225zm0 0l112 0 0 30 -112 0 0 -30z" />
-                        <path className="st2" d="M159 239zm0 0l5 0 0 16 -5 0 0 -16z" />
-                        <path className="st2" d="M238 239zm0 0l5 0 0 16 -5 0 0 -16z" />
+                        <path className="st-permanent" d="M116 255zm0 0l168 0 0 14 -168 0 0 -14z" />
+                        <path className="st-permanent" d="M145 225zm0 0l112 0 0 30 -112 0 0 -30z" />
+                        <path className="st-permanent" d="M159 239zm0 0l5 0 0 16 -5 0 0 -16z" />
+                        <path className="st-permanent" d="M238 239zm0 0l5 0 0 16 -5 0 0 -16z" />
                     </g>
                 )}
 
-                {/* ========== ДОБАВЛЕННАЯ РАЗМЕТКА: диаметр вала и подшипники ========== */}
+                {/* ========== ДОБАВЛЕННАЯ РАЗМЕТКА: диаметр вала и подшипники (только если данные переданы) ========== */}
                 {/* Диаметр вала – вертикальная размерная линия слева от вала */}
-                <g id="shaft-dimension">
-                    {/* Выносные линии от верхней и нижней граней вала */}
-                    <line className="shaft-dim" x1="28" y1="158" x2="22" y2="158" />
-                    <line className="shaft-dim" x1="28" y1="182" x2="22" y2="182" />
-                    {/* Вертикальная размерная линия */}
-                    <line className="shaft-dim" x1="22" y1="158" x2="22" y2="182" />
-                    {/* Стрелки */}
-                    <polygon className="shaft-dim" points="22,158 19,163 25,163" fill="#3b82f6" />
-                    <polygon className="shaft-dim" points="22,182 19,177 25,177" fill="#3b82f6" />
-                    {/* Текст размера – теперь левее, с отступом от края */}
-                    <text x="-30" y="172" textAnchor="start" className="shaft-text">Ø{shaftDiameter} мм</text>
-                </g>
+                {shaftDiameter !== undefined && (
+                    <g id="shaft-dimension">
+                        {/* Выносные линии от верхней и нижней граней вала */}
+                        <line className="shaft-dim" x1="28" y1="158" x2="22" y2="158" />
+                        <line className="shaft-dim" x1="28" y1="182" x2="22" y2="182" />
+                        {/* Вертикальная размерная линия */}
+                        <line className="shaft-dim" x1="22" y1="158" x2="22" y2="182" />
+                        {/* Стрелки */}
+                        <polygon className="shaft-dim" points="22,158 19,163 25,163" fill="currentColor" />
+                        <polygon className="shaft-dim" points="22,182 19,177 25,177" fill="currentColor" />
+                        {/* Текст размера – теперь левее, с отступом от края */}
+                        <text x="-30" y="172" textAnchor="start" className="shaft-text">Ø{shaftDiameter} мм</text>
+                    </g>
+                )}
 
                 {/* Передний подшипник – кружок со смещением вверх */}
-                <g id="front-bearing">
-                    {/* Пунктирная окружность вокруг переднего подшипника (центр x=128, y=114) */}
-                    <circle cx="100" cy="170" r="15" className="bearing-leader" />
-                    {/* Линия-выноска вверх */}
-                    <line className="bearing-leader" x1="100" y1="155" x2="100" y2="35" />
-                    <circle cx="100" cy="35" r="2" fill="#10b981" />
-                    {/* Текст подшипника – ещё выше */}
-                    <text x="100" y="28" textAnchor="middle" className="bearing-text">{frontBearingType}</text>
-                    {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
-                    {frontBearingLastLubricant && (
-                        <foreignObject x="40" y="-20" width="120" height="40" className="lubricant-text">
-                            <div style={{
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                fontFamily: 'monospace',
-                                color: '#f59e0b',
-                                textAlign: 'center',
-                                wordWrap: 'break-word',
-                                whiteSpace: 'normal',
-                                lineHeight: '1.2'
-                            }}>
-                                🛢️ {frontBearingLastLubricant}
-                            </div>
-                        </foreignObject>
-                    )}
-                </g>
+                {frontBearingType && (
+                    <g id="front-bearing">
+                        {/* Пунктирная окружность вокруг переднего подшипника (центр x=128, y=114) */}
+                        <circle cx="100" cy="170" r="15" className="bearing-leader" />
+                        {/* Линия-выноска вверх */}
+                        <line className="bearing-leader" x1="100" y1="155" x2="100" y2="35" />
+                        <circle cx="100" cy="35" r="2" fill="#10b981" className="dark:fill-#34d399" />
+                        {/* Текст подшипника – ещё выше */}
+                        <text x="100" y="28" textAnchor="middle" className="bearing-text">{frontBearingType}</text>
+                        {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
+                        {frontBearingLastLubricant && (
+                            <foreignObject x="40" y="-20" width="120" height="40" className="lubricant-text">
+                                <div style={{
+                                    fontSize: '14px',
+                                    fontWeight: 'bold',
+                                    fontFamily: 'monospace',
+                                    textAlign: 'center',
+                                    wordWrap: 'break-word',
+                                    whiteSpace: 'normal',
+                                    lineHeight: '1.2',
+                                    color: '#f59e0b'
+                                }}>
+                                    🛢️ {frontBearingLastLubricant}
+                                </div>
+                            </foreignObject>
+                        )}
+                    </g>
+                )}
 
                 {/* Задний подшипник */}
-                <g id="rear-bearing">
-                    <circle cx="290" cy="170" r="15" className="bearing-leader" />
-                    <line className="bearing-leader" x1="290" y1="155" x2="290" y2="35" />
-                    <circle cx="290" cy="35" r="2" fill="#10b981" />
-                    {/* Тип подшипника */}
-                    <text x="290" y="28" textAnchor="middle" className="bearing-text">{rearBearingType}</text>
-                    {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
-                    {rearBearingLastLubricant && (
-                        <foreignObject x="230" y="-20" width="120" height="40" className="lubricant-text">
-                            <div style={{
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                fontFamily: 'monospace',
-                                color: '#f59e0b',
-                                textAlign: 'center',
-                                wordWrap: 'break-word',
-                                whiteSpace: 'normal',
-                                lineHeight: '1.2'
-                            }}>
-                                🛢️ {rearBearingLastLubricant}
-                            </div>
-                        </foreignObject>
-                    )}
-                </g>
-
+                {rearBearingType && (
+                    <g id="rear-bearing">
+                        <circle cx="290" cy="170" r="15" className="bearing-leader" />
+                        <line className="bearing-leader" x1="290" y1="155" x2="290" y2="35" />
+                        <circle cx="290" cy="35" r="2" fill="#10b981" className="dark:fill-#34d399" />
+                        {/* Тип подшипника */}
+                        <text x="290" y="28" textAnchor="middle" className="bearing-text">{rearBearingType}</text>
+                        {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
+                        {rearBearingLastLubricant && (
+                            <foreignObject x="230" y="-20" width="120" height="40" className="lubricant-text">
+                                <div style={{
+                                    fontSize: '14px',
+                                    fontWeight: 'bold',
+                                    fontFamily: 'monospace',
+                                    textAlign: 'center',
+                                    wordWrap: 'break-word',
+                                    whiteSpace: 'normal',
+                                    lineHeight: '1.2',
+                                    color: '#f59e0b'
+                                }}>
+                                    🛢️ {rearBearingLastLubricant}
+                                </div>
+                            </foreignObject>
+                        )}
+                    </g>
+                )}
             </svg>
         </div>
     );

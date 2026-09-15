@@ -17,32 +17,27 @@ import type {
     SetInventoryNumberDto,
     MaintenanceReportItemDto,
     MaintenanceReportSummaryDto,
-} from '../types';
+} from '../../types/motor/motor';
+import {
+    requestInterceptor,
+    requestErrorInterceptor,
+    responseInterceptor,
+    responseErrorInterceptor,
+} from '../axiosInterceptors';
 
-/**
- * Настроенный экземпляр axios для взаимодействия с бекендом.
- * Базовый URL – '/api' (прокси на дев-сервере).
- */
-const api = axios.create({
-    baseURL: '/api',
-    headers: { 'Content-Type': 'application/json' }
+const API_BASE_URL = '/api';
+
+// Создаём экземпляр axios с базовым URL и общими заголовками
+const apiClient = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
 });
 
-/**
- * Глобальный перехватчик ответов для логирования ошибок в консоль.
- */
-api.interceptors.response.use(
-    response => response,
-    error => {
-        console.error('🌐 API Error:', {
-            url: error.config?.url,
-            method: error.config?.method,
-            status: error.response?.status,
-            data: error.response?.data
-        });
-        return Promise.reject(error);
-    }
-);
+// Применяем интерцепторы (аутентификация, обработка ошибок и т.д.)
+apiClient.interceptors.request.use(requestInterceptor, requestErrorInterceptor);
+apiClient.interceptors.response.use(responseInterceptor, responseErrorInterceptor);
 
 /**
  * API-функции для работы с электродвигателями.
@@ -54,7 +49,7 @@ export const motorApi = {
      * @returns Полная карточка созданного двигателя (с суррогатным Id).
      */
     createMotor: async (data: CreateMotorDto): Promise<MotorFullHistoryDto> => {
-        const response = await api.post<MotorFullHistoryDto>('/motors', data);
+        const response = await apiClient.post<MotorFullHistoryDto>('/motors', data);
         return response.data;
     },
 
@@ -64,7 +59,7 @@ export const motorApi = {
      * @param data - DTO с обновлёнными полями.
      */
     updateMotor: async (id: number, data: UpdateMotorRequest): Promise<void> => {
-        await api.put(`/motors/${id}`, data);
+        await apiClient.put(`/motors/${id}`, data);
     },
 
     /**
@@ -72,7 +67,7 @@ export const motorApi = {
      * @param id - Суррогатный идентификатор двигателя.
      */
     deleteMotor: async (id: number): Promise<void> => {
-        await api.delete(`/motors/${id}`);
+        await apiClient.delete(`/motors/${id}`);
     },
 
     /**
@@ -81,7 +76,7 @@ export const motorApi = {
      * @param data - Новое местоположение и опционально новый статус.
      */
     moveMotor: async (id: number, data: MoveMotorDto): Promise<void> => {
-        await api.patch(`/motors/${id}/move`, data);
+        await apiClient.patch(`/motors/${id}/move`, data);
     },
 
     /**
@@ -90,7 +85,7 @@ export const motorApi = {
      * @param data - DTO с деталями обслуживания.
      */
     addMaintenance: async (id: number, data: MaintenanceDto): Promise<void> => {
-        await api.post(`/motors/${id}/maintenance`, data);
+        await apiClient.post(`/motors/${id}/maintenance`, data);
     },
 
     /**
@@ -99,7 +94,7 @@ export const motorApi = {
      * @returns Полная карточка "жизни" двигателя.
      */
     getFullHistory: async (id: number): Promise<MotorFullHistoryDto> => {
-        const response = await api.get<MotorFullHistoryDto>(`/motors/${id}/full-history`);
+        const response = await apiClient.get<MotorFullHistoryDto>(`/motors/${id}/full-history`);
         return response.data;
     },
 
@@ -108,7 +103,7 @@ export const motorApi = {
      * @returns Массив кратких DTO двигателей.
      */
     getAllMotors: async (): Promise<MotorListItem[]> => {
-        const response = await api.get<MotorListItem[]>('/motors');
+        const response = await apiClient.get<MotorListItem[]>('/motors');
         return response.data;
     },
 
@@ -130,17 +125,18 @@ export const motorApi = {
         status?: string,
         hasInventoryNumber?: boolean | null
     ): Promise<PagedResult<MotorListItem>> => {
-        const params = new URLSearchParams();
-        params.append('page', page.toString());
-        params.append('pageSize', pageSize.toString());
-        if (inventoryNumber) params.append('inventoryNumber', inventoryNumber);
-        if (location) params.append('location', location);
-        if (status) params.append('status', status);
+        const params: Record<string, any> = {
+            page,
+            pageSize,
+        };
+        if (inventoryNumber) params.inventoryNumber = inventoryNumber;
+        if (location) params.location = location;
+        if (status) params.status = status;
         if (hasInventoryNumber !== undefined && hasInventoryNumber !== null) {
-            params.append('hasInventoryNumber', hasInventoryNumber.toString());
+            params.hasInventoryNumber = hasInventoryNumber;
         }
 
-        const response = await api.get<PagedResult<MotorListItem>>(`/motors/paged?${params.toString()}`);
+        const response = await apiClient.get<PagedResult<MotorListItem>>('/motors/paged', { params });
         return response.data;
     },
 
@@ -156,8 +152,9 @@ export const motorApi = {
         page: number = 1,
         pageSize: number = 10
     ): Promise<PagedResult<LocationHistoryDto>> => {
-        const response = await api.get<PagedResult<LocationHistoryDto>>(
-            `/motors/${id}/location-history/paged?page=${page}&pageSize=${pageSize}`
+        const response = await apiClient.get<PagedResult<LocationHistoryDto>>(
+            `/motors/${id}/location-history/paged`,
+            { params: { page, pageSize } }
         );
         return response.data;
     },
@@ -180,13 +177,15 @@ export const motorApi = {
         fromDate?: string,
         toDate?: string
     ): Promise<PagedResult<MaintenanceLogDto>> => {
-        const params = new URLSearchParams();
-        params.append('page', page.toString());
-        params.append('pageSize', pageSize.toString());
-        if (workType) params.append('workType', workType);
-        if (fromDate) params.append('fromDate', fromDate);
-        if (toDate) params.append('toDate', toDate);
-        const response = await api.get<PagedResult<MaintenanceLogDto>>(`/motors/${id}/maintenance-logs/paged?${params.toString()}`);
+        const params: Record<string, any> = { page, pageSize };
+        if (workType) params.workType = workType;
+        if (fromDate) params.fromDate = fromDate;
+        if (toDate) params.toDate = toDate;
+
+        const response = await apiClient.get<PagedResult<MaintenanceLogDto>>(
+            `/motors/${id}/maintenance-logs/paged`,
+            { params }
+        );
         return response.data;
     },
 
@@ -197,7 +196,7 @@ export const motorApi = {
      * @param data - DTO с обновляемыми полями.
      */
     updateMaintenanceLog: async (motorId: number, logId: number, data: UpdateMaintenanceLogDto): Promise<void> => {
-        await api.put(`/motors/${motorId}/maintenance/${logId}`, data);
+        await apiClient.put(`/motors/${motorId}/maintenance/${logId}`, data);
     },
 
     /**
@@ -206,7 +205,7 @@ export const motorApi = {
      * @param logId - Идентификатор записи обслуживания.
      */
     deleteMaintenanceLog: async (motorId: number, logId: number): Promise<void> => {
-        await api.delete(`/motors/${motorId}/maintenance/${logId}`);
+        await apiClient.delete(`/motors/${motorId}/maintenance/${logId}`);
     },
 
     /**
@@ -216,7 +215,7 @@ export const motorApi = {
      * @param data - Объект с новым местоположением.
      */
     updateLocationHistory: async (motorId: number, locationHistoryId: number, data: UpdateLocationHistoryDto): Promise<void> => {
-        await api.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
+        await apiClient.put(`/motors/${motorId}/location-history/${locationHistoryId}`, data);
     },
 
     /**
@@ -225,7 +224,7 @@ export const motorApi = {
      * @param locationHistoryId - Идентификатор записи истории.
      */
     deleteLocationHistory: async (motorId: number, locationHistoryId: number): Promise<void> => {
-        await api.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
+        await apiClient.delete(`/motors/${motorId}/location-history/${locationHistoryId}`);
     },
 
     /**
@@ -234,8 +233,8 @@ export const motorApi = {
      * @param data - DTO с новым инвентарным номером (null – удалить номер).
      */
     setInventoryNumber: async (motorId: number, data: SetInventoryNumberDto): Promise<void> => {
-        await api.patch(`/motors/${motorId}/inventory-number`, data);
-    }
+        await apiClient.patch(`/motors/${motorId}/inventory-number`, data);
+    },
 };
 
 /**
@@ -247,7 +246,7 @@ export const lubricantApi = {
      * @returns Массив типов смазки.
      */
     getAll: async (): Promise<LubricantType[]> => {
-        const response = await api.get<LubricantType[]>('/lubricanttypes');
+        const response = await apiClient.get<LubricantType[]>('/lubricanttypes');
         return response.data;
     },
 
@@ -257,7 +256,7 @@ export const lubricantApi = {
      * @returns Тип смазки.
      */
     getById: async (id: number): Promise<LubricantType> => {
-        const response = await api.get<LubricantType>(`/lubricanttypes/${id}`);
+        const response = await apiClient.get<LubricantType>(`/lubricanttypes/${id}`);
         return response.data;
     },
 
@@ -267,7 +266,7 @@ export const lubricantApi = {
      * @returns Созданный тип смазки.
      */
     create: async (data: CreateLubricantTypeDto): Promise<LubricantType> => {
-        const response = await api.post<LubricantType>('/lubricanttypes', data);
+        const response = await apiClient.post<LubricantType>('/lubricanttypes', data);
         return response.data;
     },
 
@@ -278,7 +277,7 @@ export const lubricantApi = {
      * @returns Обновлённый тип смазки.
      */
     update: async (id: number, data: UpdateLubricantTypeDto): Promise<LubricantType> => {
-        const response = await api.put<LubricantType>(`/lubricanttypes/${id}`, data);
+        const response = await apiClient.put<LubricantType>(`/lubricanttypes/${id}`, data);
         return response.data;
     },
 
@@ -287,8 +286,8 @@ export const lubricantApi = {
      * @param id - Идентификатор типа смазки.
      */
     delete: async (id: number): Promise<void> => {
-        await api.delete(`/lubricanttypes/${id}`);
-    }
+        await apiClient.delete(`/lubricanttypes/${id}`);
+    },
 };
 
 /**
@@ -317,7 +316,7 @@ export const reportsApi = {
         if (workType) params.append('workType', workType);
         params.append('page', page.toString());
         params.append('pageSize', pageSize.toString());
-        const response = await api.get<PagedResult<MaintenanceReportItemDto>>(`/reports/maintenance?${params.toString()}`);
+        const response = await apiClient.get<PagedResult<MaintenanceReportItemDto>>(`/reports/maintenance?${params.toString()}`);
         return response.data;
     },
 
@@ -334,7 +333,7 @@ export const reportsApi = {
         const params = new URLSearchParams();
         if (fromDate) params.append('fromDate', fromDate);
         if (toDate) params.append('toDate', toDate);
-        const response = await api.get<MaintenanceReportSummaryDto[]>(`/reports/maintenance/summary?${params.toString()}`);
+        const response = await apiClient.get<MaintenanceReportSummaryDto[]>(`/reports/maintenance/summary?${params.toString()}`);
         return response.data;
     }
 };

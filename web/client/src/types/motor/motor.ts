@@ -259,6 +259,8 @@ export interface MotorListItem {
     status: MotorStatus;
     /** Текущее местоположение */
     currentLocation: string;
+    /** Тип монтажа */
+    mountingType: MountingType;
 }
 
 /**
@@ -316,23 +318,6 @@ export interface UpdateLubricantTypeDto {
 }
 
 /**
- * Обёртка для пагинированного ответа от API.
- * @template T Тип элементов на странице.
- */
-export interface PagedResult<T> {
-    /** Элементы текущей страницы */
-    items: T[];
-    /** Общее количество записей */
-    totalCount: number;
-    /** Номер текущей страницы */
-    pageNumber: number;
-    /** Размер страницы */
-    pageSize: number;
-    /** Общее количество страниц */
-    totalPages: number;
-}
-
-/**
 * DTO для записи в отчёте по обслуживанию (детальная информация).
 */
 export interface MaintenanceReportItemDto {
@@ -372,4 +357,21 @@ export interface MaintenanceReportSummaryDto {
     workType: string;
     /** Количество записей обслуживания данного типа */
     count: number;
+}
+
+/**
+ * Обёртка для пагинированного ответа от API.
+ * @template T Тип элементов на странице.
+ */
+export interface PagedResult<T> {
+    /** Элементы текущей страницы */
+    items: T[];
+    /** Общее количество записей */
+    totalCount: number;
+    /** Номер текущей страницы */
+    pageNumber: number;
+    /** Размер страницы */
+    pageSize: number;
+    /** Общее количество страниц */
+    totalPages: number;
 }

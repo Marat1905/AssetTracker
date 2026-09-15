@@ -1,88 +1,132 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+/**
+ * Главный компонент приложения.
+ * Управляет темой оформления (светлая/тёмная) и отображает глобальные уведомления.
+ * Содержит две кнопки в правом верхнем углу:
+ *   • переключение тестовой роли (User / Electric / Admin);
+ *   • переключение темы.
+ * Также оборачивает приложение в AuthProvider (тестовый)
+ * и содержит маршруты для страниц моторов.
+ */
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router';
 import { Toaster } from 'react-hot-toast';
-import Dashboard from './pages/Dashboard';
-import MotorDetails from './pages/MotorDetails';
-import LubricantTypesPage from './pages/LubricantTypesPage';
-import ReportsPage from './pages/ReportsPage';
+import { FiSun, FiMoon, FiUser, FiShield, FiUserCheck } from 'react-icons/fi';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import MotorsPage from './pages/Motor/MotorsPage';
+import MotorDetails from './pages/Motor/MotorDetails';
+import './index.css';
 
-function Header() {
-    return (
-        <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center h-16">
-                    <Link to="/" className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-xl bg-purple-600 flex items-center justify-center shadow">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
-                        <span className="font-bold text-xl text-purple-600 dark:text-purple-400">
-                            MotorTrack
-                        </span>
-                    </Link>
-                    <div className="flex items-center space-x-4">
-                        {/* Кнопка перехода к отчётам */}
-                        <Link
-                            to="/reports"
-                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-colors"
-                        >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Отчёты
-                        </Link>
-                        {/* Кнопка перехода к справочнику типов смазки */}
-                        <Link
-                            to="/lubricant-types"
-                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50 transition-colors"
-                        >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                            </svg>
-                            Типы смазки
-                        </Link>
-                        <Link
-                            to="/motors/new"
-                            className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors"
-                        >
-                            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Электродвигателя
-                        </Link>
-                        <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">Управление электродвигателями</span>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
-}
+/** Иконка для текущей тестовой роли */
+const RoleIcon: React.FC<{ role: string }> = ({ role }) => {
+    if (role === 'Admin') return <FiShield className="w-5 h-5" />;
+    if (role === 'Electric') return <FiUserCheck className="w-5 h-5" />;
+    return <FiUser className="w-5 h-5" />;
+};
 
-function App() {
+/**
+ * Внутренний компонент — внутри AuthProvider,
+ * поэтому может использовать useAuth().
+ */
+const AppInner: React.FC = () => {
+    // Состояние темы: 'light' или 'dark'
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light' || saved === 'dark') return saved;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    });
+
+    // Применяем класс `dark` к корневому элементу при изменении темы
+    useEffect(() => {
+        const root = document.documentElement;
+        if (theme === 'dark') {
+            root.classList.add('dark');
+        } else {
+            root.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    // Переключение темы
+    const toggleTheme = () => {
+        setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+    };
+
+    // Текущая тестовая роль и функция её переключения
+    const { testRole, cycleTestRole } = useAuth();
+
+    // Подписи и цвета для кнопки роли
+    const roleLabel =
+        testRole === 'Admin' ? 'Админ' :
+            testRole === 'Electric' ? 'Электрослужба' :
+                'Пользователь';
+
+    const roleColor =
+        testRole === 'Admin'
+            ? 'text-purple-600 dark:text-purple-400'
+            : testRole === 'Electric'
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-gray-700 dark:text-gray-200';
+
     return (
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <>
+            {/* Глобальный контейнер для уведомлений (тостов) */}
             <Toaster
                 position="top-right"
                 toastOptions={{
                     duration: 4000,
                     style: {
-                        background: 'var(--card-bg)',
-                        color: 'var(--text-h)',
-                        border: '1px solid var(--border)',
+                        background: theme === 'dark' ? '#1f2937' : '#fff',
+                        color: theme === 'dark' ? '#f3f4f6' : '#1f2937',
                     },
                 }}
             />
-            <Header />
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/motors/new" element={<Dashboard />} />
-                    <Route path="/motors/:id" element={<MotorDetails />} />
-                    <Route path="/lubricant-types" element={<LubricantTypesPage />} />
-                    <Route path="/reports" element={<ReportsPage />} />
-                </Routes>
-            </main>
-        </BrowserRouter>
+
+            {/* Панель кнопок в правом верхнем углу: роль + тема */}
+            <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+                {/* Кнопка смены тестовой роли (User → Electric → Admin → User) */}
+                <button
+                    onClick={cycleTestRole}
+                    className="flex items-center gap-2 px-3 py-2 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 transition-all hover:scale-105"
+                    aria-label="Переключить тестовую роль"
+                    title={`Тестовая роль: ${roleLabel} (клик — следующая)`}
+                >
+                    <span className={roleColor}>
+                        <RoleIcon role={testRole} />
+                    </span>
+                    <span className={`text-xs font-medium ${roleColor}`}>{roleLabel}</span>
+                </button>
+
+                {/* Кнопка переключения темы */}
+                <button
+                    onClick={toggleTheme}
+                    className="p-2 rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg border border-gray-200 dark:border-gray-700 transition-all hover:scale-110"
+                    aria-label="Переключить тему"
+                >
+                    {theme === 'light' ? (
+                        <FiMoon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                    ) : (
+                        <FiSun className="w-5 h-5 text-yellow-500" />
+                    )}
+                </button>
+            </div>
+
+            {/* Маршруты приложения */}
+            <Routes>
+                <Route path="/motors" element={<MotorsPage />} />
+                <Route path="/motors/:id" element={<MotorDetails />} />
+            </Routes>
+        </>
+    );
+};
+
+/** Обёртка с AuthProvider — здесь и только здесь создаётся контекст */
+function App() {
+    return (
+        <AuthProvider>
+            <BrowserRouter>
+                <AppInner />
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 
