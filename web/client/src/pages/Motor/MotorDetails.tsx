@@ -243,7 +243,7 @@ export default function MotorDetails() {
         try {
             await motorApi.deleteMotor(motorId);
             toast.success('Двигатель удалён');
-            navigate('/electric-motors');
+            navigate('/motors');
         } catch (err: any) {
             toast.error(err.response?.data?.error || 'Ошибка удаления');
         }
@@ -418,7 +418,7 @@ export default function MotorDetails() {
             {/* Верхняя панель: кнопка "Назад к списку" слева, хлебные крошки справа */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <Link
-                    to="/electric-motors"
+                    to="/motors"
                     className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors group"
                 >
                     <svg
@@ -440,7 +440,7 @@ export default function MotorDetails() {
                 {/* Хлебные крошки (справа) */}
                 <nav className="flex items-center gap-1.5 text-sm">
                     <Link
-                        to="/electric-motors"
+                        to="/motors"
                         className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
                         Электродвигатели

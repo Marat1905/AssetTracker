@@ -157,7 +157,7 @@ export default function MotorList() {
     };
 
     const handleRowClick = (id: number) => {
-        navigate(`/electric-motors/${id}`);
+        navigate(`/motors/${id}`);
     };
 
     /**
