@@ -1,6 +1,7 @@
 ﻿using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Enums;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AssetTracker.WebAPI.Controllers;
@@ -8,8 +9,9 @@ namespace AssetTracker.WebAPI.Controllers;
 /// <summary>
 /// Контроллер для формирования отчётов.
 /// </summary>
+[ApiVersion("1.0")]
 [ApiController]
-[Route("api/[controller]")]
+[Route("motor/api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
 public class ReportsController : ControllerBase
 {
@@ -47,6 +49,7 @@ public class ReportsController : ControllerBase
 
             var result = await _motorService.GetMaintenanceReportPagedAsync(
                 fromDate, toDate, workType, page, pageSize);
+
             return Ok(result);
         }
         catch (ArgumentException ex)

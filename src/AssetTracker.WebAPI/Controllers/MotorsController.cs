@@ -1,6 +1,7 @@
 ﻿using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
 using AssetTracker.Domain.Enums;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,8 +10,9 @@ namespace AssetTracker.WebAPI.Controllers;
 /// <summary>
 /// Контроллер для управления электродвигателями.
 /// </summary>
+[ApiVersion("1.0")]
 [ApiController]
-[Route("api/[controller]")]
+[Route("motor/api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
 public class MotorsController : ControllerBase
 {
@@ -137,7 +139,7 @@ public class MotorsController : ControllerBase
     /// <param name="inventoryNumber">Фильтр по инвентарному номеру (частичное совпадение).</param>
     /// <param name="location">Фильтр по текущему местоположению (частичное совпадение).</param>
     /// <param name="status">Фильтр по статусу.</param>
-    /// <param name="hasInventoryNumber">//Фильтр по наличию инвентарного номера: true – только с номером, false – только без номера, null – все.</param>
+    /// <param name="hasInventoryNumber">Фильтр по наличию инвентарного номера: true – только с номером, false – только без номера, null – все.</param>
     /// <returns>Страница с результатами.</returns>
     [HttpGet("paged")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -147,10 +149,11 @@ public class MotorsController : ControllerBase
         [FromQuery] string? inventoryNumber = null,
         [FromQuery] string? location = null,
         [FromQuery] MotorStatus? status = null,
-        [FromQuery] bool? hasInventoryNumber = null) //параметр фильтрации
+        [FromQuery] bool? hasInventoryNumber = null) // параметр фильтрации
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
+
         var result = await _motorService.GetMotorsPagedAsync(page, pageSize, inventoryNumber, location, status, hasInventoryNumber);
         return Ok(result);
     }
@@ -172,6 +175,7 @@ public class MotorsController : ControllerBase
     {
         if (page < 1) page = 1;
         if (pageSize < 1) pageSize = 10;
+
         var result = await _motorService.GetMotorLocationHistoryPagedAsync(motorId, page, pageSize);
         return Ok(result);
     }

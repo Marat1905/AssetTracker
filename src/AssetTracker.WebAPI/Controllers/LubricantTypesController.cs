@@ -1,5 +1,6 @@
 ﻿using AssetTracker.Application.DTOs;
 using AssetTracker.Application.Interfaces;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,8 +9,9 @@ namespace AssetTracker.WebAPI.Controllers;
 /// <summary>
 /// Контроллер для управления типами смазки.
 /// </summary>
+[ApiVersion("1.0")]
 [ApiController]
-[Route("api/[controller]")]
+[Route("motor/api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
 public class LubricantTypesController : ControllerBase
 {
