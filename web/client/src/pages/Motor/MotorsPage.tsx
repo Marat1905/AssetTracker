@@ -1,10 +1,7 @@
 import { useState } from 'react';
-import PageBreadcrumb from '../../components/common/PageBreadCrumb';
+import { PageBreadcrumb } from '../../components/common';
 /*import PageMeta from '../../components/common/PageMeta';*/
-import MotorList from '../../components/motor/MotorList';
-import CreateMotorForm from '../../components/motor/CreateMotorForm';
-import ManageLubricantsModal from '../../components/motor/ManageLubricantsModal';
-import MaintenanceReport from '../../components/motor/MaintenanceReport';
+import { MotorList, CreateMotorForm, ManageLubricantsModal, MaintenanceReport } from '../../components/motor';
 import { useAuth } from '../../context/AuthContext';
 import { FaList, FaChartBar } from 'react-icons/fa';
 
