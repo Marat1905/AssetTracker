@@ -27,18 +27,11 @@
 import { useParams, Link, useNavigate } from 'react-router';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns'; // Импорт format из date-fns для форматирования дат
-import MotorHistory from '../../components/motor/MotorHistory';
-import EditMotorModal from '../../components/motor/EditMotorModal';
-import EditInventoryModal from '../../components/motor/EditInventoryModal';
-import MoveMotorForm from '../../components/motor/MoveMotorForm';
-import MaintenanceForm from '../../components/motor/MaintenanceForm';
-import EditMaintenanceModal from '../../components/motor/EditMaintenanceModal';
-import EditLocationModal from '../../components/motor/EditLocationModal';
+import { MotorHistory, EditMotorModal, EditInventoryModal, MoveMotorForm, MaintenanceForm, EditMaintenanceModal, EditLocationModal } from '../../components/motor';
 import { motorApi } from '../../services/motor/api';
 import type { MotorFullHistoryDto, LocationHistoryDto, MaintenanceLogDto } from '../../types/motor/motor';
 import toast from 'react-hot-toast';
-import Pagination from '../../components/common/Pagination';
-import RangeDatePicker from '../../components/common/RangeDatePicker';
+import { Pagination, RangeDatePicker } from '../../components/common';
 import { maintenanceTypeLabels, bearingPositionLabels, motorStatusLabels } from '../../utils/motor/locales';
 import { useAuth } from '../../context/AuthContext'; // Импорт контекста авторизации
 import { BearingIcon } from '../../icon'; // Импорт иконки подшипника
