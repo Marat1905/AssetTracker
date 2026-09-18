@@ -28,10 +28,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F23EA60C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetTracker.Tests", "tests\AssetTracker.Tests\AssetTracker.Tests.csproj", "{D940D9D0-4017-4BF2-BD11-8E8C78860767}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "web", "web", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
-EndProject
-Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "client", "web\client\client.esproj", "{485E3DE1-D647-BD96-1022-EA1E7CDE81E7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
