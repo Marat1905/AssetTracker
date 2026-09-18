@@ -25,7 +25,7 @@ import {
     responseErrorInterceptor,
 } from '../axiosInterceptors';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = '/motor/api/v1';
 
 // Создаём экземпляр axios с базовым URL и общими заголовками
 const apiClient = axios.create({
