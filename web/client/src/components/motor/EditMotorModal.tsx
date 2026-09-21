@@ -1,23 +1,12 @@
 // EditMotorModal.tsx
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { motorApi } from '../../services/motor/api';
-import { type MotorStatus, MountingType, type MotorFullHistoryDto, type UpdateMotorRequest } from '../../types/motor/motor';
+import { type MotorFullHistoryDto, type UpdateMotorRequest } from '../../types/motor/motor';
 import { motorStatusLabels, mountingTypeLabels } from '../../utils/motor/locales';
-
-// Схема валидации – без статуса (статус меняется только через перемещение)
-const schema = z.object({
-    type: z.string().min(1, 'Тип обязателен'),
-    shaftDiameter: z.number().positive('Диаметр вала > 0'),
-    power: z.number().positive('Мощность > 0'),
-    speed: z.number().positive('Обороты > 0'),
-    mountingType: z.nativeEnum(MountingType),
-});
-
-type FormData = z.infer<typeof schema>;
+import { editMotorSchema, type EditMotorFormData } from '../../schemas/motor';
 
 interface Props {
     /** Полные данные двигателя (для предзаполнения) */
@@ -50,8 +39,8 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
         : 'без инв. номера';
     const locationText = currentLocation ? ` (Место: ${currentLocation})` : '';
 
-    const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FormData>({
-        resolver: zodResolver(schema),
+    const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<EditMotorFormData>({
+        resolver: zodResolver(editMotorSchema),
         defaultValues: {
             type: motor.type,
             shaftDiameter: motor.shaftDiameter,
@@ -72,7 +61,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
         });
     }, [motor, reset]);
 
-    const onSubmit = async (data: FormData) => {
+    const onSubmit = async (data: EditMotorFormData) => {
         try {
             // Отправляем все поля, включая статус (берём текущий из motor, так как он не редактируется в форме)
             const updateData: UpdateMotorRequest = {
