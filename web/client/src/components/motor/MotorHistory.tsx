@@ -1,5 +1,6 @@
-import type { MotorFullHistoryDto, MotorStatus } from '../../types/motor/motor';
+import type { MotorFullHistoryDto } from '../../types/motor/motor';
 import { motorStatusLabels, mountingTypeLabels, mountingCodes } from '../../utils/motor/locales';
+import { getStatusColorClasses } from '../../utils/motor/statusColors';
 import MotorDiagram from './MotorDiagram';
 
 /**
@@ -19,32 +20,16 @@ interface Props {
 }
 
 /**
- * Возвращает CSS-классы для цветового оформления бейджа статуса.
- * @param status - Статус двигателя.
- * @returns Строка с классами Tailwind.
- */
-const getStatusColorClasses = (status: MotorStatus): string => {
-    switch (status) {
-        case 'InOperation':
-            return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
-        case 'Reserve':
-            return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
-        case 'Repair':
-            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
-        case 'Scrapped':
-            return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
-        default:
-            return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-    }
-};
-
-/**
  * Компонент, отображающий паспортные данные двигателя:
  * - схема с подшипниками и смазкой
  * - основные характеристики
  * - блок подшипников с производителем, поставщиком и последней смазкой
  * - кнопки редактирования и удаления (передаются из родителя)
  * - кнопка редактирования инвентарного номера
+ *
+ * Цвета бейджа статуса берутся из общей утилиты getStatusColorClasses
+ * (utils/motor/statusColors.ts), чтобы не дублировать логику между
+ * MotorHistory, MotorList, MotorDetails и отчётами.
  */
 export default function MotorHistory({ motorData, onEdit, onDelete, onEditInventory }: Props) {
     const codes = mountingCodes[motorData.mountingType] || { numeric: '', alpha: '' };

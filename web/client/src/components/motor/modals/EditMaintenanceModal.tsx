@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { motorApi, lubricantApi } from '../../services/motor/api';
-import type { MaintenanceLogDto, LubricantType, UpdateMaintenanceLogDto } from '../../types/motor/motor';
+import { motorApi, lubricantApi } from '../../../services/motor/api';
+import type { MaintenanceLogDto, LubricantType, UpdateMaintenanceLogDto } from '../../../types/motor/motor';
 import toast from 'react-hot-toast';
 
 interface Props {

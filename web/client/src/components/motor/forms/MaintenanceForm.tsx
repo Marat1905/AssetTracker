@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { MaintenanceType, BearingPosition, type LubricantType, type MotorFullHistoryDto } from '../../types/motor/motor';
-import { motorApi, lubricantApi } from '../../services/motor/api';
+import { MaintenanceType, BearingPosition, type LubricantType, type MotorFullHistoryDto } from '../../../types/motor/motor';
+import { motorApi, lubricantApi } from '../../../services/motor/api';
 import toast from 'react-hot-toast';
 
 const workTypes = [

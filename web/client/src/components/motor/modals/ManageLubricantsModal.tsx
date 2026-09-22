@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { lubricantApi } from '../../services/motor/api';
-import type { LubricantType, CreateLubricantTypeDto } from '../../types/motor/motor';
+import { lubricantApi } from '../../../services/motor/api';
+import type { LubricantType, CreateLubricantTypeDto } from '../../../types/motor/motor';
 import toast from 'react-hot-toast';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../../context/AuthContext';
 
 interface Props {
     isOpen: boolean;

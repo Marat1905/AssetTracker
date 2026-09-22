@@ -1,22 +1,24 @@
 // MotorList.tsx
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import type { MotorListItem } from '../../types/motor/motor';
-import { useMotorList, useIsMobile } from '../../hooks/motor';
-import { useAuth } from '../../context/AuthContext';
-import Pagination from '../common/Pagination';
-import EditMotorModal from './EditMotorModal';
-import { MotorListCardView, MotorListTableView } from './MotorList/';
+import type { MotorListItem } from '../../../types/motor/motor';
+import { useMotorList, useIsMobile } from '../../../hooks/motor';
+import { useAuth } from '../../../context/AuthContext';
+import Pagination from '../../common/Pagination';
+import EditMotorModal from '../modals/EditMotorModal';
+import MotorListCardView from './MotorListCardView';
+import MotorListTableView from './MotorListTableView';
+import { motorStatusLabels } from '../../../utils/motor/locales';
 import {
     FaThLarge as LayoutGrid,
     FaTable as Table,
 } from 'react-icons/fa';
-import { useState, useEffect } from 'react';
-import { motorStatusLabels } from '../../utils/motor/locales';
 
 /**
  * Список электродвигателей с возможностью поиска, фильтрации, пагинации
  * и переключения между карточным и табличным режимами отображения.
  * Содержит кнопки редактирования/удаления, доступные только админам и электрикам.
+ * Использует хук useMotorList для управления состоянием.
  */
 export default function MotorList() {
     const navigate = useNavigate();

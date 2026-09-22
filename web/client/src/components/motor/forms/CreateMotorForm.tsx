@@ -1,10 +1,10 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
-import { motorApi } from '../../services/motor/api';
-import { MotorStatus, MountingType, type CreateMotorDto } from '../../types/motor/motor';
-import { motorStatusLabels, mountingTypeLabels } from '../../utils/motor/locales';
-import { createMotorSchema, type CreateMotorFormData } from '../../schemas/motor';
+import { motorApi } from '../../../services/motor/api';
+import { MotorStatus, MountingType, type CreateMotorDto } from '../../../types/motor/motor';
+import { motorStatusLabels, mountingTypeLabels } from '../../../utils/motor/locales';
+import { createMotorSchema, type CreateMotorFormData } from '../../../schemas/motor';
 
 interface Props {
     /** Флаг видимости модального окна (только для модального режима) */
@@ -183,7 +183,9 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                     <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-2">Передний подшипник</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Тип
+                            </label>
                             <input
                                 {...register('frontBearingType')}
                                 className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
@@ -192,7 +194,9 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                             {errors.frontBearingType && <p className="text-red-600 dark:text-red-400 text-xs">{errors.frontBearingType.message}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Производитель</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Производитель
+                            </label>
                             <input
                                 {...register('frontBearingManufacturer')}
                                 className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
@@ -201,7 +205,9 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                             {errors.frontBearingManufacturer && <p className="text-red-600 dark:text-red-400 text-xs">{errors.frontBearingManufacturer.message}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Поставщик</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Поставщик
+                            </label>
                             <input
                                 {...register('frontBearingSupplier')}
                                 className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
@@ -217,7 +223,9 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                     <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-2">Задний подшипник</h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Тип</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Тип
+                            </label>
                             <input
                                 {...register('rearBearingType')}
                                 className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
@@ -226,7 +234,9 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                             {errors.rearBearingType && <p className="text-red-600 dark:text-red-400 text-xs">{errors.rearBearingType.message}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Производитель</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Производитель
+                            </label>
                             <input
                                 {...register('rearBearingManufacturer')}
                                 className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
@@ -235,7 +245,9 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                             {errors.rearBearingManufacturer && <p className="text-red-600 dark:text-red-400 text-xs">{errors.rearBearingManufacturer.message}</p>}
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Поставщик</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Поставщик
+                            </label>
                             <input
                                 {...register('rearBearingSupplier')}
                                 className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"

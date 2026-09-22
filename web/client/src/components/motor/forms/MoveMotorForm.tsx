@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { motorApi } from '../../services/motor/api';
-import { MotorStatus } from '../../types/motor/motor';
-import { motorStatusLabels } from '../../utils/motor/locales';
+import { motorApi } from '../../../services/motor/api';
+import { MotorStatus } from '../../../types/motor/motor';
+import { motorStatusLabels } from '../../../utils/motor/locales';
 
 interface Props {
     /** Флаг видимости модального окна (только для модального режима) */

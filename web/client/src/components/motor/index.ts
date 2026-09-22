@@ -1,12 +1,19 @@
-export { default as CreateMotorForm } from './CreateMotorForm';
-export { default as EditInventoryModal } from './EditInventoryModal';
-export { default as EditLocationModal } from './EditLocationModal';
-export { default as EditMaintenanceModal } from './EditMaintenanceModal';
-export { default as EditMotorModal } from './EditMotorModal';
-export { default as MaintenanceForm } from './MaintenanceForm';
-export { default as MaintenanceReport } from './MaintenanceReport';
-export { default as ManageLubricantsModal } from './ManageLubricantsModal';
+// Формы
+export { CreateMotorForm, MaintenanceForm, MoveMotorForm } from './forms';
+
+// Модальные окна
+export {
+    EditInventoryModal,
+    EditLocationModal,
+    EditMaintenanceModal,
+    EditMotorModal,
+    ManageLubricantsModal,
+} from './modals';
+
+// Отображение (остаются в корне)
 export { default as MotorDiagram } from './MotorDiagram';
 export { default as MotorHistory } from './MotorHistory';
+
+// Основные компоненты со своими подпапками
 export { default as MotorList } from './MotorList';
-export { default as MoveMotorForm } from './MoveMotorForm';
+export { default as MaintenanceReport } from './MaintenanceReport';

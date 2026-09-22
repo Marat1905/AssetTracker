@@ -3,10 +3,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { motorApi } from '../../services/motor/api';
-import { type MotorFullHistoryDto, type UpdateMotorRequest } from '../../types/motor/motor';
-import { motorStatusLabels, mountingTypeLabels } from '../../utils/motor/locales';
-import { editMotorSchema, type EditMotorFormData } from '../../schemas/motor';
+import { motorApi } from '../../../services/motor/api';
+import { type MotorFullHistoryDto, type UpdateMotorRequest } from '../../../types/motor/motor';
+import { motorStatusLabels, mountingTypeLabels } from '../../../utils/motor/locales';
+import { editMotorSchema, type EditMotorFormData } from '../../../schemas/motor';
 
 interface Props {
     /** Полные данные двигателя (для предзаполнения) */

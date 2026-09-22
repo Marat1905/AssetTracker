@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { motorApi } from '../../services/motor/api';
-import type { SetInventoryNumberDto } from '../../types/motor/motor';
+import { motorApi } from '../../../services/motor/api';
+import type { SetInventoryNumberDto } from '../../../types/motor/motor';
 import toast from 'react-hot-toast';
 
 interface Props {

@@ -1,19 +1,20 @@
-// src/components/motor/MaintenanceReport.tsx
+// src/components/motor/MaintenanceReport/MaintenanceReport.tsx
 
-import { useIsMobile, useMaintenanceReport } from '../../hooks/motor';
-import Pagination from '../common/Pagination';
-import RangeDatePicker from '../common/RangeDatePicker';
-import { maintenanceTypeLabels } from '../../utils/motor/locales';
+import { useState, useEffect } from 'react';
+import { useIsMobile, useMaintenanceReport } from '../../../hooks/motor';
+import Pagination from '../../common/Pagination';
+import RangeDatePicker from '../../common/RangeDatePicker';
+import { maintenanceTypeLabels } from '../../../utils/motor/locales';
+import { BearingIcon } from '../../../icon/';
+import MaintenanceReportCardView from './MaintenanceReportCardView';
+import MaintenanceReportTableView from './MaintenanceReportTableView';
 import {
     FaFilter, FaTimes, FaInfoCircle, FaOilCan, FaBolt, FaWrench, FaCogs,
     FaThLarge as LayoutGrid, FaTable as Table,
 } from 'react-icons/fa';
-import { BearingIcon } from '../../icon/';
-import { MaintenanceReportCardView, MaintenanceReportTableView } from './MaintenanceReport/';
-import { useState, useEffect } from 'react';
 
 /**
- * Возвращает цветовые классы для типа работ (для сводки).
+ * Возвращает цветовые классы для типа работ (используется в блоке сводки).
  */
 const getWorkTypeStyle = (workType: string) => {
     switch (workType) {
@@ -26,7 +27,7 @@ const getWorkTypeStyle = (workType: string) => {
 };
 
 /**
- * Возвращает иконку для типа работ (для сводки).
+ * Возвращает иконку для типа работ (используется в блоке сводки).
  */
 const getWorkTypeIcon = (workType: string) => {
     switch (workType) {
@@ -127,6 +128,7 @@ export default function MaintenanceReport() {
                             Сброс
                         </button>
                     </div>
+                    {/* Переключатель режимов отображения (только если не мобильный) */}
                     {!isMobile && (
                         <div className="flex items-center gap-1 bg-gray-200 dark:bg-gray-700 rounded-lg p-0.5 ml-auto">
                             <button
