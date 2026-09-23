@@ -5,7 +5,7 @@ import { useIsMobile, useMaintenanceReport } from '../../../hooks/motor';
 import Pagination from '../../common/Pagination';
 import RangeDatePicker from '../../common/RangeDatePicker';
 import { maintenanceTypeLabels } from '../../../utils/motor/locales';
-import { BearingIcon } from '../../../icon/';
+import { BearingIcon } from '../../../icons/';
 import MaintenanceReportCardView from './MaintenanceReportCardView';
 import MaintenanceReportTableView from './MaintenanceReportTableView';
 import {

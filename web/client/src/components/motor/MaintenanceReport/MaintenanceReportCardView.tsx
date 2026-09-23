@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fa';
 import type { MaintenanceReportItemDto } from '../../../types/motor/motor';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../../../utils/motor/locales';
-import { BearingIcon } from '../../../icon';
+import { BearingIcon } from '../../../icons';
 
 /**
  * Свойства компонента карточного отображения детального отчёта по обслуживанию.

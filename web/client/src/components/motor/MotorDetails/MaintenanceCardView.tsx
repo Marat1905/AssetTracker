@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fa';
 import type { MaintenanceLogDto } from '../../../types/motor/motor';
 import { maintenanceTypeLabels, bearingPositionLabels } from '../../../utils/motor/locales';
-import { BearingIcon } from '../../../icon';
+import { BearingIcon } from '../../../icons';
 import { FaBolt, FaWrench } from 'react-icons/fa';
 
 /**

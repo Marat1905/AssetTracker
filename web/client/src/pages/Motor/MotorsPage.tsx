@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PageBreadcrumb } from '../../components/common';
+import { PageBreadCrumb } from '../../components/common';
 /*import PageMeta from '../../components/common/PageMeta';*/
 import { MotorList, CreateMotorForm, ManageLubricantsModal, MaintenanceReport } from '../../components/motor';
 import { useAuth } from '../../context/AuthContext';
