@@ -1,17 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: assettracker-api
+  namespace: uchaly
   labels:
     io.kompose.service: assettracker-api
-  name: assettracker-api
   annotations:
-    # Включаем автоматическое обновление
-    keel.sh/policy: force
-    # Keel будет проверять реестр ghcr.io каждые 10 минут
+    # ИСПРАВЛЕНО: Вместо "semver" указываем "minor" (или "patch")
+    keel.sh/policy: minor
+    # Включаем опрос реестра
     keel.sh/trigger: poll
-    keel.sh/pollSchedule: "@every 10m"
+    # Интервал опроса (каждые 20 минут)
+    keel.sh/pollSchedule: "@every 20m"
 spec:
-  replicas: 1 # Количество подов
+  replicas: 1
   selector:
     matchLabels:
       io.kompose.service: assettracker-api
@@ -20,20 +22,20 @@ spec:
       labels:
         io.kompose.service: assettracker-api
     spec:
-      # Важно: используем секрет для скачивания из GHCR
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
       containers:
-        - env:
+        - name: assettracker-api
+          image: ghcr.io/marat1905/assettracker-api:1.2.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
             - name: ASPNETCORE_ENVIRONMENT
               value: Production
             - name: ASPNETCORE_HTTP_PORTS
               value: "8080"
             - name: ConnectionStrings__DefaultConnection
               value: Host=assettracker-db;Port=5432;Database=assettracker;Username=postgresuser;Password=12345678
-          image: ghcr.io/marat1905/assettracker-api:latest
-          name: assettracker-api
-          ports:
-            - containerPort: 8080
-              protocol: TCP
       restartPolicy: Always

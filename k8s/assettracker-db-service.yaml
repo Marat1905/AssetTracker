@@ -1,13 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
+  name: assettracker-db
+  namespace: uchaly
   labels:
     io.kompose.service: assettracker-db
-  name: assettracker-db
 spec:
   type: NodePort
   ports:
-    - name: "http-db"
+    - name: "tcp-db"
       nodePort: 30153
       port: 5432
       targetPort: 5432

@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
+  name: assettracker-db-data
+  namespace: uchaly
   labels:
     io.kompose.service: assettracker-db-data
-  name: assettracker-db-data
 spec:
   accessModes:
     - ReadWriteOnce
