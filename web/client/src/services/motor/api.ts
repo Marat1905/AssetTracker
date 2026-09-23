@@ -17,6 +17,7 @@ import type {
     SetInventoryNumberDto,
     MaintenanceReportItemDto,
     MaintenanceReportSummaryDto,
+    VersionResponse,
 } from '../../types/motor/motor';
 import {
     requestInterceptor,
@@ -336,4 +337,19 @@ export const reportsApi = {
         const response = await apiClient.get<MaintenanceReportSummaryDto[]>(`/reports/maintenance/summary?${params.toString()}`);
         return response.data;
     }
+};
+
+/**
+ * API-функции для получения информации о версии бэкенда.
+ */
+export const versionApi = {
+    /**
+     * Получить информацию о версии запущенного приложения.
+     * Соответствует GET /motor/api/v1/Version на бэкенде (VersionController).
+     * @returns Объект с именем приложения, версией, окружением, хэшем коммита и датой сборки.
+     */
+    getVersion: async (): Promise<VersionResponse> => {
+        const response = await apiClient.get<VersionResponse>('/version');
+        return response.data;
+    },
 };

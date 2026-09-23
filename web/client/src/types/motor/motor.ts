@@ -375,3 +375,20 @@ export interface PagedResult<T> {
     /** Общее количество страниц */
     totalPages: number;
 }
+
+/**
+ * DTO с информацией о версии бэкенда.
+ * Соответствует VersionResponse из VersionController на сервере.
+ */
+export interface VersionResponse {
+    /** Имя приложения (сборки) */
+    applicationName: string;
+    /** Версия приложения (из APP_VERSION или версии сборки .NET) */
+    version: string;
+    /** Окружение (Development / Production и т.п.) */
+    environment: string;
+    /** Хэш коммита Git (из GIT_COMMIT) */
+    gitCommit: string;
+    /** Дата сборки бинарника */
+    buildDate: string;
+}

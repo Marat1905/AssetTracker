@@ -3,6 +3,7 @@ import { PageBreadCrumb } from '../../components/common';
 /*import PageMeta from '../../components/common/PageMeta';*/
 import { MotorList, CreateMotorForm, ManageLubricantsModal, MaintenanceReport } from '../../components/motor';
 import { useAuth } from '../../context/AuthContext';
+import { useBackendVersion } from '../../hooks/motor';
 import { FaList, FaChartBar } from 'react-icons/fa';
 
 /**
@@ -15,12 +16,18 @@ import { FaList, FaChartBar } from 'react-icons/fa';
  * пользователям с ролью Admin или Electric на вкладке "Список двигателей".
  * Отчёт доступен всем авторизованным пользователям.
  * Полностью поддерживает светлую и тёмную тему.
+ *
+ * Версия бэкенда отображается справа от вкладок в той же строке,
+ * получается с эндпоинта /motor/api/v1/version через хук useBackendVersion.
  */
 export default function MotorsPage() {
     const [activeTab, setActiveTab] = useState<'list' | 'report'>('list');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isManageLubricantsOpen, setIsManageLubricantsOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+
+    // Версия бэкенда (null, пока не загружена)
+    const version = useBackendVersion();
 
     const { isAdminOrElectric } = useAuth();
 
@@ -38,14 +45,14 @@ export default function MotorsPage() {
                 <PageBreadCrumb pageTitle="Управление электродвигателями" />
 
                 <div className="space-y-8">
-                    {/* Вкладки */}
-                    <div className="border-b border-gray-200 dark:border-gray-700">
+                    {/* Вкладки + версия бэкенда справа */}
+                    <div className="border-b border-gray-200 dark:border-gray-700 flex items-center justify-between gap-4">
                         <nav className="flex gap-6">
                             <button
                                 onClick={() => setActiveTab('list')}
                                 className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'list'
-                                        ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                    ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                     }`}
                             >
                                 <FaList size={18} />
@@ -54,14 +61,28 @@ export default function MotorsPage() {
                             <button
                                 onClick={() => setActiveTab('report')}
                                 className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors ${activeTab === 'report'
-                                        ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                                    ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                                     }`}
                             >
                                 <FaChartBar size={18} />
                                 Отчёт по обслуживанию
                             </button>
                         </nav>
+
+                        {/* Версия бэкенда справа от вкладок.
+                            Отображается только когда данные успешно загружены. */}
+                        {version && (
+                            <div
+                                className="flex items-center gap-1.5 pb-3 text-xs font-mono text-gray-500 dark:text-gray-400"
+                                title={`Версия бэкенда: ${version}`}
+                            >
+                                <svg className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                                </svg>
+                                <span>v{version}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Содержимое вкладок */}
