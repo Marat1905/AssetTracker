@@ -115,7 +115,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: AssetTracker.WebAPI/Dockerfile
+          file: src/AssetTracker.WebAPI/Dockerfile
           push: true
           # Используем автоматически сгенерированные теги из metadata-action
           tags: ${{ steps.meta.outputs.tags }}
