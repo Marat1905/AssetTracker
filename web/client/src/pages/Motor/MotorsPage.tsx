@@ -35,7 +35,7 @@ export default function MotorsPage() {
                 {/*    title="Управление электродвигателями"*/}
                 {/*    description="Список, регистрация, обслуживание и отчёты по электродвигателям"*/}
                 {/*/>*/}
-                <PageBreadcrumb pageTitle="Управление электродвигателями" />
+                <PageBreadCrumb pageTitle="Управление электродвигателями" />
 
                 <div className="space-y-8">
                     {/* Вкладки */}
