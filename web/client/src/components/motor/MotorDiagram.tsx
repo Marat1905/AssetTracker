@@ -183,7 +183,8 @@ export default function MotorDiagram({
                 <polyline className="st0" points="120,241 123,252 273,252 275,250 " />
                 <polyline className="st0" points="120,244 123,256 273,256 275,253 " />
                 <path className="st0" d="M131,225c0,3-1,6-1,10v-9h1" />
-                <path className="st0" d="M275,235c-22,0-45,0,68,0c-2-1-3-3-3-7h67" />
+                {/* ИСПРАВЛЕНА ОШИБКА: изменено 68 на -68, чтобы линия не выезжала за пределы корпуса вправо */}
+                <path className="st0" d="M275,235c-22,0-45,0,-68,0c-2-1-3-3-3-7h67" />
                 <path className="st0" d="M271,225c0,3,1,6,1,10v-9h-1" />
                 <path className="st0" d="M119,218h156v7H119V218z" />
                 <path className="st0" d="M120,245c-2,0-3,0-5,0v-10" />
