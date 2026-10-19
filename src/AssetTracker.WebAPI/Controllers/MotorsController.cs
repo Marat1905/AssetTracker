@@ -29,7 +29,7 @@ public class MotorsController : ControllerBase
     /// <param name="dto">Данные для создания двигателя.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Полная карточка созданного двигателя.</returns>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -53,7 +53,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Новый инвентарный номер.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpPatch("{motorId}/inventory-number")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -82,7 +82,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Новое местоположение и опционально новый статус.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpPatch("{motorId}/move")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -99,7 +99,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Данные о выполненной работе.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpPost("{motorId}/maintenance")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -238,7 +238,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="dto">Обновлённые характеристики.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpPut("{motorId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -254,7 +254,7 @@ public class MotorsController : ControllerBase
     /// </summary>
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -271,7 +271,7 @@ public class MotorsController : ControllerBase
     /// <param name="logId">Идентификатор записи обслуживания.</param>
     /// <param name="dto">Новые данные.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpPut("{motorId}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -303,7 +303,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="logId">Идентификатор записи обслуживания.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}/maintenance/{logId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -327,7 +327,7 @@ public class MotorsController : ControllerBase
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
     /// <param name="dto">Новое расположение.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpPut("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -355,7 +355,7 @@ public class MotorsController : ControllerBase
     /// <param name="motorId">Суррогатный идентификатор двигателя.</param>
     /// <param name="locationHistoryId">Идентификатор записи истории перемещений.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
-    //[Authorize(Policy = "Electro")]
+    [Authorize(Policy = "Electro")]
     [HttpDelete("{motorId}/location-history/{locationHistoryId}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
