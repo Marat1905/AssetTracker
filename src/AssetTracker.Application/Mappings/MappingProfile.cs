@@ -40,7 +40,8 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.NewBearing, opt => opt.MapFrom(src => src.NewBearing))
             .ForMember(dest => dest.PerformedBy, opt => opt.MapFrom(src => src.PerformedBy));
 
-        // Маппинг полной истории двигателя
+        // Маппинг полной истории двигателя.
+        // AutoMapper сам обрабатывает null в источнике (FrontBearing/RearBearing) и присваивает null приёмнику.
         CreateMap<Motor, MotorFullHistoryDto>()
             .ForMember(dest => dest.FrontBearing, opt => opt.MapFrom(src => src.FrontBearing))
             .ForMember(dest => dest.RearBearing, opt => opt.MapFrom(src => src.RearBearing))

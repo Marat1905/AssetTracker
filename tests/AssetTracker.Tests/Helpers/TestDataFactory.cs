@@ -33,6 +33,27 @@ public static class TestDataFactory
         };
     }
 
+    /// <summary>
+    /// Создаёт DTO двигателя без диаметра вала и без обоих подшипников.
+    /// Используется для проверки сценариев, когда эти поля необязательны.
+    /// </summary>
+    public static CreateMotorDto CreateMinimalCreateMotorDto(string? inventoryNumber = "1002")
+    {
+        return new CreateMotorDto
+        {
+            InventoryNumber = inventoryNumber,
+            Type = "АИР80В2",
+            ShaftDiameter = null,
+            Power = 2.2,
+            Speed = 3000,
+            Status = MotorStatus.InOperation,
+            InitialLocation = "Склад",
+            MountingType = MountingType.Feet,
+            FrontBearing = null,
+            RearBearing = null
+        };
+    }
+
     public static SetInventoryNumberDto CreateSetInventoryNumberDto(string? inventoryNumber)
     {
         return new SetInventoryNumberDto { InventoryNumber = inventoryNumber };

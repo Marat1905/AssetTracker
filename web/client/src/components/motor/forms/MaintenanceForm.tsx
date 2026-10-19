@@ -36,6 +36,10 @@ interface Props {
  *
  * В модальном режиме используется затемняющий фон и центрирование.
  * Полностью поддерживает светлую и тёмную тему.
+ *
+ * ВАЖНО: двигатель может быть создан без подшипников (frontBearing / rearBearing = null).
+ * В этом случае при выборе типа работ «Замена подшипника» поля типа, производителя и поставщика
+ * остаются пустыми, чтобы пользователь ввёл данные нового подшипника.
  */
 export default function MaintenanceForm({ isOpen, onClose, motorId, motorData, onAdded, onCancel }: Props) {
     const [workType, setWorkType] = useState<MaintenanceType>(MaintenanceType.Lubrication);
@@ -83,13 +87,22 @@ export default function MaintenanceForm({ isOpen, onClose, motorId, motorData, o
                 setLubricantTypeId(lubricants[0].id);
             }
         } else if (workType === MaintenanceType.BearingReplacement) {
-            // Подставляем текущие данные подшипника (тип, производитель, поставщик)
+            // Подставляем текущие данные подшипника (тип, производитель, поставщик),
+            // если подшипник установлен. Если подшипника нет (null) — оставляем поля пустыми,
+            // чтобы пользователь ввёл данные нового подшипника.
             const currentBearing = bearingPosition === BearingPosition.Front
                 ? motorData.frontBearing
                 : motorData.rearBearing;
-            setNewBearingType(currentBearing.type);
-            setNewBearingManufacturer(currentBearing.manufacturer);
-            setNewBearingSupplier(currentBearing.supplier);
+
+            if (currentBearing) {
+                setNewBearingType(currentBearing.type);
+                setNewBearingManufacturer(currentBearing.manufacturer);
+                setNewBearingSupplier(currentBearing.supplier);
+            } else {
+                setNewBearingType('');
+                setNewBearingManufacturer('');
+                setNewBearingSupplier('');
+            }
         }
     }, [workType, bearingPosition, motorData, lubricants]);
 

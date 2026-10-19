@@ -29,7 +29,13 @@ public class MotorService : IMotorService
     public async Task<IEnumerable<MotorListItemDto>> GetAllMotorsAsync(CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Получение всех двигателей");
-        var motors = await _unitOfWork.Motors.GetAllAsync(cancellationToken);
+
+        // Сортировка: сначала двигатели без инвентарного номера (null), затем по возрастанию номера.
+        // Это соответствует правилу UI «пустые сверху».
+        var motors = await _unitOfWork.Motors.GetQueryable()
+            .OrderBy(m => m.InventoryNumber == null ? 0 : 1)
+            .ThenBy(m => m.InventoryNumber)
+            .ToListAsync(cancellationToken);
 
         var motorList = new List<MotorListItemDto>();
         foreach (var motor in motors)
@@ -66,16 +72,34 @@ public class MotorService : IMotorService
                 throw new InvalidOperationException($"Двигатель с инвентарным номером {dto.InventoryNumber} уже существует");
         }
 
-        // Создаём подшипники
-        var frontBearing = _mapper.Map<Bearing>(dto.FrontBearing);
-        var rearBearing = _mapper.Map<Bearing>(dto.RearBearing);
-        await _unitOfWork.Bearings.AddAsync(frontBearing, cancellationToken);
-        await _unitOfWork.Bearings.AddAsync(rearBearing, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken); // чтобы получить Id
+        // Создаём подшипники только если они переданы и содержат хотя бы одно непустое поле.
+        // Если объект отсутствует или все три поля пусты — подшипник не создаётся.
+        Bearing? frontBearing = null;
+        Bearing? rearBearing = null;
+
+        if (IsBearingFilled(dto.FrontBearing))
+        {
+            frontBearing = _mapper.Map<Bearing>(dto.FrontBearing);
+            await _unitOfWork.Bearings.AddAsync(frontBearing, cancellationToken);
+        }
+
+        if (IsBearingFilled(dto.RearBearing))
+        {
+            rearBearing = _mapper.Map<Bearing>(dto.RearBearing);
+            await _unitOfWork.Bearings.AddAsync(rearBearing, cancellationToken);
+        }
+
+        // Сохраняем подшипники (если есть), чтобы получить Id
+        if (frontBearing != null || rearBearing != null)
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         var motor = _mapper.Map<Motor>(dto);
-        motor.FrontBearingId = frontBearing.Id;
-        motor.RearBearingId = rearBearing.Id;
+        if (frontBearing != null)
+            motor.FrontBearingId = frontBearing.Id;
+        if (rearBearing != null)
+            motor.RearBearingId = rearBearing.Id;
         motor.Status = dto.Status;
 
         await _unitOfWork.Motors.AddAsync(motor, cancellationToken);
@@ -95,6 +119,20 @@ public class MotorService : IMotorService
 
         _logger.LogInformation("Двигатель создан с Id {MotorId}", motor.Id);
         return await GetFullHistoryAsync(motor.Id, cancellationToken);
+    }
+
+    /// <summary>
+    /// Проверяет, заполнен ли объект подшипника (передан и содержит хотя бы одно непустое поле).
+    /// Используется при создании двигателя, чтобы не создавать пустые подшипники.
+    /// </summary>
+    /// <param name="bearing">DTO подшипника или null.</param>
+    /// <returns>True, если подшипник нужно создать; иначе false.</returns>
+    private static bool IsBearingFilled(CreateBearingDto? bearing)
+    {
+        if (bearing == null) return false;
+        return !string.IsNullOrWhiteSpace(bearing.Type)
+            || !string.IsNullOrWhiteSpace(bearing.Manufacturer)
+            || !string.IsNullOrWhiteSpace(bearing.Supplier);
     }
 
     /// <inheritdoc />
@@ -192,7 +230,7 @@ public class MotorService : IMotorService
             if (!dto.BearingPosition.HasValue)
                 throw new ArgumentException("Для замены подшипника необходимо указать позицию (передний/задний)");
 
-            // Сохраняем старый подшипник
+            // Сохраняем старый подшипник (может быть null, если подшипник не был установлен)
             if (dto.BearingPosition.Value == BearingPosition.Front)
                 oldBearingId = motor.FrontBearingId;
             else
@@ -407,7 +445,13 @@ public class MotorService : IMotorService
 
         var totalCount = await query.CountAsync(cancellationToken);
 
+        // Сортировка: сначала двигатели без инвентарного номера (null), затем по возрастанию номера.
+        // Выражение `m.InventoryNumber == null ? 0 : 1` даёт 0 для null (сортируется первым)
+        // и 1 для заполненных. Затем `ThenBy(m => m.InventoryNumber)` упорядочивает
+        // непустые номера лексикографически (в базе данных — по правилам коллации PostgreSQL).
         var items = await query
+            .OrderBy(m => m.InventoryNumber == null ? 0 : 1)
+            .ThenBy(m => m.InventoryNumber)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(m => new MotorListItemDto
@@ -681,15 +725,12 @@ public class MotorService : IMotorService
                 throw new InvalidOperationException("Удаление разрешено только для последней записи замены подшипника. " +
                                                     "Чтобы удалить более раннюю замену, сначала удалите последующие записи.");
 
-            // Откатываем мотор на старый подшипник
-            if (log.OldBearingId.HasValue)
-            {
-                if (log.BearingPosition == BearingPosition.Front)
-                    motor.FrontBearingId = log.OldBearingId.Value;
-                else if (log.BearingPosition == BearingPosition.Rear)
-                    motor.RearBearingId = log.OldBearingId.Value;
-                _unitOfWork.Motors.Update(motor);
-            }
+            // Откатываем мотор на старый подшипник (может быть null, если подшипника не было)
+            if (log.BearingPosition == BearingPosition.Front)
+                motor.FrontBearingId = log.OldBearingId;
+            else if (log.BearingPosition == BearingPosition.Rear)
+                motor.RearBearingId = log.OldBearingId;
+            _unitOfWork.Motors.Update(motor);
         }
 
         _unitOfWork.MaintenanceLogs.Remove(log);

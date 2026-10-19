@@ -167,7 +167,7 @@ namespace AssetTracker.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("FrontBearingId")
+                    b.Property<int?>("FrontBearingId")
                         .HasColumnType("integer");
 
                     b.Property<string>("InventoryNumber")
@@ -183,10 +183,10 @@ namespace AssetTracker.Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("double precision");
 
-                    b.Property<int>("RearBearingId")
+                    b.Property<int?>("RearBearingId")
                         .HasColumnType("integer");
 
-                    b.Property<double>("ShaftDiameter")
+                    b.Property<double?>("ShaftDiameter")
                         .HasPrecision(10, 2)
                         .HasColumnType("double precision");
 
@@ -263,14 +263,12 @@ namespace AssetTracker.Infrastructure.Migrations
                     b.HasOne("AssetTracker.Domain.Entities.Bearing", "FrontBearing")
                         .WithMany()
                         .HasForeignKey("FrontBearingId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("AssetTracker.Domain.Entities.Bearing", "RearBearing")
                         .WithMany()
                         .HasForeignKey("RearBearingId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("FrontBearing");
 

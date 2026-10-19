@@ -13,8 +13,8 @@ public class CreateMotorDto
     /// <summary>Тип двигателя (марка, модель).</summary>
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>Диаметр вала (мм).</summary>
-    public double ShaftDiameter { get; set; }
+    /// <summary>Диаметр вала (мм). Необязательное поле.</summary>
+    public double? ShaftDiameter { get; set; }
 
     /// <summary>Мощность (кВт).</summary>
     public double Power { get; set; }
@@ -22,11 +22,11 @@ public class CreateMotorDto
     /// <summary>Обороты (об/мин).</summary>
     public int Speed { get; set; }
 
-    /// <summary>Данные переднего подшипника.</summary>
-    public CreateBearingDto FrontBearing { get; set; } = new CreateBearingDto();
+    /// <summary>Данные переднего подшипника. Может отсутствовать.</summary>
+    public CreateBearingDto? FrontBearing { get; set; }
 
-    /// <summary>Данные заднего подшипника.</summary>
-    public CreateBearingDto RearBearing { get; set; } = new CreateBearingDto();
+    /// <summary>Данные заднего подшипника. Может отсутствовать.</summary>
+    public CreateBearingDto? RearBearing { get; set; }
 
     /// <summary>Начальный статус двигателя.</summary>
     public MotorStatus Status { get; set; } = MotorStatus.InOperation;
@@ -46,8 +46,8 @@ public class UpdateMotorDto
     /// <summary>Тип двигателя.</summary>
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>Диаметр вала (мм).</summary>
-    public double ShaftDiameter { get; set; }
+    /// <summary>Диаметр вала (мм). Необязательное поле.</summary>
+    public double? ShaftDiameter { get; set; }
 
     /// <summary>Мощность (кВт).</summary>
     public double Power { get; set; }

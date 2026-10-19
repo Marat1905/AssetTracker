@@ -16,8 +16,8 @@ public class Motor
     /// <summary>Тип двигателя (марка, модель).</summary>
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>Диаметр вала (мм).</summary>
-    public double ShaftDiameter { get; set; }
+    /// <summary>Диаметр вала (мм). Необязательное поле.</summary>
+    public double? ShaftDiameter { get; set; }
 
     /// <summary>Мощность (кВт).</summary>
     public double Power { get; set; }
@@ -25,17 +25,17 @@ public class Motor
     /// <summary>Обороты (об/мин).</summary>
     public int Speed { get; set; }
 
-    /// <summary>Идентификатор переднего подшипника (внешний ключ).</summary>
-    public int FrontBearingId { get; set; }
+    /// <summary>Идентификатор переднего подшипника (внешний ключ). Необязательно.</summary>
+    public int? FrontBearingId { get; set; }
 
-    /// <summary>Идентификатор заднего подшипника (внешний ключ).</summary>
-    public int RearBearingId { get; set; }
+    /// <summary>Идентификатор заднего подшипника (внешний ключ). Необязательно.</summary>
+    public int? RearBearingId { get; set; }
 
-    /// <summary>Навигационное свойство: передний подшипник.</summary>
-    public virtual Bearing FrontBearing { get; set; } = null!;
+    /// <summary>Навигационное свойство: передний подшипник (может отсутствовать).</summary>
+    public virtual Bearing? FrontBearing { get; set; }
 
-    /// <summary>Навигационное свойство: задний подшипник.</summary>
-    public virtual Bearing RearBearing { get; set; } = null!;
+    /// <summary>Навигационное свойство: задний подшипник (может отсутствовать).</summary>
+    public virtual Bearing? RearBearing { get; set; }
 
     /// <summary>Текущий статус двигателя.</summary>
     public MotorStatus Status { get; set; }

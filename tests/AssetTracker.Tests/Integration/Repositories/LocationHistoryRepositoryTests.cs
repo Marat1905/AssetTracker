@@ -38,20 +38,17 @@ public class LocationHistoryRepositoryTests : IClassFixture<TestContainersFixtur
 
     private async Task<int> SeedMotor()
     {
-        var front = new Bearing { Type = "6204", Manufacturer = "X", Supplier = "Y" };
-        var rear = new Bearing { Type = "6204", Manufacturer = "X", Supplier = "Y" };
-        await _context.Bearings.AddRangeAsync(front, rear);
-        await _context.SaveChangesAsync();
-
+        // Создаём двигатель без подшипников и без диаметра вала —
+        // эти поля теперь необязательны, и репозиторий должен работать с такими данными.
         var motor = new Motor
         {
             InventoryNumber = "8001", // строка
             Type = "MotorForLocTest",
-            ShaftDiameter = 25,
+            ShaftDiameter = null,
             Power = 5,
             Speed = 1000,
-            FrontBearingId = front.Id,
-            RearBearingId = rear.Id,
+            FrontBearingId = null,
+            RearBearingId = null,
             Status = MotorStatus.Reserve,
             MountingType = MountingType.Flange
         };

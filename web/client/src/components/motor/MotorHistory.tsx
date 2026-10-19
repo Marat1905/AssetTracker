@@ -27,6 +27,9 @@ interface Props {
  * - кнопки редактирования и удаления (передаются из родителя)
  * - кнопка редактирования инвентарного номера
  *
+ * Диаметр вала и подшипники могут отсутствовать — в этом случае отображается «—»
+ * или «Не известен».
+ *
  * Цвета бейджа статуса берутся из общей утилиты getStatusColorClasses
  * (utils/motor/statusColors.ts), чтобы не дублировать логику между
  * MotorHistory, MotorList, MotorDetails и отчётами.
@@ -109,9 +112,9 @@ export default function MotorHistory({ motorData, onEdit, onDelete, onEditInvent
                     {/* Левая колонка – схема */}
                     <div className="flex justify-center items-center w-96 max-w-full mx-auto">
                         <MotorDiagram
-                            shaftDiameter={motorData.shaftDiameter}
-                            frontBearingType={motorData.frontBearing.type}
-                            rearBearingType={motorData.rearBearing.type}
+                            shaftDiameter={motorData.shaftDiameter ?? undefined}
+                            frontBearingType={motorData.frontBearing?.type}
+                            rearBearingType={motorData.rearBearing?.type}
                             mountingType={motorData.mountingType}
                             frontBearingLastLubricant={motorData.frontBearingLastLubricant}
                             rearBearingLastLubricant={motorData.rearBearingLastLubricant}
@@ -137,7 +140,9 @@ export default function MotorHistory({ motorData, onEdit, onDelete, onEditInvent
                             </div>
                             <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-700">
                                 <span className="text-sm text-gray-500 dark:text-gray-400">Диаметр вала:</span>
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{motorData.shaftDiameter} мм</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                    {motorData.shaftDiameter != null ? `${motorData.shaftDiameter} мм` : '—'}
+                                </span>
                             </div>
                             <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-gray-700">
                                 <span className="text-sm text-gray-500 dark:text-gray-400">Мощность:</span>
@@ -185,20 +190,24 @@ export default function MotorHistory({ motorData, onEdit, onDelete, onEditInvent
                                     </span>
                                 )}
                             </div>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500 dark:text-gray-400">Тип:</span>
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.frontBearing.type}</span>
+                            {motorData.frontBearing ? (
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500 dark:text-gray-400">Тип:</span>
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.frontBearing.type}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500 dark:text-gray-400">Производитель:</span>
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.frontBearing.manufacturer}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500 dark:text-gray-400">Поставщик:</span>
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.frontBearing.supplier}</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500 dark:text-gray-400">Производитель:</span>
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.frontBearing.manufacturer}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500 dark:text-gray-400">Поставщик:</span>
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.frontBearing.supplier}</span>
-                                </div>
-                            </div>
+                            ) : (
+                                <p className="text-sm text-gray-400 dark:text-gray-500 italic">Не известен</p>
+                            )}
                         </div>
 
                         {/* Задний подшипник */}
@@ -211,20 +220,24 @@ export default function MotorHistory({ motorData, onEdit, onDelete, onEditInvent
                                     </span>
                                 )}
                             </div>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500 dark:text-gray-400">Тип:</span>
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.rearBearing.type}</span>
+                            {motorData.rearBearing ? (
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500 dark:text-gray-400">Тип:</span>
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.rearBearing.type}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500 dark:text-gray-400">Производитель:</span>
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.rearBearing.manufacturer}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500 dark:text-gray-400">Поставщик:</span>
+                                        <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.rearBearing.supplier}</span>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500 dark:text-gray-400">Производитель:</span>
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.rearBearing.manufacturer}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-500 dark:text-gray-400">Поставщик:</span>
-                                    <span className="font-medium text-gray-900 dark:text-gray-100">{motorData.rearBearing.supplier}</span>
-                                </div>
-                            </div>
+                            ) : (
+                                <p className="text-sm text-gray-400 dark:text-gray-500 italic">Не известен</p>
+                            )}
                         </div>
                     </div>
                 </div>

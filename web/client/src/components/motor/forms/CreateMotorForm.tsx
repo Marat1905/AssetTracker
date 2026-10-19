@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import toast from 'react-hot-toast';
 import { motorApi } from '../../../services/motor/api';
-import { MotorStatus, MountingType, type CreateMotorDto } from '../../../types/motor/motor';
+import { MotorStatus, MountingType, type CreateMotorDto, type CreateBearingDto } from '../../../types/motor/motor';
 import { motorStatusLabels, mountingTypeLabels } from '../../../utils/motor/locales';
 import { createMotorSchema, type CreateMotorFormData } from '../../../schemas/motor';
 
@@ -24,6 +24,9 @@ interface Props {
  * В модальном режиме используется затемняющий фон и центрирование.
  * Форма компактная, без вертикальной прокрутки на большинстве экранов (адаптивная высота).
  * Полностью поддерживает светлую и тёмную тему.
+ *
+ * Диаметр вала и оба подшипника — необязательные поля.
+ * Если пользователь заполнил хотя бы одно поле подшипника, все три поля становятся обязательными.
  */
 export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<CreateMotorFormData>({
@@ -35,25 +38,42 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
         }
     });
 
+    /**
+     * Формирует объект подшипника из полей формы.
+     * Возвращает null, если все три поля пусты.
+     */
+    const buildBearing = (
+        type?: string,
+        manufacturer?: string,
+        supplier?: string
+    ): CreateBearingDto | null => {
+        const t = type?.trim() ?? '';
+        const m = manufacturer?.trim() ?? '';
+        const s = supplier?.trim() ?? '';
+        if (!t && !m && !s) return null;
+        return { type: t, manufacturer: m, supplier: s };
+    };
+
     const onSubmit = async (data: CreateMotorFormData) => {
         try {
             const payload: CreateMotorDto = {
                 // Пустую строку преобразуем в null
                 inventoryNumber: data.inventoryNumber && data.inventoryNumber.trim() !== '' ? data.inventoryNumber.trim() : null,
                 type: data.type,
-                shaftDiameter: data.shaftDiameter,
+                // Диаметр вала: undefined → null
+                shaftDiameter: data.shaftDiameter ?? null,
                 power: data.power,
                 speed: data.speed,
-                frontBearing: {
-                    type: data.frontBearingType,
-                    manufacturer: data.frontBearingManufacturer,
-                    supplier: data.frontBearingSupplier,
-                },
-                rearBearing: {
-                    type: data.rearBearingType,
-                    manufacturer: data.rearBearingManufacturer,
-                    supplier: data.rearBearingSupplier,
-                },
+                frontBearing: buildBearing(
+                    data.frontBearingType,
+                    data.frontBearingManufacturer,
+                    data.frontBearingSupplier
+                ),
+                rearBearing: buildBearing(
+                    data.rearBearingType,
+                    data.rearBearingManufacturer,
+                    data.rearBearingSupplier
+                ),
                 status: data.status,
                 initialLocation: data.initialLocation,
                 mountingType: data.mountingType,
@@ -103,12 +123,15 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Диаметр вала (мм)
+                        Диаметр вала (мм) <span className="text-gray-400">— необязательно</span>
                     </label>
                     <input
                         type="number"
                         step="0.1"
-                        {...register('shaftDiameter', { valueAsNumber: true })}
+                        {...register('shaftDiameter', {
+                            // Пустое значение превращаем в undefined (поле не задано)
+                            setValueAs: (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+                        })}
                         className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
                         placeholder="Например: 38"
                     />
@@ -178,9 +201,11 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                     {errors.initialLocation && <p className="text-red-600 dark:text-red-400 text-xs mt-0.5">{errors.initialLocation.message}</p>}
                 </div>
 
-                {/* Блок переднего подшипника - компактный */}
+                {/* Блок переднего подшипника - компактный (необязательный) */}
                 <div className="md:col-span-2 border-t border-gray-200 dark:border-slate-700 pt-2 mt-1">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-2">Передний подшипник</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-2">
+                        Передний подшипник <span className="text-gray-400 font-normal">— необязательно</span>
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -218,9 +243,11 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                     </div>
                 </div>
 
-                {/* Блок заднего подшипника - компактный */}
+                {/* Блок заднего подшипника - компактный (необязательный) */}
                 <div className="md:col-span-2 border-t border-gray-200 dark:border-slate-700 pt-2 mt-1">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-2">Задний подшипник</h4>
+                    <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-2">
+                        Задний подшипник <span className="text-gray-400 font-normal">— необязательно</span>
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

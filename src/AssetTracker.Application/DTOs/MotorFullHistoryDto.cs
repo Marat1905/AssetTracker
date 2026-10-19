@@ -16,8 +16,8 @@ public class MotorFullHistoryDto
     /// <summary>Тип.</summary>
     public string Type { get; set; } = string.Empty;
 
-    /// <summary>Диаметр вала.</summary>
-    public double ShaftDiameter { get; set; }
+    /// <summary>Диаметр вала (может отсутствовать).</summary>
+    public double? ShaftDiameter { get; set; }
 
     /// <summary>Мощность.</summary>
     public double Power { get; set; }
@@ -25,11 +25,11 @@ public class MotorFullHistoryDto
     /// <summary>Обороты.</summary>
     public int Speed { get; set; }
 
-    /// <summary>Передний подшипник.</summary>
-    public BearingDto FrontBearing { get; set; } = new BearingDto();
+    /// <summary>Передний подшипник (может отсутствовать).</summary>
+    public BearingDto? FrontBearing { get; set; }
 
-    /// <summary>Задний подшипник.</summary>
-    public BearingDto RearBearing { get; set; } = new BearingDto();
+    /// <summary>Задний подшипник (может отсутствовать).</summary>
+    public BearingDto? RearBearing { get; set; }
 
     /// <summary>Текущий статус.</summary>
     public MotorStatus Status { get; set; }

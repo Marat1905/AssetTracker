@@ -24,6 +24,16 @@ interface MotorDiagramProps {
  * размерную линию диаметра вала, а также опционально – тип смазки.
  * Внешний вид (лапы, фланец) зависит от типа монтажа.
  * Полностью поддерживает светлую и тёмную тему.
+ *
+ * Важно: кружок с выноской обозначает ПОЗИЦИЮ подшипника (переднюю или заднюю),
+ * а не сам подшипник. Поэтому он отображается, если для этой позиции есть
+ * хоть какая-то информация — установленный подшипник ИЛИ зафиксированная смазка.
+ * Тип подшипника (текст над выноской) показывается только при наличии подшипника.
+ * Бейдж со смазкой показывается только при наличии смазки.
+ *
+ * Это позволяет видеть бейдж смазки даже для позиции без установленного
+ * подшипника — смазка могла быть выполнена раньше, либо подшипник был снят,
+ * но история смазки сохранилась.
  */
 export default function MotorDiagram({
     shaftDiameter,
@@ -48,6 +58,11 @@ export default function MotorDiagram({
         mountingType === MountingType.FeetAndSmallFlange;
 
     const showNormalFrontCover = !hasBigFlange && !hasSmallFlange;
+
+    // Показывать ли кружок с выноской для передней/задней позиции:
+    // либо установлен подшипник, либо есть смазка (то есть для позиции есть информация).
+    const showFrontBearingMarker = !!frontBearingType || !!frontBearingLastLubricant;
+    const showRearBearingMarker = !!rearBearingType || !!rearBearingLastLubricant;
 
     return (
         <div className="w-full flex justify-center items-center">
@@ -168,7 +183,7 @@ export default function MotorDiagram({
                 <polyline className="st0" points="120,241 123,252 273,252 275,250 " />
                 <polyline className="st0" points="120,244 123,256 273,256 275,253 " />
                 <path className="st0" d="M131,225c0,3-1,6-1,10v-9h1" />
-                <path className="st0" d="M275,235c-22,0-45,0-68,0c-2-1-3-3-3-7h67" />
+                <path className="st0" d="M275,235c-22,0-45,0,68,0c-2-1-3-3-3-7h67" />
                 <path className="st0" d="M271,225c0,3,1,6,1,10v-9h-1" />
                 <path className="st0" d="M119,218h156v7H119V218z" />
                 <path className="st0" d="M120,245c-2,0-3,0-5,0v-10" />
@@ -242,62 +257,76 @@ export default function MotorDiagram({
                     </g>
                 )}
 
-                {/* Передний подшипник – кружок со смещением вверх */}
-                {frontBearingType && (
-                    <g id="front-bearing">
+                {/* ========== ПЕРЕДНЯЯ ПОЗИЦИЯ ПОДШИПНИКА ========== */}
+                {/* Кружок с выноской обозначает ПОЗИЦИЮ, поэтому показывается,
+                    если есть либо установленный подшипник, либо зафиксированная смазка. */}
+                {showFrontBearingMarker && (
+                    <g id="front-bearing-marker">
                         {/* Пунктирная окружность вокруг переднего подшипника (центр x=128, y=114) */}
                         <circle cx="100" cy="170" r="15" className="bearing-leader" />
                         {/* Линия-выноска вверх */}
                         <line className="bearing-leader" x1="100" y1="155" x2="100" y2="35" />
                         <circle cx="100" cy="35" r="2" fill="#10b981" className="dark:fill-#34d399" />
-                        {/* Текст подшипника – ещё выше */}
-                        <text x="100" y="28" textAnchor="middle" className="bearing-text">{frontBearingType}</text>
-                        {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
-                        {frontBearingLastLubricant && (
-                            <foreignObject x="40" y="-20" width="120" height="40" className="lubricant-text">
-                                <div style={{
-                                    fontSize: '14px',
-                                    fontWeight: 'bold',
-                                    fontFamily: 'monospace',
-                                    textAlign: 'center',
-                                    wordWrap: 'break-word',
-                                    whiteSpace: 'normal',
-                                    lineHeight: '1.2',
-                                    color: '#f59e0b'
-                                }}>
-                                    🛢️ {frontBearingLastLubricant}
-                                </div>
-                            </foreignObject>
-                        )}
                     </g>
                 )}
 
-                {/* Задний подшипник */}
-                {rearBearingType && (
-                    <g id="rear-bearing">
+                {/* Тип переднего подшипника – показывается только если подшипник установлен. */}
+                {frontBearingType && (
+                    <text x="100" y="28" textAnchor="middle" className="bearing-text">{frontBearingType}</text>
+                )}
+
+                {/* Бейдж с последней смазкой переднего подшипника – показывается независимо
+                    от наличия подшипника. */}
+                {frontBearingLastLubricant && (
+                    <foreignObject x="40" y="-20" width="120" height="40" className="lubricant-text">
+                        <div style={{
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            fontFamily: 'monospace',
+                            textAlign: 'center',
+                            wordWrap: 'break-word',
+                            whiteSpace: 'normal',
+                            lineHeight: '1.2',
+                            color: '#f59e0b'
+                        }}>
+                            🛢️ {frontBearingLastLubricant}
+                        </div>
+                    </foreignObject>
+                )}
+
+                {/* ========== ЗАДНЯЯ ПОЗИЦИЯ ПОДШИПНИКА ========== */}
+                {/* Кружок с выноской обозначает ПОЗИЦИЮ, поэтому показывается,
+                    если есть либо установленный подшипник, либо зафиксированная смазка. */}
+                {showRearBearingMarker && (
+                    <g id="rear-bearing-marker">
                         <circle cx="290" cy="170" r="15" className="bearing-leader" />
                         <line className="bearing-leader" x1="290" y1="155" x2="290" y2="35" />
                         <circle cx="290" cy="35" r="2" fill="#10b981" className="dark:fill-#34d399" />
-                        {/* Тип подшипника */}
-                        <text x="290" y="28" textAnchor="middle" className="bearing-text">{rearBearingType}</text>
-                        {/* Тип смазки (если есть) – используем foreignObject для автоматического переноса строки */}
-                        {rearBearingLastLubricant && (
-                            <foreignObject x="230" y="-20" width="120" height="40" className="lubricant-text">
-                                <div style={{
-                                    fontSize: '14px',
-                                    fontWeight: 'bold',
-                                    fontFamily: 'monospace',
-                                    textAlign: 'center',
-                                    wordWrap: 'break-word',
-                                    whiteSpace: 'normal',
-                                    lineHeight: '1.2',
-                                    color: '#f59e0b'
-                                }}>
-                                    🛢️ {rearBearingLastLubricant}
-                                </div>
-                            </foreignObject>
-                        )}
                     </g>
+                )}
+
+                {/* Тип заднего подшипника – показывается только если подшипник установлен. */}
+                {rearBearingType && (
+                    <text x="290" y="28" textAnchor="middle" className="bearing-text">{rearBearingType}</text>
+                )}
+
+                {/* Бейдж с последней смазкой заднего подшипника – показывается независимо
+                    от наличия подшипника. */}
+                {rearBearingLastLubricant && (
+                    <foreignObject x="230" y="-20" width="120" height="40" className="lubricant-text">
+                        <div style={{
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            fontFamily: 'monospace',
+                            textAlign: 'center',
+                            wordWrap: 'break-word',
+                            whiteSpace: 'normal',
+                            lineHeight: '1.2',
+                            color: '#f59e0b'
+                        }}>
+                            🛢️ {rearBearingLastLubricant}
+                        </div>
+                    </foreignObject>
                 )}
             </svg>
         </div>

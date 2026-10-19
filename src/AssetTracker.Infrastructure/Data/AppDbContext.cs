@@ -45,7 +45,12 @@ public class AppDbContext : DbContext
                 .HasFilter($"\"{nameof(Motor.InventoryNumber)}\" IS NOT NULL");
 
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.ShaftDiameter).HasPrecision(10, 2);
+
+            // Диаметр вала теперь необязателен
+            entity.Property(e => e.ShaftDiameter)
+                .HasPrecision(10, 2)
+                .IsRequired(false);
+
             entity.Property(e => e.Power).HasPrecision(10, 2);
             entity.Property(e => e.Status).HasConversion<string>();
             entity.Property(e => e.MountingType)
@@ -53,14 +58,18 @@ public class AppDbContext : DbContext
                 .HasMaxLength(20)
                 .IsRequired();
 
+            // Передний подшипник – необязательная связь
             entity.HasOne(e => e.FrontBearing)
                 .WithMany()
                 .HasForeignKey(e => e.FrontBearingId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Задний подшипник – необязательная связь
             entity.HasOne(e => e.RearBearing)
                 .WithMany()
                 .HasForeignKey(e => e.RearBearingId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

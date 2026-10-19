@@ -58,7 +58,7 @@ public class MotorServiceTests
     }
 
     [Fact]
-    public async Task CreateMotorAsync_ValidDto_ShouldCreateMotorAndLocation()
+    public async Task CreateMotorAsync_ValidDtoWithBearings_ShouldCreateMotorAndLocation()
     {
         // Arrange
         var dto = TestDataFactory.CreateValidCreateMotorDto("2001");
@@ -114,10 +114,131 @@ public class MotorServiceTests
         Assert.NotNull(result);
         Assert.Equal(motorId, result.Id);
         Assert.Equal(dto.InventoryNumber, result.InventoryNumber);
+        // Оба подшипника заполнены → должны быть добавлены.
         _bearingRepoMock.Verify(r => r.AddAsync(It.IsAny<Bearing>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         _motorRepoMock.Verify(r => r.AddAsync(It.IsAny<Motor>(), It.IsAny<CancellationToken>()), Times.Once);
         _locationHistoryRepoMock.Verify(r => r.AddAsync(It.IsAny<LocationHistory>(), It.IsAny<CancellationToken>()), Times.Once);
+        // 1 – после добавления подшипников, 2 – после добавления мотора, 3 – после добавления локации.
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(3));
+    }
+
+    [Fact]
+    public async Task CreateMotorAsync_WithoutBearings_ShouldNotCreateBearingsAndSaveTwice()
+    {
+        // Arrange: DTO без подшипников, без диаметра вала.
+        var dto = TestDataFactory.CreateMinimalCreateMotorDto("2003");
+        int motorId = 43;
+
+        var createdMotor = new Motor
+        {
+            Id = motorId,
+            InventoryNumber = dto.InventoryNumber,
+            Type = dto.Type,
+            ShaftDiameter = dto.ShaftDiameter,
+            Power = dto.Power,
+            Speed = dto.Speed,
+            Status = dto.Status,
+            MountingType = dto.MountingType,
+            FrontBearing = null,
+            RearBearing = null
+        };
+
+        _motorRepoMock.Setup(r => r.GetByInventoryNumberAsync(dto.InventoryNumber!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Motor?)null);
+
+        _motorRepoMock.Setup(r => r.AddAsync(It.IsAny<Motor>(), It.IsAny<CancellationToken>()))
+            .Callback<Motor, CancellationToken>((m, ct) => m.Id = motorId)
+            .Returns(Task.CompletedTask);
+
+        _locationHistoryRepoMock.Setup(r => r.AddAsync(It.IsAny<LocationHistory>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var motorQuery = new List<Motor> { createdMotor }.AsQueryable();
+        var motorDbSetMock = CreateAsyncMockDbSet(motorQuery);
+        _motorRepoMock.Setup(r => r.GetQueryable()).Returns(motorDbSetMock.Object);
+
+        var locationHistoryQuery = new List<LocationHistory>().AsQueryable();
+        var locationDbSetMock = CreateAsyncMockDbSet(locationHistoryQuery);
+        _locationHistoryRepoMock.Setup(r => r.GetQueryable()).Returns(locationDbSetMock.Object);
+
+        var maintenanceQuery = new List<MaintenanceLog>().AsQueryable();
+        var maintenanceDbSetMock = CreateAsyncMockDbSet(maintenanceQuery);
+        _maintenanceLogRepoMock.Setup(r => r.GetQueryable()).Returns(maintenanceDbSetMock.Object);
+
+        // Act
+        var result = await _service.CreateMotorAsync(dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(motorId, result.Id);
+        // Подшипники не должны добавляться.
+        _bearingRepoMock.Verify(r => r.AddAsync(It.IsAny<Bearing>(), It.IsAny<CancellationToken>()), Times.Never);
+        _motorRepoMock.Verify(r => r.AddAsync(It.IsAny<Motor>(), It.IsAny<CancellationToken>()), Times.Once);
+        _locationHistoryRepoMock.Verify(r => r.AddAsync(It.IsAny<LocationHistory>(), It.IsAny<CancellationToken>()), Times.Once);
+        // 1 – после добавления мотора, 2 – после добавления локации.
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task CreateMotorAsync_WithOnlyFrontBearing_ShouldCreateOnlyOneBearing()
+    {
+        // Arrange: только передний подшипник, задний — null.
+        var dto = TestDataFactory.CreateValidCreateMotorDto("2004");
+        dto.RearBearing = null;
+        int motorId = 44;
+
+        var createdMotor = new Motor
+        {
+            Id = motorId,
+            InventoryNumber = dto.InventoryNumber,
+            Type = dto.Type,
+            ShaftDiameter = dto.ShaftDiameter,
+            Power = dto.Power,
+            Speed = dto.Speed,
+            Status = dto.Status,
+            MountingType = dto.MountingType,
+            FrontBearing = new Bearing { Id = 1, Type = "6205", Manufacturer = "SKF", Supplier = "OOO" },
+            RearBearing = null
+        };
+
+        _motorRepoMock.Setup(r => r.GetByInventoryNumberAsync(dto.InventoryNumber!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Motor?)null);
+
+        _bearingRepoMock.Setup(r => r.AddAsync(It.IsAny<Bearing>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _motorRepoMock.Setup(r => r.AddAsync(It.IsAny<Motor>(), It.IsAny<CancellationToken>()))
+            .Callback<Motor, CancellationToken>((m, ct) => m.Id = motorId)
+            .Returns(Task.CompletedTask);
+
+        _locationHistoryRepoMock.Setup(r => r.AddAsync(It.IsAny<LocationHistory>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var motorQuery = new List<Motor> { createdMotor }.AsQueryable();
+        var motorDbSetMock = CreateAsyncMockDbSet(motorQuery);
+        _motorRepoMock.Setup(r => r.GetQueryable()).Returns(motorDbSetMock.Object);
+
+        var locationHistoryQuery = new List<LocationHistory>().AsQueryable();
+        var locationDbSetMock = CreateAsyncMockDbSet(locationHistoryQuery);
+        _locationHistoryRepoMock.Setup(r => r.GetQueryable()).Returns(locationDbSetMock.Object);
+
+        var maintenanceQuery = new List<MaintenanceLog>().AsQueryable();
+        var maintenanceDbSetMock = CreateAsyncMockDbSet(maintenanceQuery);
+        _maintenanceLogRepoMock.Setup(r => r.GetQueryable()).Returns(maintenanceDbSetMock.Object);
+
+        // Act
+        var result = await _service.CreateMotorAsync(dto);
+
+        // Assert
+        Assert.NotNull(result);
+        // Только передний подшипник → ровно одна запись AddAsync.
+        _bearingRepoMock.Verify(r => r.AddAsync(It.IsAny<Bearing>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -261,6 +382,42 @@ public class MotorServiceTests
         Assert.Equal("5001", result.InventoryNumber);
         Assert.Single(result.LocationHistory);
         Assert.Single(result.MaintenanceLogs);
+    }
+
+    [Fact]
+    public async Task GetFullHistoryAsync_MotorWithoutBearings_ShouldReturnDtoWithNullBearings()
+    {
+        // Arrange: у двигателя нет подшипников.
+        int motorId = 5002;
+        var motor = new Motor
+        {
+            Id = motorId,
+            InventoryNumber = "5002",
+            Type = "TestMotor",
+            Status = MotorStatus.InOperation,
+            FrontBearing = null,
+            RearBearing = null
+        };
+
+        var motorQuery = new List<Motor> { motor }.AsQueryable();
+        var motorDbSetMock = CreateAsyncMockDbSet(motorQuery);
+        _motorRepoMock.Setup(r => r.GetQueryable()).Returns(motorDbSetMock.Object);
+
+        var locations = new List<LocationHistory>().AsQueryable();
+        var locationDbSetMock = CreateAsyncMockDbSet(locations);
+        _locationHistoryRepoMock.Setup(r => r.GetQueryable()).Returns(locationDbSetMock.Object);
+
+        var logs = new List<MaintenanceLog>().AsQueryable();
+        var logDbSetMock = CreateAsyncMockDbSet(logs);
+        _maintenanceLogRepoMock.Setup(r => r.GetQueryable()).Returns(logDbSetMock.Object);
+
+        // Act
+        var result = await _service.GetFullHistoryAsync(motorId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Null(result.FrontBearing);
+        Assert.Null(result.RearBearing);
     }
 
     [Fact]

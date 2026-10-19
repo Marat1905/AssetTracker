@@ -28,6 +28,9 @@ interface Props {
  * Для предотвращения излишней высоты добавлена прокрутка содержимого.
  * Инвентарный номер редактируется в отдельном модальном окне.
  * Статус отображается только для информации (изменить его можно через перемещение).
+ *
+ * Диаметр вала и подшипники могут отсутствовать у двигателя — в этом случае
+ * поля отображаются пустыми или с пометкой «Не известен».
  */
 export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Props) {
     // Получаем текущее местоположение из истории перемещений
@@ -43,7 +46,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
         resolver: zodResolver(editMotorSchema),
         defaultValues: {
             type: motor.type,
-            shaftDiameter: motor.shaftDiameter,
+            shaftDiameter: motor.shaftDiameter ?? undefined,
             power: motor.power,
             speed: motor.speed,
             mountingType: motor.mountingType,
@@ -54,7 +57,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
     useEffect(() => {
         reset({
             type: motor.type,
-            shaftDiameter: motor.shaftDiameter,
+            shaftDiameter: motor.shaftDiameter ?? undefined,
             power: motor.power,
             speed: motor.speed,
             mountingType: motor.mountingType,
@@ -63,14 +66,13 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
 
     const onSubmit = async (data: EditMotorFormData) => {
         try {
-            // Отправляем все поля, включая статус (берём текущий из motor, так как он не редактируется в форме)
+            // Отправляем все поля, включая статус (берём текущий из motor, так как он не редактируется в форме).
+            // Диаметр вала может быть undefined — тогда отправляем null.
             const updateData: UpdateMotorRequest = {
                 type: data.type,
-                shaftDiameter: data.shaftDiameter,
+                shaftDiameter: data.shaftDiameter ?? null,
                 power: data.power,
                 speed: data.speed,
-                frontBearingType: motor.frontBearing.type,
-                rearBearingType: motor.rearBearing.type,
                 status: motor.status, // статус не меняется, передаём текущий
                 mountingType: data.mountingType,
             };
@@ -128,12 +130,14 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Диаметр вала (мм)
+                                    Диаметр вала (мм) <span className="text-gray-400">— необязательно</span>
                                 </label>
                                 <input
                                     type="number"
                                     step="0.1"
-                                    {...register('shaftDiameter', { valueAsNumber: true })}
+                                    {...register('shaftDiameter', {
+                                        setValueAs: (v) => (v === '' || v === null || v === undefined ? undefined : Number(v)),
+                                    })}
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 />
                                 {errors.shaftDiameter && (
@@ -199,7 +203,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                             </div>
                         </div>
 
-                        {/* Информационные блоки о подшипниках */}
+                        {/* Информационные блоки о подшипниках (могут отсутствовать) */}
                         <div className="border-t border-gray-200 dark:border-slate-700 pt-3 mt-2">
                             <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                                 Подшипники (информационно)
@@ -207,19 +211,27 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                 <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2">
                                     <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">Передний</div>
-                                    <div className="space-y-0.5 text-gray-600 dark:text-gray-400">
-                                        <div>Тип: {motor.frontBearing.type}</div>
-                                        <div>Производитель: {motor.frontBearing.manufacturer}</div>
-                                        <div>Поставщик: {motor.frontBearing.supplier}</div>
-                                    </div>
+                                    {motor.frontBearing ? (
+                                        <div className="space-y-0.5 text-gray-600 dark:text-gray-400">
+                                            <div>Тип: {motor.frontBearing.type}</div>
+                                            <div>Производитель: {motor.frontBearing.manufacturer}</div>
+                                            <div>Поставщик: {motor.frontBearing.supplier}</div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-gray-400 dark:text-gray-500 italic">Не известен</div>
+                                    )}
                                 </div>
                                 <div className="bg-gray-50 dark:bg-slate-800/50 rounded-lg p-2">
                                     <div className="font-medium text-gray-900 dark:text-gray-100 mb-1">Задний</div>
-                                    <div className="space-y-0.5 text-gray-600 dark:text-gray-400">
-                                        <div>Тип: {motor.rearBearing.type}</div>
-                                        <div>Производитель: {motor.rearBearing.manufacturer}</div>
-                                        <div>Поставщик: {motor.rearBearing.supplier}</div>
-                                    </div>
+                                    {motor.rearBearing ? (
+                                        <div className="space-y-0.5 text-gray-600 dark:text-gray-400">
+                                            <div>Тип: {motor.rearBearing.type}</div>
+                                            <div>Производитель: {motor.rearBearing.manufacturer}</div>
+                                            <div>Поставщик: {motor.rearBearing.supplier}</div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-gray-400 dark:text-gray-500 italic">Не известен</div>
+                                    )}
                                 </div>
                             </div>
                             <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">

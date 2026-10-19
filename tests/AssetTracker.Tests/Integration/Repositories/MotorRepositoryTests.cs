@@ -90,6 +90,33 @@ public class MotorRepositoryTests : IClassFixture<TestContainersFixture>, IAsync
     }
 
     [Fact]
+    public async Task GetWithFullHistoryAsync_MotorWithoutBearings_ShouldReturnMotor()
+    {
+        // Создаём двигатель без подшипников и без диаметра вала.
+        var motor = new Motor
+        {
+            InventoryNumber = "9002",
+            Type = "BearinglessMotor",
+            ShaftDiameter = null,
+            Power = 3,
+            Speed = 1000,
+            FrontBearingId = null,
+            RearBearingId = null,
+            Status = MotorStatus.Reserve,
+            MountingType = MountingType.Flange
+        };
+        await _context.Motors.AddAsync(motor);
+        await _context.SaveChangesAsync();
+
+        var result = await _repository.GetWithFullHistoryAsync(motor.Id);
+
+        Assert.NotNull(result);
+        Assert.Null(result.FrontBearingId);
+        Assert.Null(result.RearBearingId);
+        Assert.Null(result.ShaftDiameter);
+    }
+
+    [Fact]
     public async Task GetQueryable_ShouldReturnQueryable()
     {
         var query = _repository.GetQueryable();

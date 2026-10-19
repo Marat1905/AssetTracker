@@ -76,16 +76,69 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
             .FirstOrDefaultAsync(m => m.InventoryNumber == "7777");
         Assert.NotNull(motorInDb);
         Assert.Equal("АИР100L4", motorInDb.Type);
-        Assert.Equal(28, motorInDb.ShaftDiameter);
+        // ShaftDiameter теперь nullable — проверяем через .Value после NotNull.
+        Assert.NotNull(motorInDb.ShaftDiameter);
+        Assert.Equal(28d, motorInDb.ShaftDiameter.Value);
         Assert.Equal(5.5, motorInDb.Power);
         Assert.Equal(1500, motorInDb.Speed);
         Assert.Equal(MotorStatus.InOperation, motorInDb.Status);
+        Assert.NotNull(motorInDb.FrontBearing);
+        Assert.NotNull(motorInDb.RearBearing);
 
         var locationInDb = await _context.LocationHistories
             .FirstOrDefaultAsync(l => l.MotorId == motorInDb.Id && l.EndDate == null);
         Assert.NotNull(locationInDb);
         Assert.Equal("Цех №1", locationInDb.Location);
         Assert.Equal(MotorStatus.InOperation, locationInDb.Status);
+    }
+
+    [Fact]
+    public async Task CreateMotorAsync_WithoutShaftDiameterAndBearings_ShouldPersistMotorWithNulls()
+    {
+        // Создаём двигатель без диаметра вала и без подшипников.
+        var dto = TestDataFactory.CreateMinimalCreateMotorDto("7000");
+        var result = await _service.CreateMotorAsync(dto);
+
+        Assert.NotNull(result);
+        Assert.Null(result.ShaftDiameter);
+        Assert.Null(result.FrontBearing);
+        Assert.Null(result.RearBearing);
+
+        // Проверяем в БД напрямую.
+        var motorInDb = await _context.Motors
+            .FirstOrDefaultAsync(m => m.InventoryNumber == "7000");
+        Assert.NotNull(motorInDb);
+        Assert.Null(motorInDb.ShaftDiameter);
+        Assert.Null(motorInDb.FrontBearingId);
+        Assert.Null(motorInDb.RearBearingId);
+
+        // Запись о местоположении всё равно создана.
+        var locationInDb = await _context.LocationHistories
+            .FirstOrDefaultAsync(l => l.MotorId == motorInDb.Id && l.EndDate == null);
+        Assert.NotNull(locationInDb);
+    }
+
+    [Fact]
+    public async Task CreateMotorAsync_WithOnlyFrontBearing_ShouldPersistOnlyFrontBearing()
+    {
+        // Создаём двигатель только с передним подшипником.
+        var dto = TestDataFactory.CreateValidCreateMotorDto("7001");
+        dto.RearBearing = null;
+        await _service.CreateMotorAsync(dto);
+
+        var motorInDb = await _context.Motors
+            .Include(m => m.FrontBearing)
+            .Include(m => m.RearBearing)
+            .FirstAsync(m => m.InventoryNumber == "7001");
+
+        Assert.NotNull(motorInDb.FrontBearing);
+        Assert.Null(motorInDb.RearBearing);
+        Assert.NotNull(motorInDb.FrontBearingId);
+        Assert.Null(motorInDb.RearBearingId);
+
+        // В таблице Bearings ровно одна запись для этого двигателя.
+        var bearingsCount = await _context.Bearings.CountAsync();
+        Assert.Equal(1, bearingsCount);
     }
 
     [Fact]
@@ -151,6 +204,7 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
         var motor = await _context.Motors
             .Include(m => m.RearBearing)
             .FirstAsync(m => m.Id == motorId);
+        Assert.NotNull(motor.RearBearing);
         Assert.Equal("6306", motor.RearBearing.Type);
 
         var log = await _context.MaintenanceLogs
@@ -158,6 +212,30 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
         Assert.NotNull(log);
         Assert.Equal(BearingPosition.Rear, log.BearingPosition);
         Assert.NotNull(log.NewBearing);
+    }
+
+    [Fact]
+    public async Task AddMaintenanceAsync_BearingReplacementOnMotorWithoutBearing_ShouldWork()
+    {
+        // Двигатель создан без подшипников, затем устанавливается передний подшипник.
+        var createDto = TestDataFactory.CreateMinimalCreateMotorDto("1112");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
+
+        var replacementDto = TestDataFactory.CreateBearingReplacementWithNewBearingDto(BearingPosition.Front);
+        await _service.AddMaintenanceAsync(motorId, replacementDto);
+
+        var motor = await _context.Motors
+            .Include(m => m.FrontBearing)
+            .FirstAsync(m => m.Id == motorId);
+        Assert.NotNull(motor.FrontBearing);
+        Assert.Equal("6306", motor.FrontBearing.Type);
+
+        var log = await _context.MaintenanceLogs
+            .FirstAsync(l => l.MotorId == motorId && l.WorkType == MaintenanceType.BearingReplacement);
+        // Старого подшипника не было — OldBearingId = null.
+        Assert.Null(log.OldBearingId);
+        Assert.NotNull(log.NewBearingId);
     }
 
     [Fact]
@@ -193,11 +271,31 @@ public class MotorServiceIntegrationTests : IClassFixture<TestContainersFixture>
 
         var motor = await _context.Motors.FirstAsync(m => m.Id == motorId);
         Assert.Equal(updateDto.Type, motor.Type);
-        Assert.Equal(updateDto.ShaftDiameter, motor.ShaftDiameter);
+        // ShaftDiameter nullable — сравниваем через .Value.
+        Assert.NotNull(motor.ShaftDiameter);
+        Assert.NotNull(updateDto.ShaftDiameter);
+        Assert.Equal(updateDto.ShaftDiameter!.Value, motor.ShaftDiameter.Value);
         Assert.Equal(updateDto.Power, motor.Power);
         Assert.Equal(updateDto.Speed, motor.Speed);
         Assert.Equal(updateDto.Status, motor.Status);
         Assert.Equal(updateDto.MountingType, motor.MountingType);
+    }
+
+    [Fact]
+    public async Task UpdateMotorAsync_SetShaftDiameterToNull_ShouldWork()
+    {
+        // Создаём двигатель с диаметром вала, затем обнуляем его.
+        var createDto = TestDataFactory.CreateValidCreateMotorDto("3334");
+        var created = await _service.CreateMotorAsync(createDto);
+        int motorId = created.Id;
+
+        var updateDto = TestDataFactory.CreateValidUpdateMotorDto();
+        updateDto.ShaftDiameter = null;
+
+        await _service.UpdateMotorAsync(motorId, updateDto);
+
+        var motor = await _context.Motors.FirstAsync(m => m.Id == motorId);
+        Assert.Null(motor.ShaftDiameter);
     }
 
     [Fact]

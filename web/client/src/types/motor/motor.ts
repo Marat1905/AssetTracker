@@ -123,6 +123,9 @@ export interface MaintenanceLogDto {
 /**
  * DTO для полной истории двигателя, включая текущие данные, подшипники,
  * историю перемещений и последние записи обслуживания.
+ *
+ * Поля shaftDiameter, frontBearing и rearBearing могут быть null — они необязательны
+ * при создании двигателя и могут отсутствовать.
  */
 export interface MotorFullHistoryDto {
     /** Суррогатный идентификатор */
@@ -131,16 +134,16 @@ export interface MotorFullHistoryDto {
     inventoryNumber: string | null;
     /** Тип двигателя */
     type: string;
-    /** Диаметр вала (мм) */
-    shaftDiameter: number;
+    /** Диаметр вала (мм). Может отсутствовать. */
+    shaftDiameter: number | null;
     /** Мощность (кВт) */
     power: number;
     /** Обороты (об/мин) */
     speed: number;
-    /** Передний подшипник */
-    frontBearing: BearingDto;
-    /** Задний подшипник */
-    rearBearing: BearingDto;
+    /** Передний подшипник (может отсутствовать) */
+    frontBearing: BearingDto | null;
+    /** Задний подшипник (может отсутствовать) */
+    rearBearing: BearingDto | null;
     /** Текущий статус */
     status: MotorStatus;
     /** Тип монтажа */
@@ -157,22 +160,23 @@ export interface MotorFullHistoryDto {
 
 /**
  * DTO для первичной регистрации нового электродвигателя.
+ * Диаметр вала и подшипники — необязательны.
  */
 export interface CreateMotorDto {
     /** Инвентарный номер (опциональный, уникальный) */
     inventoryNumber: string | null;
     /** Тип двигателя (марка, модель) */
     type: string;
-    /** Диаметр вала (мм) */
-    shaftDiameter: number;
+    /** Диаметр вала (мм). Необязательное поле. */
+    shaftDiameter: number | null;
     /** Мощность (кВт) */
     power: number;
     /** Обороты (об/мин) */
     speed: number;
-    /** Данные переднего подшипника */
-    frontBearing: CreateBearingDto;
-    /** Данные заднего подшипника */
-    rearBearing: CreateBearingDto;
+    /** Данные переднего подшипника. Может отсутствовать. */
+    frontBearing: CreateBearingDto | null;
+    /** Данные заднего подшипника. Может отсутствовать. */
+    rearBearing: CreateBearingDto | null;
     /** Начальный статус */
     status: MotorStatus;
     /** Начальное место установки */
@@ -265,20 +269,18 @@ export interface MotorListItem {
 
 /**
  * DTO для обновления основных характеристик двигателя (без изменения подшипников).
+ * Поля frontBearingType и rearBearingType удалены — они не поддерживаются сервером.
+ * Диаметр вала необязателен.
  */
 export interface UpdateMotorRequest {
     /** Тип двигателя */
     type: string;
-    /** Диаметр вала (мм) */
-    shaftDiameter: number;
+    /** Диаметр вала (мм). Необязательное поле. */
+    shaftDiameter: number | null;
     /** Мощность (кВт) */
     power: number;
     /** Обороты (об/мин) */
     speed: number;
-    /** Тип переднего подшипника (только для совместимости) */
-    frontBearingType: string;
-    /** Тип заднего подшипника (только для совместимости) */
-    rearBearingType: string;
     /** Статус */
     status: MotorStatus;
     /** Тип монтажа */

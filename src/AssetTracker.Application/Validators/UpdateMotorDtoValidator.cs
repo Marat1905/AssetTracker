@@ -5,6 +5,7 @@ namespace AssetTracker.Application.Validators;
 
 /// <summary>
 /// Валидатор для DTO обновления характеристик двигателя.
+/// Диаметр вала необязателен.
 /// </summary>
 public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
 {
@@ -14,8 +15,10 @@ public class UpdateMotorDtoValidator : AbstractValidator<UpdateMotorDto>
             .NotEmpty().WithMessage("Тип двигателя обязателен")
             .MaximumLength(100);
 
+        // Диаметр вала необязателен, но если задан — должен быть > 0
         RuleFor(x => x.ShaftDiameter)
-            .GreaterThan(0).WithMessage("Диаметр вала должен быть больше 0 мм");
+            .GreaterThan(0).WithMessage("Диаметр вала должен быть больше 0 мм")
+            .When(x => x.ShaftDiameter.HasValue);
 
         RuleFor(x => x.Power)
             .GreaterThan(0).WithMessage("Мощность должна быть больше 0");
