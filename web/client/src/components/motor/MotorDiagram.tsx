@@ -68,7 +68,7 @@ export default function MotorDiagram({
         <div className="w-full flex justify-center items-center">
             <svg
                 version="1.1"
-                viewBox="-30 -30 460 340"
+                viewBox="-30 -50 460 360"
                 className="w-full"
                 preserveAspectRatio="xMidYMid meet"
                 style={{
@@ -278,8 +278,14 @@ export default function MotorDiagram({
                 {/* Бейдж с последней смазкой переднего подшипника – показывается независимо
                     от наличия подшипника. */}
                 {frontBearingLastLubricant && (
-                    <foreignObject x="40" y="-20" width="120" height="40" className="lubricant-text">
+                    <foreignObject x="30" y="-49" width="140" height="54" className="lubricant-text">
                         <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
                             fontSize: '14px',
                             fontWeight: 'bold',
                             fontFamily: 'monospace',
@@ -313,8 +319,14 @@ export default function MotorDiagram({
                 {/* Бейдж с последней смазкой заднего подшипника – показывается независимо
                     от наличия подшипника. */}
                 {rearBearingLastLubricant && (
-                    <foreignObject x="230" y="-20" width="120" height="40" className="lubricant-text">
+                    <foreignObject x="220" y="-49" width="140" height="54" className="lubricant-text">
                         <div style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'flex-end',
+                            alignItems: 'center',
                             fontSize: '14px',
                             fontWeight: 'bold',
                             fontFamily: 'monospace',
