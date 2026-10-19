@@ -15,12 +15,35 @@ const optionalPositiveNumber = z.preprocess(
 );
 
 /**
+ * Регулярное выражение для инвентарного номера.
+ * Должно совпадать с бэкендовым: ^[a-zA-Zа-яА-ЯёЁ0-9\-_\/\.]*$
+ * Разрешены: латиница, кириллица, цифры и символы - _ / .
+ */
+const INVENTORY_NUMBER_PATTERN = /^[a-zA-Zа-яА-ЯёЁ0-9\-_/.]*$/;
+
+const INVENTORY_NUMBER_MESSAGE =
+    'Разрешены только буквы (латиница/кириллица), цифры и символы - _ / .';
+
+/**
  * Схема валидации формы создания нового электродвигателя.
  * Диаметр вала и подшипники (передний и задний) необязательны.
  * Если хотя бы одно поле подшипника заполнено, все три поля становятся обязательными.
  */
 export const createMotorSchema = z.object({
-    inventoryNumber: z.string().optional().nullable(),
+    // Инвентарный номер: может быть пустым (будет отправлен null),
+    // но если задан — должен соответствовать регулярке (латиница/кириллица, цифры, - _ / .)
+    inventoryNumber: z
+        .string()
+        .optional()
+        .nullable()
+        .refine(
+            (val) => {
+                if (val == null) return true;
+                const trimmed = val.trim();
+                return INVENTORY_NUMBER_PATTERN.test(trimmed);
+            },
+            { message: INVENTORY_NUMBER_MESSAGE }
+        ),
     type: z.string().min(1, 'Тип обязателен'),
     shaftDiameter: optionalPositiveNumber,
     power: z.number().positive('Мощность > 0'),

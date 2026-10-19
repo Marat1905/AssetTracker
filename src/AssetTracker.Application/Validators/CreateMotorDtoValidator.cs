@@ -10,20 +10,42 @@ namespace AssetTracker.Application.Validators;
 /// (тип, производитель, поставщик) пусты (пустая строка либо только пробелы),
 /// валидация подшипника не производится.
 /// Если же хотя бы одно из трёх полей заполнено — все три поля становятся обязательными.
+///
+/// Инвентарный номер: разрешены латинские и кириллические буквы, цифры
+/// и символы - _ / . (дефис, подчёркивание, слэш, точка).
 /// </summary>
 public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 {
+    /// <summary>
+    /// Регулярное выражение для инвентарного номера.
+    /// Разрешены: латиница (a-z, A-Z), кириллица (а-я, А-Я, ё, Ё),
+    /// цифры (0-9) и символы - _ / .
+    /// </summary>
+    private const string InventoryNumberPattern = @"^[a-zA-Zа-яА-ЯёЁ0-9\-_\/\.]*$";
+
+    /// <summary>
+    /// Сообщение об ошибке для инвентарного номера.
+    /// </summary>
+    private const string InventoryNumberMessage =
+        "Инвентарный номер может содержать только буквы (латиница/кириллица), цифры и символы - _ / .";
+
+    /// <summary>
+    /// Сообщение об ошибке для пустой строки инвентарного номера.
+    /// </summary>
+    private const string InventoryNumberEmptyMessage =
+        "Инвентарный номер не может быть пустой строкой. Используйте null для удаления номера.";
+
     public CreateMotorDtoValidator()
     {
         // Инвентарный номер: null допускается, пустая строка – нет
         RuleFor(x => x.InventoryNumber)
             .MaximumLength(50).WithMessage("Инвентарный номер не должен превышать 50 символов")
-            .Matches(@"^[a-zA-Z0-9\-_\/\.]*$").WithMessage("Инвентарный номер может содержать только буквы, цифры и символы - _ / .")
+            .Matches(InventoryNumberPattern).WithMessage(InventoryNumberMessage)
             .When(x => !string.IsNullOrWhiteSpace(x.InventoryNumber));
 
         RuleFor(x => x.InventoryNumber)
             .Must(inv => inv == null || !string.IsNullOrWhiteSpace(inv))
-            .WithMessage("Инвентарный номер не может быть пустой строкой. Используйте null для удаления номера.");
+            .WithMessage(InventoryNumberEmptyMessage);
 
         RuleFor(x => x.Type)
             .NotEmpty().WithMessage("Тип двигателя обязателен")
@@ -98,15 +120,34 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 /// </summary>
 public class SetInventoryNumberDtoValidator : AbstractValidator<SetInventoryNumberDto>
 {
+    /// <summary>
+    /// Регулярное выражение для инвентарного номера.
+    /// Разрешены: латиница (a-z, A-Z), кириллица (а-я, А-Я, ё, Ё),
+    /// цифры (0-9) и символы - _ / .
+    /// </summary>
+    private const string InventoryNumberPattern = @"^[a-zA-Zа-яА-ЯёЁ0-9\-_\/\.]*$";
+
+    /// <summary>
+    /// Сообщение об ошибке для инвентарного номера.
+    /// </summary>
+    private const string InventoryNumberMessage =
+        "Инвентарный номер может содержать только буквы (латиница/кириллица), цифры и символы - _ / .";
+
+    /// <summary>
+    /// Сообщение об ошибке для пустой строки инвентарного номера.
+    /// </summary>
+    private const string InventoryNumberEmptyMessage =
+        "Инвентарный номер не может быть пустой строкой. Используйте null для удаления номера.";
+
     public SetInventoryNumberDtoValidator()
     {
         RuleFor(x => x.InventoryNumber)
             .MaximumLength(50).WithMessage("Инвентарный номер не должен превышать 50 символов")
-            .Matches(@"^[a-zA-Z0-9\-_\/\.]*$").WithMessage("Инвентарный номер может содержать только буквы, цифры и символы - _ / .")
+            .Matches(InventoryNumberPattern).WithMessage(InventoryNumberMessage)
             .When(x => !string.IsNullOrWhiteSpace(x.InventoryNumber));
 
         RuleFor(x => x.InventoryNumber)
             .Must(inv => inv == null || !string.IsNullOrWhiteSpace(inv))
-            .WithMessage("Инвентарный номер не может быть пустой строкой. Используйте null для удаления номера.");
+            .WithMessage(InventoryNumberEmptyMessage);
     }
 }
