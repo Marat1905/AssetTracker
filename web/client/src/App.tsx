@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import MotorsPage from './pages/Motor/MotorsPage';
 import MotorDetails from './pages/Motor/MotorDetails';
 import './index.css';
+import Layout from './components/Layout';
 
 /** Иконка для текущей тестовой роли */
 const RoleIcon: React.FC<{ role: string }> = ({ role }) => {
@@ -111,10 +112,13 @@ const AppInner: React.FC = () => {
             </div>
 
             {/* Маршруты приложения */}
-            <Routes>
-                <Route path="/motors" element={<MotorsPage />} />
-                <Route path="/motors/:id" element={<MotorDetails />} />
-            </Routes>
+            <Layout>
+                <Routes>
+                    <Route path="/motors" element={<MotorsPage />} />
+                    <Route path="/motors/:id" element={<MotorDetails />} />
+                </Routes>
+            </Layout>
+            
         </>
     );
 };
