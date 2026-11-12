@@ -167,6 +167,10 @@ namespace AssetTracker.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<int?>("FrontBearingId")
                         .HasColumnType("integer");
 
@@ -180,7 +184,7 @@ namespace AssetTracker.Infrastructure.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.Property<double>("Power")
-                        .HasPrecision(10, 2)
+                        .HasPrecision(10, 3)
                         .HasColumnType("double precision");
 
                     b.Property<int?>("RearBearingId")
