@@ -25,8 +25,10 @@ interface Props {
  * Форма компактная, без вертикальной прокрутки на большинстве экранов (адаптивная высота).
  * Полностью поддерживает светлую и тёмную тему.
  *
- * Диаметр вала и оба подшипника — необязательные поля.
+ * Диаметр вала, комментарий и оба подшипника — необязательные поля.
  * Если пользователь заполнил хотя бы одно поле подшипника, все три поля становятся обязательными.
+ *
+ * Мощность: можно указывать значения меньше 0.1 кВт (например, 0.05) — step="any".
  */
 export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
     const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<CreateMotorFormData>({
@@ -35,6 +37,7 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
             status: MotorStatus.InOperation,
             mountingType: MountingType.Feet,
             inventoryNumber: '',
+            comment: '',
         }
     });
 
@@ -64,6 +67,8 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                 shaftDiameter: data.shaftDiameter ?? null,
                 power: data.power,
                 speed: data.speed,
+                // Комментарий: пусто/пробелы → null
+                comment: data.comment?.trim() || null,
                 frontBearing: buildBearing(
                     data.frontBearingType,
                     data.frontBearingManufacturer,
@@ -143,12 +148,16 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                     </label>
                     <input
                         type="number"
-                        step="0.1"
+                        // step="any" позволяет вводить значения меньше 0.1 кВт (например, 0.05)
+                        step="any"
                         {...register('power', { valueAsNumber: true })}
                         className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
-                        placeholder="Например: 15.5"
+                        placeholder="Например: 15.5 или 0.05"
                     />
                     {errors.power && <p className="text-red-600 dark:text-red-400 text-xs mt-0.5">{errors.power.message}</p>}
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        Допускаются значения меньше 0.1 кВт (например, 0.05)
+                    </p>
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -199,6 +208,20 @@ export default function CreateMotorForm({ isOpen, onClose, onSuccess }: Props) {
                         placeholder="Например: Насос P1.1"
                     />
                     {errors.initialLocation && <p className="text-red-600 dark:text-red-400 text-xs mt-0.5">{errors.initialLocation.message}</p>}
+                </div>
+
+                {/* Комментарий – на всю ширину */}
+                <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Комментарий <span className="text-gray-400">— необязательно</span>
+                    </label>
+                    <textarea
+                        {...register('comment')}
+                        rows={3}
+                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 text-sm resize-y"
+                        placeholder="Дополнительная информация: сальник, особенности эксплуатации и т.п."
+                    />
+                    {errors.comment && <p className="text-red-600 dark:text-red-400 text-xs mt-0.5">{errors.comment.message}</p>}
                 </div>
 
                 {/* Блок переднего подшипника - компактный (необязательный) */}

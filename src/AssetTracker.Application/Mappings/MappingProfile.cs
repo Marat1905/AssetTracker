@@ -19,8 +19,12 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.FrontBearingId, opt => opt.Ignore())
             .ForMember(dest => dest.RearBearingId, opt => opt.Ignore());
 
-        // Маппинг для обновления мотора (UpdateMotorDto -> Motor)
-        CreateMap<UpdateMotorDto, Motor>();
+        // Маппинг для обновления мотора (UpdateMotorDto -> Motor).
+        // Comment: если источник null — не трогаем существующее значение
+        // (чтобы клиент, не приславший comment, не стёр его).
+        // Чтобы очистить комментарий, клиент должен прислать пустую строку.
+        CreateMap<UpdateMotorDto, Motor>()
+            .ForMember(dest => dest.Comment, opt => opt.Condition(src => src.Comment != null));
 
         // Маппинг для подшипников
         CreateMap<CreateBearingDto, Bearing>();

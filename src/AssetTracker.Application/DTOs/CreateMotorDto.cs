@@ -16,11 +16,17 @@ public class CreateMotorDto
     /// <summary>Диаметр вала (мм). Необязательное поле.</summary>
     public double? ShaftDiameter { get; set; }
 
-    /// <summary>Мощность (кВт).</summary>
+    /// <summary>Мощность (кВт). Может быть меньше 0.1 кВт (например, 0.05).</summary>
     public double Power { get; set; }
 
     /// <summary>Обороты (об/мин).</summary>
     public int Speed { get; set; }
+
+    /// <summary>
+    /// Комментарий (дополнительная информация о двигателе, например про сальник и т.п.).
+    /// Необязательное поле.
+    /// </summary>
+    public string? Comment { get; set; }
 
     /// <summary>Данные переднего подшипника. Может отсутствовать.</summary>
     public CreateBearingDto? FrontBearing { get; set; }
@@ -49,11 +55,18 @@ public class UpdateMotorDto
     /// <summary>Диаметр вала (мм). Необязательное поле.</summary>
     public double? ShaftDiameter { get; set; }
 
-    /// <summary>Мощность (кВт).</summary>
+    /// <summary>Мощность (кВт). Может быть меньше 0.1 кВт (например, 0.05).</summary>
     public double Power { get; set; }
 
     /// <summary>Обороты (об/мин).</summary>
     public int Speed { get; set; }
+
+    /// <summary>
+    /// Комментарий (дополнительная информация о двигателе).
+    /// Если null — существующее значение не изменяется.
+    /// Чтобы очистить комментарий — передайте пустую строку.
+    /// </summary>
+    public string? Comment { get; set; }
 
     /// <summary>Статус двигателя.</summary>
     public MotorStatus Status { get; set; }

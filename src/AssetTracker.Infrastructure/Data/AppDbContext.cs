@@ -46,12 +46,17 @@ public class AppDbContext : DbContext
 
             entity.Property(e => e.Type).IsRequired().HasMaxLength(100);
 
+            // Комментарий – необязательный, до 1000 символов
+            entity.Property(e => e.Comment)
+                .HasMaxLength(1000)
+                .IsRequired(false);
+
             // Диаметр вала теперь необязателен
             entity.Property(e => e.ShaftDiameter)
                 .HasPrecision(10, 2)
                 .IsRequired(false);
 
-            entity.Property(e => e.Power).HasPrecision(10, 2);
+            entity.Property(e => e.Power).HasPrecision(10, 3);
             entity.Property(e => e.Status).HasConversion<string>();
             entity.Property(e => e.MountingType)
                 .HasConversion<string>()

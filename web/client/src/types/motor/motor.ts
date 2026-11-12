@@ -124,8 +124,8 @@ export interface MaintenanceLogDto {
  * DTO для полной истории двигателя, включая текущие данные, подшипники,
  * историю перемещений и последние записи обслуживания.
  *
- * Поля shaftDiameter, frontBearing и rearBearing могут быть null — они необязательны
- * при создании двигателя и могут отсутствовать.
+ * Поля shaftDiameter, comment, frontBearing и rearBearing могут быть null —
+ * они необязательны при создании двигателя и могут отсутствовать.
  */
 export interface MotorFullHistoryDto {
     /** Суррогатный идентификатор */
@@ -140,6 +140,8 @@ export interface MotorFullHistoryDto {
     power: number;
     /** Обороты (об/мин) */
     speed: number;
+    /** Комментарий (дополнительная информация о двигателе). Может отсутствовать. */
+    comment: string | null;
     /** Передний подшипник (может отсутствовать) */
     frontBearing: BearingDto | null;
     /** Задний подшипник (может отсутствовать) */
@@ -160,7 +162,7 @@ export interface MotorFullHistoryDto {
 
 /**
  * DTO для первичной регистрации нового электродвигателя.
- * Диаметр вала и подшипники — необязательны.
+ * Диаметр вала, комментарий и подшипники — необязательны.
  */
 export interface CreateMotorDto {
     /** Инвентарный номер (опциональный, уникальный) */
@@ -169,10 +171,12 @@ export interface CreateMotorDto {
     type: string;
     /** Диаметр вала (мм). Необязательное поле. */
     shaftDiameter: number | null;
-    /** Мощность (кВт) */
+    /** Мощность (кВт). Может быть меньше 0.1 кВт. */
     power: number;
     /** Обороты (об/мин) */
     speed: number;
+    /** Комментарий (дополнительная информация). Необязательное поле. */
+    comment: string | null;
     /** Данные переднего подшипника. Может отсутствовать. */
     frontBearing: CreateBearingDto | null;
     /** Данные заднего подшипника. Может отсутствовать. */
@@ -270,14 +274,14 @@ export interface MotorListItem {
 /**
  * DTO для обновления основных характеристик двигателя (без изменения подшипников).
  * Поля frontBearingType и rearBearingType удалены — они не поддерживаются сервером.
- * Диаметр вала необязателен.
+ * Диаметр вала и комментарий необязательны.
  */
 export interface UpdateMotorRequest {
     /** Тип двигателя */
     type: string;
     /** Диаметр вала (мм). Необязательное поле. */
     shaftDiameter: number | null;
-    /** Мощность (кВт) */
+    /** Мощность (кВт). Может быть меньше 0.1 кВт. */
     power: number;
     /** Обороты (об/мин) */
     speed: number;
@@ -285,6 +289,11 @@ export interface UpdateMotorRequest {
     status: MotorStatus;
     /** Тип монтажа */
     mountingType: MountingType;
+    /**
+     * Комментарий (дополнительная информация о двигателе).
+     * null — не изменять существующий; пустая строка — очистить.
+     */
+    comment: string | null;
 }
 
 /**

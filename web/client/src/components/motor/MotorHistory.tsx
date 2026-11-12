@@ -24,10 +24,11 @@ interface Props {
  * - схема с подшипниками и смазкой
  * - основные характеристики
  * - блок подшипников с производителем, поставщиком и последней смазкой
+ * - блок комментария (если задан)
  * - кнопки редактирования и удаления (передаются из родителя)
  * - кнопка редактирования инвентарного номера
  *
- * Диаметр вала и подшипники могут отсутствовать — в этом случае отображается «—»
+ * Диаметр вала, комментарий и подшипники могут отсутствовать — в этом случае отображается «—»
  * или «Не известен».
  *
  * Цвета бейджа статуса берутся из общей утилиты getStatusColorClasses
@@ -168,6 +169,23 @@ export default function MotorHistory({ motorData, onEdit, onDelete, onEditInvent
                         </div>
                     </div>
                 </div>
+
+                {/* Блок комментария – отображается только если комментарий задан */}
+                {motorData.comment && (
+                    <div className="mt-8">
+                        <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2 border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <svg className="w-5 h-5 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                            </svg>
+                            Комментарий
+                        </h4>
+                        <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                                {motorData.comment}
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* Блок подшипников – на всю ширину под двумя колонками */}
                 <div className="mt-8">

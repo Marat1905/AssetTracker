@@ -25,6 +25,12 @@ public class Motor
     /// <summary>Обороты (об/мин).</summary>
     public int Speed { get; set; }
 
+    /// <summary>
+    /// Комментарий (дополнительная информация о двигателе, например про сальник и т.п.).
+    /// Необязательное поле.
+    /// </summary>
+    public string? Comment { get; set; }
+
     /// <summary>Идентификатор переднего подшипника (внешний ключ). Необязательно.</summary>
     public int? FrontBearingId { get; set; }
 

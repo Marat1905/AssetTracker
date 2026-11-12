@@ -23,14 +23,20 @@ interface Props {
  * Модальное окно редактирования основных характеристик двигателя.
  * Полностью поддерживает светлую и тёмную тему.
  * Содержит поля для изменения типа, диаметра вала, мощности, оборотов,
- * типа монтажа. Подшипники отображаются информационно, так как
+ * типа монтажа и комментария. Подшипники отображаются информационно, так как
  * их замена выполняется через журнал обслуживания.
  * Для предотвращения излишней высоты добавлена прокрутка содержимого.
  * Инвентарный номер редактируется в отдельном модальном окне.
  * Статус отображается только для информации (изменить его можно через перемещение).
  *
- * Диаметр вала и подшипники могут отсутствовать у двигателя — в этом случае
+ * Диаметр вала, комментарий и подшипники могут отсутствовать у двигателя — в этом случае
  * поля отображаются пустыми или с пометкой «Не известен».
+ *
+ * Мощность: step="any" — можно указывать значения меньше 0.1 кВт (например, 0.05).
+ *
+ * Комментарий: если не изменён — отправляется текущее значение; если очищен — отправляется
+ * пустая строка (бэкенд сотрёт комментарий); если не передан (undefined) — бэкенд сохранит
+ * существующее значение.
  */
 export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Props) {
     // Получаем текущее местоположение из истории перемещений
@@ -50,6 +56,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
             power: motor.power,
             speed: motor.speed,
             mountingType: motor.mountingType,
+            comment: motor.comment ?? '',
         }
     });
 
@@ -61,6 +68,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
             power: motor.power,
             speed: motor.speed,
             mountingType: motor.mountingType,
+            comment: motor.comment ?? '',
         });
     }, [motor, reset]);
 
@@ -68,6 +76,9 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
         try {
             // Отправляем все поля, включая статус (берём текущий из motor, так как он не редактируется в форме).
             // Диаметр вала может быть undefined — тогда отправляем null.
+            // Комментарий: если поле пустое (''), отправляем '' — бэкенд очистит комментарий.
+            // Если поле не тронуто, отправляется текущее значение motor.comment.
+            // Если по какой-то причине data.comment === undefined, отправляем null — бэкенд сохранит существующее значение.
             const updateData: UpdateMotorRequest = {
                 type: data.type,
                 shaftDiameter: data.shaftDiameter ?? null,
@@ -75,6 +86,7 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                 speed: data.speed,
                 status: motor.status, // статус не меняется, передаём текущий
                 mountingType: data.mountingType,
+                comment: data.comment ?? null,
             };
             await motorApi.updateMotor(motor.id, updateData);
             toast.success('Данные двигателя обновлены');
@@ -150,13 +162,17 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                 </label>
                                 <input
                                     type="number"
-                                    step="0.1"
+                                    // step="any" позволяет вводить значения меньше 0.1 кВт (например, 0.05)
+                                    step="any"
                                     {...register('power', { valueAsNumber: true })}
                                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 />
                                 {errors.power && (
                                     <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.power.message}</p>
                                 )}
+                                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                    Допускаются значения меньше 0.1 кВт
+                                </p>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -201,6 +217,25 @@ export default function EditMotorModal({ motor, isOpen, onClose, onSuccess }: Pr
                                     </span>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Комментарий – на всю ширину */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Комментарий <span className="text-gray-400">— необязательно</span>
+                            </label>
+                            <textarea
+                                {...register('comment')}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-y"
+                                placeholder="Дополнительная информация: сальник, особенности эксплуатации и т.п."
+                            />
+                            {errors.comment && (
+                                <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.comment.message}</p>
+                            )}
+                            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                Очистите поле, чтобы удалить комментарий.
+                            </p>
                         </div>
 
                         {/* Информационные блоки о подшипниках (могут отсутствовать) */}

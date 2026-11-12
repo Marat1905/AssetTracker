@@ -13,6 +13,9 @@ namespace AssetTracker.Application.Validators;
 ///
 /// Инвентарный номер: разрешены латинские и кириллические буквы, цифры
 /// и символы - _ / . (дефис, подчёркивание, слэш, точка).
+///
+/// Мощность: должна быть строго больше 0. Значения меньше 0.1 кВт
+/// (например, 0.05) допустимы — электродвигатели бывают маломощными.
 /// </summary>
 public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
 {
@@ -56,11 +59,16 @@ public class CreateMotorDtoValidator : AbstractValidator<CreateMotorDto>
             .GreaterThan(0).WithMessage("Диаметр вала должен быть больше 0 мм")
             .When(x => x.ShaftDiameter.HasValue);
 
+        // Мощность: строго больше 0. Малые значения (0.001, 0.05) допустимы.
         RuleFor(x => x.Power)
             .GreaterThan(0).WithMessage("Мощность должна быть больше 0");
 
         RuleFor(x => x.Speed)
             .GreaterThan(0).WithMessage("Обороты должны быть больше 0");
+
+        // Комментарий необязателен, но если задан — до 1000 символов
+        RuleFor(x => x.Comment)
+            .MaximumLength(1000).WithMessage("Комментарий не должен превышать 1000 символов");
 
         // Передний подшипник — необязателен.
         // Проверяем только если хотя бы одно из трёх полей заполнено.

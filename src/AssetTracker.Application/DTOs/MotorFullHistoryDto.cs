@@ -25,6 +25,12 @@ public class MotorFullHistoryDto
     /// <summary>Обороты.</summary>
     public int Speed { get; set; }
 
+    /// <summary>
+    /// Комментарий (дополнительная информация о двигателе).
+    /// Может отсутствовать.
+    /// </summary>
+    public string? Comment { get; set; }
+
     /// <summary>Передний подшипник (может отсутствовать).</summary>
     public BearingDto? FrontBearing { get; set; }
 
